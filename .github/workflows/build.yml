@@ -1,0 +1,48 @@
+name: Build Football Genie APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download source code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Check project files
+        run: |
+          echo "Football Genie build workflow is running."
+          find . -maxdepth 3 -type f | sort
+
+      - name: Build APK if Gradle project exists
+        run: |
+          if [ -f ./gradlew ]; then
+            chmod +x ./gradlew
+            ./gradlew assembleDebug
+          elif [ -f ./app/build.gradle ]; then
+            gradle assembleDebug
+          elif [ -f ./app/build.gradle.kts ]; then
+            gradle assembleDebug
+          else
+            echo "Android project files have not been uploaded yet."
+            echo "The build workflow is ready, but the Android source code is still needed."
+          fi
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Football-Genie-APK
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: ignore
