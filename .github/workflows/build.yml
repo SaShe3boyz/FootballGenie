@@ -9,10 +9,9 @@ branches:
 jobs:
 build:
 runs-on: ubuntu-latest
-
 steps:
-  - name: Download source code
-    uses: actions/checkout@v4
+- name: Download source code
+uses: actions/checkout@v4
 
   - name: Check project files
     run: |
