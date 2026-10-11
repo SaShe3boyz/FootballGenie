@@ -14,6 +14,11 @@ import android.widget.*;
 
 import java.util.Locale;
 import java.util.Random;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
@@ -46,6 +51,7 @@ public class MainActivity extends Activity {
         buildResults();
 
         setContentView(scroll);
+        checkApiConnection();
     }
 
     private void buildHeader() {
@@ -476,4 +482,50 @@ public class MainActivity extends Activity {
             ).show();
         }
     }
+        private void checkApiConnection() {
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+
+            try {
+                URL url = new URL(
+                    "https://football-genie-api.onrender.com/"
+                );
+
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(15000);
+
+                int responseCode = connection.getResponseCode();
+
+                runOnUiThread(() -> {
+                    if (responseCode == 200) {
+                        Toast.makeText(
+                            MainActivity.this,
+                            "Football Genie server connected!",
+                            Toast.LENGTH_LONG
+                        ).show();
+                    } else {
+                        Toast.makeText(
+                            MainActivity.this,
+                            "Server response: " + responseCode,
+                            Toast.LENGTH_LONG
+                        ).show();
+                    }
+                });
+
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(
+                    MainActivity.this,
+                    "Could not connect to server. Check internet.",
+                    Toast.LENGTH_LONG
+                ).show());
+
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
+            }
+        }).start();
+                }
     }
