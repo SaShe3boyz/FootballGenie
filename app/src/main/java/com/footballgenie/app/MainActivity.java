@@ -19,6 +19,10 @@ import java.net.URL;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import android.widget.Toast;
+import android.app.AlertDialog;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import java.util.ArrayList;
 
 public class MainActivity extends Activity {
 
@@ -132,6 +136,23 @@ public class MainActivity extends Activity {
         note.setTextSize(12);
         note.setPadding(0, dp(8), 0, dp(10));
         form.addView(note);
+
+                Button fixturesButton = new Button(this);
+        fixturesButton.setText("🌐  LOAD LIVE FIXTURES");
+        fixturesButton.setTextColor(WHITE);
+        fixturesButton.setTextSize(14);
+        fixturesButton.setTypeface(null, Typeface.BOLD);
+        fixturesButton.setAllCaps(false);
+        fixturesButton.setBackground(rounded(CARD, 14));
+
+        LinearLayout.LayoutParams fixturesParams =
+            new LinearLayout.LayoutParams(-1, dp(54));
+
+        fixturesParams.bottomMargin = dp(12);
+
+        form.addView(fixturesButton, fixturesParams);
+
+        fixturesButton.setOnClickListener(v -> loadFixtures());
 
         Button simulateButton = new Button(this);
         simulateButton.setText("⚽  SIMULATE 10,000 MATCHES");
@@ -528,4 +549,136 @@ public class MainActivity extends Activity {
             }
         }).start();
                 }
+        private void loadFixtures() {
+        Toast.makeText(
+            MainActivity.this,
+            "Loading live fixtures...",
+            Toast.LENGTH_SHORT
+        ).show();
+
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+
+            try {
+                URL url = new URL(
+                    "https://football-genie-api.onrender.com/api/matches"
+                );
+
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(20000);
+                connection.setReadTimeout(20000);
+
+                BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(connection.getInputStream())
+                );
+
+                StringBuilder response = new StringBuilder();
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+
+                reader.close();
+
+                JSONObject data = new JSONObject(response.toString());
+                JSONArray matches = data.getJSONArray("matches");
+
+                ArrayList<JSONObject> fixtures = new ArrayList<>();
+                ArrayList<String> fixtureNames = new ArrayList<>();
+
+                for (int i = 0; i < matches.length(); i++) {
+                    JSONObject match = matches.getJSONObject(i);
+
+                    JSONObject home = match.getJSONObject("homeTeam");
+                    JSONObject away = match.getJSONObject("awayTeam");
+
+                    String homeName = home.optString("name", "Home team");
+                    String awayName = away.optString("name", "Away team");
+
+                    String competition = "";
+                    JSONObject comp = match.optJSONObject("competition");
+
+                    if (comp != null) {
+                        competition = comp.optString("name", "");
+                    }
+
+                    String date = match.optString("utcDate", "");
+
+                    String display = homeName + " vs " + awayName;
+
+                    if (!competition.isEmpty()) {
+                        display += "\n" + competition;
+                    }
+
+                    if (date.length() >= 10) {
+                        display += " • " + date.substring(0, 10);
+                    }
+
+                    fixtures.add(match);
+                    fixtureNames.add(display);
+                }
+
+                runOnUiThread(() -> {
+                    if (fixtures.isEmpty()) {
+                        Toast.makeText(
+                            MainActivity.this,
+                            "No fixtures found. Please try again later.",
+                            Toast.LENGTH_LONG
+                        ).show();
+                        return;
+                    }
+
+                    String[] choices = fixtureNames.toArray(new String[0]);
+
+                    new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Select a Live Fixture")
+                        .setItems(choices, (dialog, which) -> {
+                            try {
+                                JSONObject selected = fixtures.get(which);
+
+                                String homeName = selected
+                                    .getJSONObject("homeTeam")
+                                    .optString("name", "");
+
+                                String awayName = selected
+                                    .getJSONObject("awayTeam")
+                                    .optString("name", "");
+
+                                homeInput.setText(homeName);
+                                awayInput.setText(awayName);
+
+                                Toast.makeText(
+                                    MainActivity.this,
+                                    "Fixture selected. Enter expected goals to simulate.",
+                                    Toast.LENGTH_LONG
+                                ).show();
+
+                            } catch (Exception e) {
+                                Toast.makeText(
+                                    MainActivity.this,
+                                    "Could not select this fixture.",
+                                    Toast.LENGTH_SHORT
+                                ).show();
+                            }
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+                });
+
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(
+                    MainActivity.this,
+                    "Could not load fixtures. Please try again.",
+                    Toast.LENGTH_LONG
+                ).show());
+
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
+            }
+        }).start();
+    }
     }
