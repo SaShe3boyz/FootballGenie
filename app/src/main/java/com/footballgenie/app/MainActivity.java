@@ -588,7 +588,6 @@ public class MainActivity extends Activity {
                 ArrayList<JSONObject> fixtures = new ArrayList<>();
                 ArrayList<String> fixtureNames = new ArrayList<>();
 
-                for (int i = 0; i < matches.length(); i++) {
                 
                 for (int i = 0; i < matches.length(); i++) {
                     JSONObject match = matches.getJSONObject(i);
