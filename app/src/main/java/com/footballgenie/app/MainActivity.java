@@ -594,10 +594,34 @@ public class MainActivity extends Activity {
 
                     String status = match.optString("status", "SCHEDULED");
 
-                    if (!status.equals("SCHEDULED")
-                            && !status.equals("TIMED")) {
-                        continue;
-                    }
+if (!status.equals("SCHEDULED")
+&& !status.equals("TIMED")) {
+continue;
+}
+
+String kickoff = match.optString("utcDate", "");
+
+try {
+java.text.SimpleDateFormat dateFormat =
+new java.text.SimpleDateFormat(
+"yyyy-MM-dd'T'HH:mm:ss'Z'",
+java.util.Locale.US
+);
+
+dateFormat.setTimeZone(
+    java.util.TimeZone.getTimeZone("UTC")
+);
+
+java.util.Date kickoffDate = dateFormat.parse(kickoff);
+
+if (kickoffDate != null
+        && kickoffDate.getTime() <= System.currentTimeMillis()) {
+    continue;
+}
+
+} catch (java.text.ParseException e) {
+continue;
+}
 
                     JSONObject home = match.optJSONObject("homeTeam");
                     JSONObject away = match.optJSONObject("awayTeam");
