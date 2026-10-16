@@ -589,10 +589,23 @@ public class MainActivity extends Activity {
                 ArrayList<String> fixtureNames = new ArrayList<>();
 
                 for (int i = 0; i < matches.length(); i++) {
+                
+                for (int i = 0; i < matches.length(); i++) {
                     JSONObject match = matches.getJSONObject(i);
 
-                    JSONObject home = match.getJSONObject("homeTeam");
-                    JSONObject away = match.getJSONObject("awayTeam");
+                    String status = match.optString("status", "SCHEDULED");
+
+                    if (!status.equals("SCHEDULED")
+                            && !status.equals("TIMED")) {
+                        continue;
+                    }
+
+                    JSONObject home = match.optJSONObject("homeTeam");
+                    JSONObject away = match.optJSONObject("awayTeam");
+
+                    if (home == null || away == null) {
+                        continue;
+                    }
 
                     String homeName = home.optString("name", "Home team");
                     String awayName = away.optString("name", "Away team");
@@ -612,13 +625,21 @@ public class MainActivity extends Activity {
                         display += "\n" + competition;
                     }
 
-                    if (date.length() >= 10) {
-                        display += " • " + date.substring(0, 10);
+                    if (date.length() >= 16) {
+                        display += "\nKickoff: "
+                            + date.substring(0, 10)
+                            + " "
+                            + date.substring(11, 16)
+                            + " UTC";
                     }
+
+                    display += "\nStatus: Upcoming";
 
                     fixtures.add(match);
                     fixtureNames.add(display);
                 }
+
+                
 
                 runOnUiThread(() -> {
                     if (fixtures.isEmpty()) {
