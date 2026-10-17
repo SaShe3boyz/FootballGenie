@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - improve-fixture-statuses
+      - prediction-history
 
 jobs:
   build:

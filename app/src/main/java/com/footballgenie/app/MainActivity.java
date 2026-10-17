@@ -9,6 +9,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.text.InputType;
 import android.widget.*;
 
@@ -29,6 +30,7 @@ public class MainActivity extends Activity {
     private EditText homeInput, awayInput, homeGoals, awayGoals;
     private TextView result, status, statsSummary;
     private LinearLayout mainLayout;
+    private JSONObject selectedFixture;
 
     private final int BG = Color.rgb(9, 16, 31);
     private final int CARD = Color.rgb(20, 31, 51);
@@ -165,6 +167,18 @@ public class MainActivity extends Activity {
         form.addView(fixturesButton, fixturesParams);
 
         fixturesButton.setOnClickListener(v -> loadFixtures());
+
+        Button historyButton = new Button(this);
+        historyButton.setText("📊  PREDICTION HISTORY / UPDATE RESULTS");
+        historyButton.setTextColor(WHITE);
+        historyButton.setTextSize(13);
+        historyButton.setAllCaps(false);
+        historyButton.setBackground(rounded(CARD, 14));
+        LinearLayout.LayoutParams historyParams =
+            new LinearLayout.LayoutParams(-1, dp(50));
+        historyParams.bottomMargin = dp(12);
+        form.addView(historyButton, historyParams);
+        historyButton.setOnClickListener(v -> syncPredictionHistory());
 
         Button simulateButton = new Button(this);
         simulateButton.setText("⚽  SIMULATE 10,000 MATCHES");
@@ -507,6 +521,9 @@ public class MainActivity extends Activity {
                 analysis
             ));
 
+            savePredictionIfEligible(home, away, homeXg, awayXg,
+                homeP, drawP, awayP, overP, bttsP, bestHome, bestAway);
+
         } catch (Exception e) {
             Toast.makeText(
                 this,
@@ -561,7 +578,221 @@ public class MainActivity extends Activity {
             }
         }).start();
                 }
-        private void loadFixtures() {
+    
+    private SharedPreferences predictionPrefs() {
+        return getSharedPreferences("football_genie_predictions", MODE_PRIVATE);
+    }
+
+    private JSONArray readPredictionHistory() {
+        try {
+            return new JSONArray(predictionPrefs().getString("history", "[]"));
+        } catch (Exception e) {
+            return new JSONArray();
+        }
+    }
+
+    private void savePredictionIfEligible(String home, String away,
+            double homeXg, double awayXg, double homeP, double drawP,
+            double awayP, double overP, double bttsP, int predictedHome,
+            int predictedAway) {
+        if (selectedFixture == null) {
+            return;
+        }
+
+        String fixtureStatus = selectedFixture.optString("status", "");
+        if (!"SCHEDULED".equals(fixtureStatus) && !"TIMED".equals(fixtureStatus)) {
+            Toast.makeText(this,
+                "History saves predictions for upcoming fixtures only.",
+                Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        String fixtureId = selectedFixture.optString("id", "");
+        String kickoff = selectedFixture.optString("utcDate", "");
+        if (fixtureId.isEmpty()) return;
+
+        try {
+            JSONArray oldHistory = readPredictionHistory();
+            JSONArray updated = new JSONArray();
+            JSONObject record = new JSONObject();
+            record.put("fixtureId", fixtureId);
+            record.put("home", home);
+            record.put("away", away);
+            record.put("kickoff", kickoff);
+            record.put("homeXg", homeXg);
+            record.put("awayXg", awayXg);
+            record.put("homeP", homeP);
+            record.put("drawP", drawP);
+            record.put("awayP", awayP);
+            record.put("overP", overP);
+            record.put("bttsP", bttsP);
+            record.put("predictedHome", predictedHome);
+            record.put("predictedAway", predictedAway);
+            record.put("predictionStatus", "PENDING");
+            record.put("savedAt", System.currentTimeMillis());
+
+            for (int i = 0; i < oldHistory.length(); i++) {
+                JSONObject old = oldHistory.optJSONObject(i);
+                if (old == null) continue;
+                if (!fixtureId.equals(old.optString("fixtureId", ""))) {
+                    updated.put(old);
+                }
+            }
+            updated.put(record);
+            predictionPrefs().edit().putString("history", updated.toString()).apply();
+            Toast.makeText(this,
+                "Prediction saved to your on-phone history.",
+                Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(this,
+                "Could not save this prediction.",
+                Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void syncPredictionHistory() {
+        Toast.makeText(this, "Checking saved predictions for final results...",
+            Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            try {
+                URL url = new URL("https://football-genie-api.onrender.com/api/matches");
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(20000);
+                connection.setReadTimeout(20000);
+                BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(connection.getInputStream()));
+                StringBuilder body = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) body.append(line);
+                reader.close();
+
+                JSONObject data = new JSONObject(body.toString());
+                JSONArray matches = data.optJSONArray("matches");
+                JSONArray history = readPredictionHistory();
+                int updatedCount = 0;
+
+                if (matches != null) {
+                    for (int i = 0; i < history.length(); i++) {
+                        JSONObject record = history.optJSONObject(i);
+                        if (record == null ||
+                                "FINISHED".equals(record.optString("predictionStatus"))) {
+                            continue;
+                        }
+                        String wantedId = record.optString("fixtureId", "");
+                        for (int j = 0; j < matches.length(); j++) {
+                            JSONObject match = matches.optJSONObject(j);
+                            if (match == null ||
+                                !wantedId.equals(match.optString("id", ""))) continue;
+
+                            String matchStatus = match.optString("status", "");
+                            record.put("currentMatchStatus", matchStatus);
+                            if ("FINISHED".equals(matchStatus)) {
+                                JSONObject score = match.optJSONObject("score");
+                                JSONObject fullTime = score != null
+                                    ? score.optJSONObject("fullTime") : null;
+                                if (fullTime != null && !fullTime.isNull("home")
+                                        && !fullTime.isNull("away")) {
+                                    int actualHome = fullTime.optInt("home", -1);
+                                    int actualAway = fullTime.optInt("away", -1);
+                                    if (actualHome >= 0 && actualAway >= 0) {
+                                        record.put("actualHome", actualHome);
+                                        record.put("actualAway", actualAway);
+                                        record.put("predictionStatus", "FINISHED");
+                                        updatedCount++;
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                predictionPrefs().edit().putString("history", history.toString()).apply();
+                final int updated = updatedCount;
+                runOnUiThread(() -> showPredictionHistory(updated));
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(MainActivity.this,
+                    "Could not update results. Please try again when connected.",
+                    Toast.LENGTH_LONG).show());
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }).start();
+    }
+
+    private void showPredictionHistory(int newlyUpdated) {
+        JSONArray history = readPredictionHistory();
+        int finished = 0, outcomeCorrect = 0, goalsCorrect = 0;
+        int bttsCorrect = 0, exactCorrect = 0;
+        StringBuilder summary = new StringBuilder();
+        summary.append("PREDICTION HISTORY\n");
+        summary.append("New final results added: ").append(newlyUpdated).append("\n\n");
+
+        for (int i = history.length() - 1; i >= 0; i--) {
+            JSONObject record = history.optJSONObject(i);
+            if (record == null) continue;
+            String home = record.optString("home", "Home");
+            String away = record.optString("away", "Away");
+            String state = record.optString("predictionStatus", "PENDING");
+            summary.append(home).append(" vs ").append(away).append("\n");
+            summary.append("Expected goals: ")
+                .append(String.format(Locale.US, "%.2f", record.optDouble("homeXg", 0)))
+                .append(" - ")
+                .append(String.format(Locale.US, "%.2f", record.optDouble("awayXg", 0)))
+                .append("\n");
+
+            if ("FINISHED".equals(state)) {
+                int ah = record.optInt("actualHome", -1);
+                int aa = record.optInt("actualAway", -1);
+                if (ah >= 0 && aa >= 0) {
+                    finished++;
+                    String predictedOutcome = record.optDouble("homeP", 0) >=
+                        Math.max(record.optDouble("drawP", 0), record.optDouble("awayP", 0))
+                        ? "HOME" : (record.optDouble("drawP", 0) >= record.optDouble("awayP", 0)
+                            ? "DRAW" : "AWAY");
+                    String actualOutcome = ah > aa ? "HOME" : (ah == aa ? "DRAW" : "AWAY");
+                    if (predictedOutcome.equals(actualOutcome)) outcomeCorrect++;
+
+                    boolean predictedOver = record.optDouble("overP", 0) >= 50.0;
+                    if (predictedOver == (ah + aa > 2)) goalsCorrect++;
+                    boolean predictedBtts = record.optDouble("bttsP", 0) >= 50.0;
+                    if (predictedBtts == (ah > 0 && aa > 0)) bttsCorrect++;
+                    if (ah == record.optInt("predictedHome", -2)
+                            && aa == record.optInt("predictedAway", -2)) exactCorrect++;
+
+                    summary.append("Actual score: ").append(ah).append(" - ").append(aa).append("\n");
+                }
+            } else {
+                summary.append("Result: ").append(state.equals("PENDING")
+                    ? "Waiting for final result" : state).append("\n");
+            }
+            summary.append("────────────────────\n");
+        }
+
+        if (finished > 0) {
+            summary.insert("PREDICTION HISTORY\n".length(),
+                "Evaluated matches: " + finished + "\n" +
+                "Outcome pick correct: " + outcomeCorrect + "/" + finished +
+                " (" + String.format(Locale.US, "%.1f", 100.0 * outcomeCorrect / finished) + "%)\n" +
+                "Over/Under pick correct: " + goalsCorrect + "/" + finished +
+                " (" + String.format(Locale.US, "%.1f", 100.0 * goalsCorrect / finished) + "%)\n" +
+                "BTTS pick correct: " + bttsCorrect + "/" + finished +
+                " (" + String.format(Locale.US, "%.1f", 100.0 * bttsCorrect / finished) + "%)\n" +
+                "Exact score: " + exactCorrect + "/" + finished + "\n\n");
+        } else {
+            summary.append("\nNo saved predictions have a final result yet. Save predictions for upcoming matches, then use this button again after they finish.\n");
+        }
+
+        new AlertDialog.Builder(this)
+            .setTitle("Football Genie • Prediction History")
+            .setMessage(summary.toString())
+            .setPositiveButton("Close", null)
+            .show();
+    }
+
+    private void loadFixtures() {
         Toast.makeText(
             MainActivity.this,
             "Loading fixtures...",
@@ -726,6 +957,7 @@ public class MainActivity extends Activity {
                                     .getJSONObject("awayTeam")
                                     .optString("name", "");
 
+                                selectedFixture = selected;
                                 homeInput.setText(homeName);
                                 awayInput.setText(awayName);
 
