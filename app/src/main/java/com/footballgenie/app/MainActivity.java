@@ -552,7 +552,7 @@ public class MainActivity extends Activity {
         private void loadFixtures() {
         Toast.makeText(
             MainActivity.this,
-            "Loading live fixtures...",
+            "Loading fixtures...",
             Toast.LENGTH_SHORT
         ).show();
 
@@ -588,41 +588,8 @@ public class MainActivity extends Activity {
                 ArrayList<JSONObject> fixtures = new ArrayList<>();
                 ArrayList<String> fixtureNames = new ArrayList<>();
 
-                
                 for (int i = 0; i < matches.length(); i++) {
                     JSONObject match = matches.getJSONObject(i);
-
-                    String status = match.optString("status", "SCHEDULED");
-
-if (!status.equals("SCHEDULED")
-&& !status.equals("TIMED")) {
-continue;
-}
-
-String kickoff = match.optString("utcDate", "");
-
-try {
-java.text.SimpleDateFormat dateFormat =
-new java.text.SimpleDateFormat(
-"yyyy-MM-dd'T'HH:mm:ss'Z'",
-java.util.Locale.US
-);
-
-dateFormat.setTimeZone(
-    java.util.TimeZone.getTimeZone("UTC")
-);
-
-java.util.Date kickoffDate = dateFormat.parse(kickoff);
-
-if (kickoffDate != null
-        && kickoffDate.getTime() <= System.currentTimeMillis()) {
-    continue;
-}
-
-} catch (java.text.ParseException e) {
-continue;
-}
-
                     JSONObject home = match.optJSONObject("homeTeam");
                     JSONObject away = match.optJSONObject("awayTeam");
 
@@ -632,7 +599,7 @@ continue;
 
                     String homeName = home.optString("name", "Home team");
                     String awayName = away.optString("name", "Away team");
-
+                    String status = match.optString("status", "SCHEDULED");
                     String competition = "";
                     JSONObject comp = match.optJSONObject("competition");
 
@@ -641,7 +608,6 @@ continue;
                     }
 
                     String date = match.optString("utcDate", "");
-
                     String display = homeName + " vs " + awayName;
 
                     if (!competition.isEmpty()) {
@@ -649,26 +615,84 @@ continue;
                     }
 
                     if (date.length() >= 16) {
-                        display += "\nKickoff: "
+                        display += "\nDate: "
                             + date.substring(0, 10)
                             + " "
                             + date.substring(11, 16)
                             + " UTC";
                     }
 
-                    display += "\nStatus: Upcoming";
+                    String statusLabel;
+                    switch (status) {
+                        case "IN_PLAY":
+                            statusLabel = "LIVE";
+                            break;
+                        case "PAUSED":
+                            statusLabel = "LIVE - Half-time or paused";
+                            break;
+                        case "EXTRA_TIME":
+                            statusLabel = "LIVE - Extra time";
+                            break;
+                        case "PENALTY_SHOOTOUT":
+                            statusLabel = "LIVE - Penalty shoot-out";
+                            break;
+                        case "FINISHED":
+                            statusLabel = "Completed";
+                            break;
+                        case "POSTPONED":
+                            statusLabel = "Postponed";
+                            break;
+                        case "SUSPENDED":
+                            statusLabel = "Suspended";
+                            break;
+                        case "CANCELLED":
+                            statusLabel = "Cancelled";
+                            break;
+                        case "AWARDED":
+                            statusLabel = "Result awarded";
+                            break;
+                        case "TIMED":
+                        case "SCHEDULED":
+                        default:
+                            statusLabel = "Upcoming";
+                            break;
+                    }
+
+                    display += "\nStatus: " + statusLabel;
+
+                    JSONObject score = match.optJSONObject("score");
+                    if (score != null) {
+                        JSONObject scoreDetails = score.optJSONObject("fullTime");
+                        if (scoreDetails == null
+                                || scoreDetails.isNull("home")
+                                || scoreDetails.isNull("away")) {
+                            scoreDetails = score.optJSONObject("regularTime");
+                        }
+                        if (scoreDetails == null
+                                || scoreDetails.isNull("home")
+                                || scoreDetails.isNull("away")) {
+                            scoreDetails = score.optJSONObject("halfTime");
+                        }
+
+                        if (scoreDetails != null
+                                && !scoreDetails.isNull("home")
+                                && !scoreDetails.isNull("away")) {
+                            display += "\nScore: "
+                                + scoreDetails.optInt("home")
+                                + " - "
+                                + scoreDetails.optInt("away");
+                        }
+                    }
 
                     fixtures.add(match);
                     fixtureNames.add(display);
                 }
 
-                
-
                 runOnUiThread(() -> {
                     if (fixtures.isEmpty()) {
                         Toast.makeText(
                             MainActivity.this,
-                            "No fixtures found. Please try again later.",
+                            "No matches found in the available date range.",
                             Toast.LENGTH_LONG
                         ).show();
                         return;
@@ -677,7 +701,7 @@ continue;
                     String[] choices = fixtureNames.toArray(new String[0]);
 
                     new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Select a Live Fixture")
+                        .setTitle("Select a Fixture")
                         .setItems(choices, (dialog, which) -> {
                             try {
                                 JSONObject selected = fixtures.get(which);
