@@ -138,7 +138,7 @@ public class MainActivity extends Activity {
         form.addView(note);
 
         statsSummary = label(
-            "RECENT TEAM FORM\\nSelect a fixture to load recent results and statistics."
+            "RECENT TEAM FORM\nSelect a fixture to load recent results and statistics."
         );
         statsSummary.setTextColor(WHITE);
         statsSummary.setTextSize(13);
@@ -730,7 +730,7 @@ public class MainActivity extends Activity {
                                 awayInput.setText(awayName);
 
                                 statsSummary.setText(
-                                    "RECENT TEAM FORM\\nLoading recent completed matches for both teams..."
+                                    "RECENT TEAM FORM\nLoading recent completed matches for both teams..."
                                 );
                                 loadTeamStatsForFixture(selected);
 
@@ -783,7 +783,7 @@ public class MainActivity extends Activity {
                         || awayStats.optInt("sampleSize", 0) == 0) {
                     runOnUiThread(() -> {
                         statsSummary.setText(
-                            "RECENT TEAM FORM\\nStatistics are unavailable for one or both teams. " +
+                            "RECENT TEAM FORM\nStatistics are unavailable for one or both teams. " +
                             "Please enter expected goals manually."
                         );
                         Toast.makeText(
@@ -811,11 +811,11 @@ public class MainActivity extends Activity {
                 final String homeForm = homeStats.optString("form", "Not available");
                 final String awayForm = awayStats.optString("form", "Not available");
                 final String homeName = homeStats.optJSONObject("team") != null
-                    ? homeStats.optJSONObject("team").optString("name", homeInput.getText().toString())
-                    : homeInput.getText().toString();
+                    ? homeStats.optJSONObject("team").optString("name", "Home team")
+                    : "Home team";
                 final String awayName = awayStats.optJSONObject("team") != null
-                    ? awayStats.optJSONObject("team").optString("name", awayInput.getText().toString())
-                    : awayInput.getText().toString();
+                    ? awayStats.optJSONObject("team").optString("name", "Away team")
+                    : "Away team";
                 final int homeSample = homeStats.optInt("sampleSize", 0);
                 final int awaySample = awayStats.optInt("sampleSize", 0);
 
@@ -823,13 +823,13 @@ public class MainActivity extends Activity {
                     homeGoals.setText(homeValue);
                     awayGoals.setText(awayValue);
                     statsSummary.setText(
-                        "RECENT TEAM FORM (latest first)\\n" +
-                        homeName + ": " + homeForm + "  |  Analysed: " + homeSample + " matches\\n" +
+                        "RECENT TEAM FORM (latest first)\n" +
+                        homeName + ": " + homeForm + "  |  Analysed: " + homeSample + " matches\n" +
                         "Goals per match: " + homeGoalsStats.optString("averageScored", "0") +
-                        " scored, " + homeGoalsStats.optString("averageConceded", "0") + " conceded\\n\\n" +
-                        awayName + ": " + awayForm + "  |  Analysed: " + awaySample + " matches\\n" +
+                        " scored, " + homeGoalsStats.optString("averageConceded", "0") + " conceded\n\n" +
+                        awayName + ": " + awayForm + "  |  Analysed: " + awaySample + " matches\n" +
                         "Goals per match: " + awayGoalsStats.optString("averageScored", "0") +
-                        " scored, " + awayGoalsStats.optString("averageConceded", "0") + " conceded\\n\\n" +
+                        " scored, " + awayGoalsStats.optString("averageConceded", "0") + " conceded\n\n" +
                         "Expected goals have been estimated from these recent results. You can edit them above."
                     );
                     Toast.makeText(
@@ -841,7 +841,7 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 runOnUiThread(() -> {
                     statsSummary.setText(
-                        "RECENT TEAM FORM\\nCould not load team statistics. Check your connection and try again, " +
+                        "RECENT TEAM FORM\nCould not load team statistics. Check your connection and try again, " +
                         "or enter expected goals manually."
                     );
                     Toast.makeText(
