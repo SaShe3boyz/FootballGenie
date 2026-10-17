@@ -27,7 +27,7 @@ import java.util.ArrayList;
 public class MainActivity extends Activity {
 
     private EditText homeInput, awayInput, homeGoals, awayGoals;
-    private TextView result, status;
+    private TextView result, status, statsSummary;
     private LinearLayout mainLayout;
 
     private final int BG = Color.rgb(9, 16, 31);
@@ -129,13 +129,25 @@ public class MainActivity extends Activity {
         );
 
         TextView note = label(
-            "Expected goals are model inputs, not automatically " +
-            "retrieved live statistics. Use realistic estimates."
+            "Select a fixture to estimate expected goals from recent completed matches. " +
+            "You can also edit the values manually."
         );
         note.setTextColor(MUTED);
         note.setTextSize(12);
         note.setPadding(0, dp(8), 0, dp(10));
         form.addView(note);
+
+        statsSummary = label(
+            "RECENT TEAM FORM\\nSelect a fixture to load recent results and statistics."
+        );
+        statsSummary.setTextColor(WHITE);
+        statsSummary.setTextSize(13);
+        statsSummary.setPadding(dp(12), dp(12), dp(12), dp(12));
+        statsSummary.setBackground(rounded(Color.rgb(31, 44, 65), 10));
+        LinearLayout.LayoutParams statsParams =
+            new LinearLayout.LayoutParams(-1, -2);
+        statsParams.bottomMargin = dp(12);
+        form.addView(statsSummary, statsParams);
 
                 Button fixturesButton = new Button(this);
         fixturesButton.setText("🌐  LOAD LIVE FIXTURES");
@@ -465,11 +477,11 @@ public class MainActivity extends Activity {
                 "these simulation runs.\n\n" +
 
                 "IMPORTANT LIMITATIONS\n" +
-                "This version uses only the expected-goals " +
-                "values you entered. It has not checked live " +
-                "fixtures, recent form, injuries, line-ups, " +
-                "weather or real team statistics. Those factors " +
-                "may change the real match outcome.";
+                "Expected goals can be estimated from recent completed matches " +
+                "when you select a fixture, or entered manually. This model does " +
+                "not currently account for injuries, confirmed line-ups, weather " +
+                "or every relevant team statistic. Those factors may change the " +
+                "real match outcome.";
 
             status.setText("✓  SIMULATION COMPLETE");
 
@@ -717,6 +729,9 @@ public class MainActivity extends Activity {
                                 homeInput.setText(homeName);
                                 awayInput.setText(awayName);
 
+                                statsSummary.setText(
+                                    "RECENT TEAM FORM\\nLoading recent completed matches for both teams..."
+                                );
                                 loadTeamStatsForFixture(selected);
 
                                 Toast.makeText(
@@ -766,11 +781,17 @@ public class MainActivity extends Activity {
                 if (homeGoalsStats == null || awayGoalsStats == null
                         || homeStats.optInt("sampleSize", 0) == 0
                         || awayStats.optInt("sampleSize", 0) == 0) {
-                    runOnUiThread(() -> Toast.makeText(
-                        MainActivity.this,
-                        "Recent stats unavailable for one or both teams. Enter expected goals manually.",
-                        Toast.LENGTH_LONG
-                    ).show());
+                    runOnUiThread(() -> {
+                        statsSummary.setText(
+                            "RECENT TEAM FORM\\nStatistics are unavailable for one or both teams. " +
+                            "Please enter expected goals manually."
+                        );
+                        Toast.makeText(
+                            MainActivity.this,
+                            "Recent stats unavailable. You can enter expected goals manually.",
+                            Toast.LENGTH_LONG
+                        ).show();
+                    });
                     return;
                 }
 
@@ -787,25 +808,48 @@ public class MainActivity extends Activity {
 
                 final String homeValue = String.format(Locale.US, "%.2f", homeExpected);
                 final String awayValue = String.format(Locale.US, "%.2f", awayExpected);
-                final String formSummary = homeStats.optString("form", "")
-                    + " | " + awayStats.optString("form", "");
+                final String homeForm = homeStats.optString("form", "Not available");
+                final String awayForm = awayStats.optString("form", "Not available");
+                final String homeName = homeStats.optJSONObject("team") != null
+                    ? homeStats.optJSONObject("team").optString("name", homeInput.getText().toString())
+                    : homeInput.getText().toString();
+                final String awayName = awayStats.optJSONObject("team") != null
+                    ? awayStats.optJSONObject("team").optString("name", awayInput.getText().toString())
+                    : awayInput.getText().toString();
+                final int homeSample = homeStats.optInt("sampleSize", 0);
+                final int awaySample = awayStats.optInt("sampleSize", 0);
 
                 runOnUiThread(() -> {
                     homeGoals.setText(homeValue);
                     awayGoals.setText(awayValue);
+                    statsSummary.setText(
+                        "RECENT TEAM FORM (latest first)\\n" +
+                        homeName + ": " + homeForm + "  |  Analysed: " + homeSample + " matches\\n" +
+                        "Goals per match: " + homeGoalsStats.optString("averageScored", "0") +
+                        " scored, " + homeGoalsStats.optString("averageConceded", "0") + " conceded\\n\\n" +
+                        awayName + ": " + awayForm + "  |  Analysed: " + awaySample + " matches\\n" +
+                        "Goals per match: " + awayGoalsStats.optString("averageScored", "0") +
+                        " scored, " + awayGoalsStats.optString("averageConceded", "0") + " conceded\\n\\n" +
+                        "Expected goals have been estimated from these recent results. You can edit them above."
+                    );
                     Toast.makeText(
                         MainActivity.this,
-                        "Expected goals estimated from recent results. Form (latest first): "
-                            + formSummary,
-                        Toast.LENGTH_LONG
+                        "Recent team statistics loaded.",
+                        Toast.LENGTH_SHORT
                     ).show();
                 });
             } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(
-                    MainActivity.this,
-                    "Could not load team stats. You can still enter expected goals manually.",
-                    Toast.LENGTH_LONG
-                ).show());
+                runOnUiThread(() -> {
+                    statsSummary.setText(
+                        "RECENT TEAM FORM\\nCould not load team statistics. Check your connection and try again, " +
+                        "or enter expected goals manually."
+                    );
+                    Toast.makeText(
+                        MainActivity.this,
+                        "Could not load team stats. Manual entry is still available.",
+                        Toast.LENGTH_LONG
+                    ).show();
+                });
             }
         }).start();
     }
