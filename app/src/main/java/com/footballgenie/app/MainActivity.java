@@ -812,17 +812,31 @@ public class MainActivity extends Activity {
                 int awayVenueSample = awayAway != null
                     ? awayAway.optInt("sampleSize", 0) : 0;
 
-                // Prefer home-only and away-only records when at least two matches exist.
-                double homeAttack = homeVenueSample >= 2
+                // Blend venue-specific rates with overall recent rates.
+                // Small venue samples receive less weight to reduce overreaction.
+                double homeVenueWeight = homeVenueSample / (homeVenueSample + 4.0);
+                double awayVenueWeight = awayVenueSample / (awayVenueSample + 4.0);
+
+                double homeVenueScored = homeAtHome != null
                     ? homeAtHome.optDouble("averageScored", homeScored) : homeScored;
-                double homeDefence = homeVenueSample >= 2
+                double homeVenueConceded = homeAtHome != null
                     ? homeAtHome.optDouble("averageConceded", homeConceded) : homeConceded;
-                double awayAttack = awayVenueSample >= 2
+                double awayVenueScored = awayAway != null
                     ? awayAway.optDouble("averageScored", awayScored) : awayScored;
-                double awayDefence = awayVenueSample >= 2
+                double awayVenueConceded = awayAway != null
                     ? awayAway.optDouble("averageConceded", awayConceded) : awayConceded;
 
-                // Combine attack and opponent defence; keep only a modest home adjustment.
+                double homeAttack = homeScored * (1.0 - homeVenueWeight)
+                    + homeVenueScored * homeVenueWeight;
+                double homeDefence = homeConceded * (1.0 - homeVenueWeight)
+                    + homeVenueConceded * homeVenueWeight;
+                double awayAttack = awayScored * (1.0 - awayVenueWeight)
+                    + awayVenueScored * awayVenueWeight;
+                double awayDefence = awayConceded * (1.0 - awayVenueWeight)
+                    + awayVenueConceded * awayVenueWeight;
+
+                // Combine attack with the opponent's defensive concession rate.
+                // Apply a modest home advantage and keep estimates within sensible bounds.
                 double homeExpected = ((homeAttack + awayDefence) / 2.0) * 1.05;
                 double awayExpected = (awayAttack + homeDefence) / 2.0;
                 homeExpected = Math.max(0.2, Math.min(4.5, homeExpected));
@@ -854,11 +868,12 @@ public class MainActivity extends Activity {
                         awayName + ": " + awayForm + "  |  Analysed: " + awaySample + " matches\n" +
                         "Goals per match: " + awayGoalsStats.optString("averageScored", "0") +
                         " scored, " + awayGoalsStats.optString("averageConceded", "0") + " conceded\n\n" +
-                        "Venue-specific matches used: " + homeName + " at home: " +
+                        "Venue-specific matches: " + homeName + " at home: " +
                         displayedHomeVenueSample + "; " + awayName + " away: " +
-                        displayedAwayVenueSample + ". Where at least 2 venue-specific matches exist, " +
-                        "they help estimate expected goals; otherwise overall recent averages are used.\n\n" +
-                        "Expected goals are estimates, not guarantees. You can edit them above."
+                        displayedAwayVenueSample + ". Venue rates are blended with overall recent rates, " +
+                        "so small home/away samples have less influence.\n\n" +
+                        "Expected goals are estimates, not guarantees. Opponent strength and league-wide " +
+                        "scoring baselines are not yet included. You can edit the estimates above."
                     );
                     Toast.makeText(
                         MainActivity.this,
