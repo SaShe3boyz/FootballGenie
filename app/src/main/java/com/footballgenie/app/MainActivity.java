@@ -27,7 +27,7 @@ import java.util.ArrayList;
 public class MainActivity extends Activity {
 
     private EditText homeInput, awayInput, homeGoals, awayGoals;
-    private TextView result, status;
+    private TextView result, status, statsSummary;
     private LinearLayout mainLayout;
 
     private final int BG = Color.rgb(9, 16, 31);
@@ -129,13 +129,25 @@ public class MainActivity extends Activity {
         );
 
         TextView note = label(
-            "Expected goals are model inputs, not automatically " +
-            "retrieved live statistics. Use realistic estimates."
+            "Select a fixture to estimate expected goals from recent completed matches. " +
+            "You can also edit the values manually."
         );
         note.setTextColor(MUTED);
         note.setTextSize(12);
         note.setPadding(0, dp(8), 0, dp(10));
         form.addView(note);
+
+        statsSummary = label(
+            "RECENT TEAM FORM\nSelect a fixture to load recent results and statistics."
+        );
+        statsSummary.setTextColor(WHITE);
+        statsSummary.setTextSize(13);
+        statsSummary.setPadding(dp(12), dp(12), dp(12), dp(12));
+        statsSummary.setBackground(rounded(Color.rgb(31, 44, 65), 10));
+        LinearLayout.LayoutParams statsParams =
+            new LinearLayout.LayoutParams(-1, -2);
+        statsParams.bottomMargin = dp(12);
+        form.addView(statsSummary, statsParams);
 
                 Button fixturesButton = new Button(this);
         fixturesButton.setText("🌐  LOAD LIVE FIXTURES");
@@ -465,11 +477,11 @@ public class MainActivity extends Activity {
                 "these simulation runs.\n\n" +
 
                 "IMPORTANT LIMITATIONS\n" +
-                "This version uses only the expected-goals " +
-                "values you entered. It has not checked live " +
-                "fixtures, recent form, injuries, line-ups, " +
-                "weather or real team statistics. Those factors " +
-                "may change the real match outcome.";
+                "Expected goals can be estimated from recent completed matches " +
+                "when you select a fixture, or entered manually. This model does " +
+                "not currently account for injuries, confirmed line-ups, weather " +
+                "or every relevant team statistic. Those factors may change the " +
+                "real match outcome.";
 
             status.setText("✓  SIMULATION COMPLETE");
 
@@ -552,7 +564,7 @@ public class MainActivity extends Activity {
         private void loadFixtures() {
         Toast.makeText(
             MainActivity.this,
-            "Loading live fixtures...",
+            "Loading fixtures...",
             Toast.LENGTH_SHORT
         ).show();
 
@@ -588,41 +600,8 @@ public class MainActivity extends Activity {
                 ArrayList<JSONObject> fixtures = new ArrayList<>();
                 ArrayList<String> fixtureNames = new ArrayList<>();
 
-                
                 for (int i = 0; i < matches.length(); i++) {
                     JSONObject match = matches.getJSONObject(i);
-
-                    String status = match.optString("status", "SCHEDULED");
-
-if (!status.equals("SCHEDULED")
-&& !status.equals("TIMED")) {
-continue;
-}
-
-String kickoff = match.optString("utcDate", "");
-
-try {
-java.text.SimpleDateFormat dateFormat =
-new java.text.SimpleDateFormat(
-"yyyy-MM-dd'T'HH:mm:ss'Z'",
-java.util.Locale.US
-);
-
-dateFormat.setTimeZone(
-    java.util.TimeZone.getTimeZone("UTC")
-);
-
-java.util.Date kickoffDate = dateFormat.parse(kickoff);
-
-if (kickoffDate != null
-        && kickoffDate.getTime() <= System.currentTimeMillis()) {
-    continue;
-}
-
-} catch (java.text.ParseException e) {
-continue;
-}
-
                     JSONObject home = match.optJSONObject("homeTeam");
                     JSONObject away = match.optJSONObject("awayTeam");
 
@@ -632,7 +611,7 @@ continue;
 
                     String homeName = home.optString("name", "Home team");
                     String awayName = away.optString("name", "Away team");
-
+                    String status = match.optString("status", "SCHEDULED");
                     String competition = "";
                     JSONObject comp = match.optJSONObject("competition");
 
@@ -641,7 +620,6 @@ continue;
                     }
 
                     String date = match.optString("utcDate", "");
-
                     String display = homeName + " vs " + awayName;
 
                     if (!competition.isEmpty()) {
@@ -649,26 +627,84 @@ continue;
                     }
 
                     if (date.length() >= 16) {
-                        display += "\nKickoff: "
+                        display += "\nDate: "
                             + date.substring(0, 10)
                             + " "
                             + date.substring(11, 16)
                             + " UTC";
                     }
 
-                    display += "\nStatus: Upcoming";
+                    String statusLabel;
+                    switch (status) {
+                        case "IN_PLAY":
+                            statusLabel = "LIVE";
+                            break;
+                        case "PAUSED":
+                            statusLabel = "LIVE - Half-time or paused";
+                            break;
+                        case "EXTRA_TIME":
+                            statusLabel = "LIVE - Extra time";
+                            break;
+                        case "PENALTY_SHOOTOUT":
+                            statusLabel = "LIVE - Penalty shoot-out";
+                            break;
+                        case "FINISHED":
+                            statusLabel = "Completed";
+                            break;
+                        case "POSTPONED":
+                            statusLabel = "Postponed";
+                            break;
+                        case "SUSPENDED":
+                            statusLabel = "Suspended";
+                            break;
+                        case "CANCELLED":
+                            statusLabel = "Cancelled";
+                            break;
+                        case "AWARDED":
+                            statusLabel = "Result awarded";
+                            break;
+                        case "TIMED":
+                        case "SCHEDULED":
+                        default:
+                            statusLabel = "Upcoming";
+                            break;
+                    }
+
+                    display += "\nStatus: " + statusLabel;
+
+                    JSONObject score = match.optJSONObject("score");
+                    if (score != null) {
+                        JSONObject scoreDetails = score.optJSONObject("fullTime");
+                        if (scoreDetails == null
+                                || scoreDetails.isNull("home")
+                                || scoreDetails.isNull("away")) {
+                            scoreDetails = score.optJSONObject("regularTime");
+                        }
+                        if (scoreDetails == null
+                                || scoreDetails.isNull("home")
+                                || scoreDetails.isNull("away")) {
+                            scoreDetails = score.optJSONObject("halfTime");
+                        }
+
+                        if (scoreDetails != null
+                                && !scoreDetails.isNull("home")
+                                && !scoreDetails.isNull("away")) {
+                            display += "\nScore: "
+                                + scoreDetails.optInt("home")
+                                + " - "
+                                + scoreDetails.optInt("away");
+                        }
+                    }
 
                     fixtures.add(match);
                     fixtureNames.add(display);
                 }
 
-                
-
                 runOnUiThread(() -> {
                     if (fixtures.isEmpty()) {
                         Toast.makeText(
                             MainActivity.this,
-                            "No fixtures found. Please try again later.",
+                            "No matches found in the available date range.",
                             Toast.LENGTH_LONG
                         ).show();
                         return;
@@ -677,7 +713,7 @@ continue;
                     String[] choices = fixtureNames.toArray(new String[0]);
 
                     new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Select a Live Fixture")
+                        .setTitle("Select a Fixture")
                         .setItems(choices, (dialog, which) -> {
                             try {
                                 JSONObject selected = fixtures.get(which);
@@ -693,9 +729,14 @@ continue;
                                 homeInput.setText(homeName);
                                 awayInput.setText(awayName);
 
+                                statsSummary.setText(
+                                    "RECENT TEAM FORM\nLoading recent completed matches for both teams..."
+                                );
+                                loadTeamStatsForFixture(selected);
+
                                 Toast.makeText(
                                     MainActivity.this,
-                                    "Fixture selected. Enter expected goals to simulate.",
+                                    "Fixture selected. Loading recent team statistics...",
                                     Toast.LENGTH_LONG
                                 ).show();
 
@@ -725,4 +766,166 @@ continue;
             }
         }).start();
     }
+
+    // Estimate expected goals from each team's recent completed matches.
+    private void loadTeamStatsForFixture(JSONObject fixture) {
+        new Thread(() -> {
+            try {
+                String homeId = String.valueOf(fixture.getJSONObject("homeTeam").getLong("id"));
+                String awayId = String.valueOf(fixture.getJSONObject("awayTeam").getLong("id"));
+                JSONObject homeStats = fetchTeamStats(homeId);
+                JSONObject awayStats = fetchTeamStats(awayId);
+                JSONObject homeGoalsStats = homeStats.optJSONObject("goals");
+                JSONObject awayGoalsStats = awayStats.optJSONObject("goals");
+
+                if (homeGoalsStats == null || awayGoalsStats == null
+                        || homeStats.optInt("sampleSize", 0) == 0
+                        || awayStats.optInt("sampleSize", 0) == 0) {
+                    runOnUiThread(() -> {
+                        statsSummary.setText(
+                            "RECENT TEAM FORM\nStatistics are unavailable for one or both teams. " +
+                            "Please enter expected goals manually."
+                        );
+                        Toast.makeText(
+                            MainActivity.this,
+                            "Recent stats unavailable. You can enter expected goals manually.",
+                            Toast.LENGTH_LONG
+                        ).show();
+                    });
+                    return;
+                }
+
+                double homeScored = homeGoalsStats.optDouble("averageScored", 0);
+                double homeConceded = homeGoalsStats.optDouble("averageConceded", 0);
+                double awayScored = awayGoalsStats.optDouble("averageScored", 0);
+                double awayConceded = awayGoalsStats.optDouble("averageConceded", 0);
+
+                JSONObject homeVenueStats = homeStats.optJSONObject("venueStats");
+                JSONObject awayVenueStats = awayStats.optJSONObject("venueStats");
+                JSONObject homeAtHome = homeVenueStats != null
+                    ? homeVenueStats.optJSONObject("home") : null;
+                JSONObject awayAway = awayVenueStats != null
+                    ? awayVenueStats.optJSONObject("away") : null;
+
+                int homeVenueSample = homeAtHome != null
+                    ? homeAtHome.optInt("sampleSize", 0) : 0;
+                int awayVenueSample = awayAway != null
+                    ? awayAway.optInt("sampleSize", 0) : 0;
+
+                // Blend venue-specific rates with overall recent rates.
+                // Small venue samples receive less weight to reduce overreaction.
+                double homeVenueWeight = homeVenueSample / (homeVenueSample + 4.0);
+                double awayVenueWeight = awayVenueSample / (awayVenueSample + 4.0);
+
+                double homeVenueScored = homeAtHome != null
+                    ? homeAtHome.optDouble("averageScored", homeScored) : homeScored;
+                double homeVenueConceded = homeAtHome != null
+                    ? homeAtHome.optDouble("averageConceded", homeConceded) : homeConceded;
+                double awayVenueScored = awayAway != null
+                    ? awayAway.optDouble("averageScored", awayScored) : awayScored;
+                double awayVenueConceded = awayAway != null
+                    ? awayAway.optDouble("averageConceded", awayConceded) : awayConceded;
+
+                double homeAttack = homeScored * (1.0 - homeVenueWeight)
+                    + homeVenueScored * homeVenueWeight;
+                double homeDefence = homeConceded * (1.0 - homeVenueWeight)
+                    + homeVenueConceded * homeVenueWeight;
+                double awayAttack = awayScored * (1.0 - awayVenueWeight)
+                    + awayVenueScored * awayVenueWeight;
+                double awayDefence = awayConceded * (1.0 - awayVenueWeight)
+                    + awayVenueConceded * awayVenueWeight;
+
+                // Combine attack with the opponent's defensive concession rate.
+                // Apply a modest home advantage and keep estimates within sensible bounds.
+                double homeExpected = ((homeAttack + awayDefence) / 2.0) * 1.05;
+                double awayExpected = (awayAttack + homeDefence) / 2.0;
+                homeExpected = Math.max(0.2, Math.min(4.5, homeExpected));
+                awayExpected = Math.max(0.2, Math.min(4.5, awayExpected));
+
+                final String homeValue = String.format(Locale.US, "%.2f", homeExpected);
+                final String awayValue = String.format(Locale.US, "%.2f", awayExpected);
+                final String homeForm = homeStats.optString("form", "Not available");
+                final String awayForm = awayStats.optString("form", "Not available");
+                final JSONObject homeTeamStats = homeStats.optJSONObject("team");
+                final JSONObject awayTeamStats = awayStats.optJSONObject("team");
+                final String homeName = homeTeamStats != null
+                    ? homeTeamStats.optString("name", "Home team") : "Home team";
+                final String awayName = awayTeamStats != null
+                    ? awayTeamStats.optString("name", "Away team") : "Away team";
+                final int homeSample = homeStats.optInt("sampleSize", 0);
+                final int awaySample = awayStats.optInt("sampleSize", 0);
+                final int displayedHomeVenueSample = homeVenueSample;
+                final int displayedAwayVenueSample = awayVenueSample;
+
+                runOnUiThread(() -> {
+                    homeGoals.setText(homeValue);
+                    awayGoals.setText(awayValue);
+                    statsSummary.setText(
+                        "RECENT TEAM FORM (latest first)\n" +
+                        homeName + ": " + homeForm + "  |  Analysed: " + homeSample + " matches\n" +
+                        "Goals per match: " + homeGoalsStats.optString("averageScored", "0") +
+                        " scored, " + homeGoalsStats.optString("averageConceded", "0") + " conceded\n\n" +
+                        awayName + ": " + awayForm + "  |  Analysed: " + awaySample + " matches\n" +
+                        "Goals per match: " + awayGoalsStats.optString("averageScored", "0") +
+                        " scored, " + awayGoalsStats.optString("averageConceded", "0") + " conceded\n\n" +
+                        "Venue-specific matches: " + homeName + " at home: " +
+                        displayedHomeVenueSample + "; " + awayName + " away: " +
+                        displayedAwayVenueSample + ". Venue rates are blended with overall recent rates, " +
+                        "so small home/away samples have less influence.\n\n" +
+                        "Expected goals are estimates, not guarantees. Opponent strength and league-wide " +
+                        "scoring baselines are not yet included. You can edit the estimates above."
+                    );
+                    Toast.makeText(
+                        MainActivity.this,
+                        "Recent team statistics loaded.",
+                        Toast.LENGTH_SHORT
+                    ).show();
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    statsSummary.setText(
+                        "RECENT TEAM FORM\nCould not load team statistics. Check your connection and try again, " +
+                        "or enter expected goals manually."
+                    );
+                    Toast.makeText(
+                        MainActivity.this,
+                        "Could not load team stats. Manual entry is still available.",
+                        Toast.LENGTH_LONG
+                    ).show();
+                });
+            }
+        }).start();
+    }
+
+    private JSONObject fetchTeamStats(String teamId) throws Exception {
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL(
+                "https://football-genie-api.onrender.com/api/team-stats?teamId="
+                    + teamId + "&limit=10"
+            );
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(15000);
+            connection.setReadTimeout(15000);
+
+            int code = connection.getResponseCode();
+            java.io.InputStream stream = (code >= 200 && code < 300)
+                ? connection.getInputStream()
+                : connection.getErrorStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+            StringBuilder body = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) body.append(line);
+            reader.close();
+
+            if (code < 200 || code >= 300) {
+                throw new java.io.IOException("Team stats request failed: " + code);
+            }
+            return new JSONObject(body.toString());
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
+    }
+
     }
