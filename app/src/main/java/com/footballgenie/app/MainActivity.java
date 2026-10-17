@@ -727,8 +727,8 @@ public class MainActivity extends Activity {
         int finished = 0, outcomeCorrect = 0, goalsCorrect = 0;
         int bttsCorrect = 0, exactCorrect = 0;
         StringBuilder summary = new StringBuilder();
-        summary.append("PREDICTION HISTORY\\n");
-        summary.append("New final results added: ").append(newlyUpdated).append("\\n\\n");
+        summary.append("PREDICTION HISTORY\n");
+        summary.append("New final results added: ").append(newlyUpdated).append("\n\n");
 
         for (int i = history.length() - 1; i >= 0; i--) {
             JSONObject record = history.optJSONObject(i);
@@ -736,12 +736,12 @@ public class MainActivity extends Activity {
             String home = record.optString("home", "Home");
             String away = record.optString("away", "Away");
             String state = record.optString("predictionStatus", "PENDING");
-            summary.append(home).append(" vs ").append(away).append("\\n");
+            summary.append(home).append(" vs ").append(away).append("\n");
             summary.append("Expected goals: ")
                 .append(String.format(Locale.US, "%.2f", record.optDouble("homeXg", 0)))
                 .append(" - ")
                 .append(String.format(Locale.US, "%.2f", record.optDouble("awayXg", 0)))
-                .append("\\n");
+                .append("\n");
 
             if ("FINISHED".equals(state)) {
                 int ah = record.optInt("actualHome", -1);
@@ -762,27 +762,27 @@ public class MainActivity extends Activity {
                     if (ah == record.optInt("predictedHome", -2)
                             && aa == record.optInt("predictedAway", -2)) exactCorrect++;
 
-                    summary.append("Actual score: ").append(ah).append(" - ").append(aa).append("\\n");
+                    summary.append("Actual score: ").append(ah).append(" - ").append(aa).append("\n");
                 }
             } else {
                 summary.append("Result: ").append(state.equals("PENDING")
-                    ? "Waiting for final result" : state).append("\\n");
+                    ? "Waiting for final result" : state).append("\n");
             }
-            summary.append("────────────────────\\n");
+            summary.append("────────────────────\n");
         }
 
         if (finished > 0) {
-            summary.insert("PREDICTION HISTORY\\n".length(),
-                "Evaluated matches: " + finished + "\\n" +
+            summary.insert("PREDICTION HISTORY\n".length(),
+                "Evaluated matches: " + finished + "\n" +
                 "Outcome pick correct: " + outcomeCorrect + "/" + finished +
-                " (" + String.format(Locale.US, "%.1f", 100.0 * outcomeCorrect / finished) + "%)\\n" +
+                " (" + String.format(Locale.US, "%.1f", 100.0 * outcomeCorrect / finished) + "%)\n" +
                 "Over/Under pick correct: " + goalsCorrect + "/" + finished +
-                " (" + String.format(Locale.US, "%.1f", 100.0 * goalsCorrect / finished) + "%)\\n" +
+                " (" + String.format(Locale.US, "%.1f", 100.0 * goalsCorrect / finished) + "%)\n" +
                 "BTTS pick correct: " + bttsCorrect + "/" + finished +
-                " (" + String.format(Locale.US, "%.1f", 100.0 * bttsCorrect / finished) + "%)\\n" +
-                "Exact score: " + exactCorrect + "/" + finished + "\\n\\n");
+                " (" + String.format(Locale.US, "%.1f", 100.0 * bttsCorrect / finished) + "%)\n" +
+                "Exact score: " + exactCorrect + "/" + finished + "\n\n");
         } else {
-            summary.append("\\nNo saved predictions have a final result yet. Save predictions for upcoming matches, then use this button again after they finish.\\n");
+            summary.append("\nNo saved predictions have a final result yet. Save predictions for upcoming matches, then use this button again after they finish.\n");
         }
 
         new AlertDialog.Builder(this)
