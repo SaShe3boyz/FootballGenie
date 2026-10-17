@@ -810,12 +810,12 @@ public class MainActivity extends Activity {
                 final String awayValue = String.format(Locale.US, "%.2f", awayExpected);
                 final String homeForm = homeStats.optString("form", "Not available");
                 final String awayForm = awayStats.optString("form", "Not available");
-                final String homeName = homeStats.optJSONObject("team") != null
-                    ? homeStats.optJSONObject("team").optString("name", "Home team")
-                    : "Home team";
-                final String awayName = awayStats.optJSONObject("team") != null
-                    ? awayStats.optJSONObject("team").optString("name", "Away team")
-                    : "Away team";
+                final JSONObject homeTeamStats = homeStats.optJSONObject("team");
+                final JSONObject awayTeamStats = awayStats.optJSONObject("team");
+                final String homeName = homeTeamStats != null
+                    ? homeTeamStats.optString("name", "Home team") : "Home team";
+                final String awayName = awayTeamStats != null
+                    ? awayTeamStats.optString("name", "Away team") : "Away team";
                 final int homeSample = homeStats.optInt("sampleSize", 0);
                 final int awaySample = awayStats.optInt("sampleSize", 0);
 
