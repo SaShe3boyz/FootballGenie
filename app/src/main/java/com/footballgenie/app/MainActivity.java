@@ -742,6 +742,22 @@ public class MainActivity extends Activity {
                 .append(" - ")
                 .append(String.format(Locale.US, "%.2f", record.optDouble("awayXg", 0)))
                 .append("\n");
+            summary.append("Win probabilities (Home / Draw / Away): ")
+                .append(String.format(Locale.US, "%.1f%% / %.1f%% / %.1f%%",
+                    record.optDouble("homeP", 0),
+                    record.optDouble("drawP", 0),
+                    record.optDouble("awayP", 0)))
+                .append("\n");
+            summary.append("Goals market: Over 2.5 ")
+                .append(String.format(Locale.US, "%.1f%%", record.optDouble("overP", 0)))
+                .append(" | BTTS ")
+                .append(String.format(Locale.US, "%.1f%%", record.optDouble("bttsP", 0)))
+                .append("\n");
+            summary.append("Predicted correct score: ")
+                .append(record.optInt("predictedHome", 0))
+                .append(" - ")
+                .append(record.optInt("predictedAway", 0))
+                .append("\n");
 
             if ("FINISHED".equals(state)) {
                 int ah = record.optInt("actualHome", -1);
