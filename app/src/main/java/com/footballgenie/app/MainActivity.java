@@ -717,9 +717,11 @@ public class MainActivity extends Activity {
                                 homeInput.setText(homeName);
                                 awayInput.setText(awayName);
 
+                                loadTeamStatsForFixture(selected);
+
                                 Toast.makeText(
                                     MainActivity.this,
-                                    "Fixture selected. Enter expected goals to simulate.",
+                                    "Fixture selected. Loading recent team statistics...",
                                     Toast.LENGTH_LONG
                                 ).show();
 
@@ -749,4 +751,94 @@ public class MainActivity extends Activity {
             }
         }).start();
     }
+
+    // Estimate expected goals from each team's recent completed matches.
+    private void loadTeamStatsForFixture(JSONObject fixture) {
+        new Thread(() -> {
+            try {
+                String homeId = String.valueOf(fixture.getJSONObject("homeTeam").getLong("id"));
+                String awayId = String.valueOf(fixture.getJSONObject("awayTeam").getLong("id"));
+                JSONObject homeStats = fetchTeamStats(homeId);
+                JSONObject awayStats = fetchTeamStats(awayId);
+                JSONObject homeGoalsStats = homeStats.optJSONObject("goals");
+                JSONObject awayGoalsStats = awayStats.optJSONObject("goals");
+
+                if (homeGoalsStats == null || awayGoalsStats == null
+                        || homeStats.optInt("sampleSize", 0) == 0
+                        || awayStats.optInt("sampleSize", 0) == 0) {
+                    runOnUiThread(() -> Toast.makeText(
+                        MainActivity.this,
+                        "Recent stats unavailable for one or both teams. Enter expected goals manually.",
+                        Toast.LENGTH_LONG
+                    ).show());
+                    return;
+                }
+
+                double homeScored = homeGoalsStats.optDouble("averageScored", 0);
+                double homeConceded = homeGoalsStats.optDouble("averageConceded", 0);
+                double awayScored = awayGoalsStats.optDouble("averageScored", 0);
+                double awayConceded = awayGoalsStats.optDouble("averageConceded", 0);
+
+                // Blend recent scoring and conceding averages; allow modest home advantage.
+                double homeExpected = ((homeScored + awayConceded) / 2.0) * 1.08;
+                double awayExpected = (awayScored + homeConceded) / 2.0;
+                homeExpected = Math.max(0.2, Math.min(4.5, homeExpected));
+                awayExpected = Math.max(0.2, Math.min(4.5, awayExpected));
+
+                final String homeValue = String.format(Locale.US, "%.2f", homeExpected);
+                final String awayValue = String.format(Locale.US, "%.2f", awayExpected);
+                final String formSummary = homeStats.optString("form", "")
+                    + " | " + awayStats.optString("form", "");
+
+                runOnUiThread(() -> {
+                    homeGoals.setText(homeValue);
+                    awayGoals.setText(awayValue);
+                    Toast.makeText(
+                        MainActivity.this,
+                        "Expected goals estimated from recent results. Form (latest first): "
+                            + formSummary,
+                        Toast.LENGTH_LONG
+                    ).show();
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(
+                    MainActivity.this,
+                    "Could not load team stats. You can still enter expected goals manually.",
+                    Toast.LENGTH_LONG
+                ).show());
+            }
+        }).start();
+    }
+
+    private JSONObject fetchTeamStats(String teamId) throws Exception {
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL(
+                "https://football-genie-api.onrender.com/api/team-stats?teamId="
+                    + teamId + "&limit=10"
+            );
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(15000);
+            connection.setReadTimeout(15000);
+
+            int code = connection.getResponseCode();
+            java.io.InputStream stream = (code >= 200 && code < 300)
+                ? connection.getInputStream()
+                : connection.getErrorStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+            StringBuilder body = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) body.append(line);
+            reader.close();
+
+            if (code < 200 || code >= 300) {
+                throw new java.io.IOException("Team stats request failed: " + code);
+            }
+            return new JSONObject(body.toString());
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
+    }
+
     }
