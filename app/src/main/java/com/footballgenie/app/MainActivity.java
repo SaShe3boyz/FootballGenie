@@ -800,9 +800,31 @@ public class MainActivity extends Activity {
                 double awayScored = awayGoalsStats.optDouble("averageScored", 0);
                 double awayConceded = awayGoalsStats.optDouble("averageConceded", 0);
 
-                // Blend recent scoring and conceding averages; allow modest home advantage.
-                double homeExpected = ((homeScored + awayConceded) / 2.0) * 1.08;
-                double awayExpected = (awayScored + homeConceded) / 2.0;
+                JSONObject homeVenueStats = homeStats.optJSONObject("venueStats");
+                JSONObject awayVenueStats = awayStats.optJSONObject("venueStats");
+                JSONObject homeAtHome = homeVenueStats != null
+                    ? homeVenueStats.optJSONObject("home") : null;
+                JSONObject awayAway = awayVenueStats != null
+                    ? awayVenueStats.optJSONObject("away") : null;
+
+                int homeVenueSample = homeAtHome != null
+                    ? homeAtHome.optInt("sampleSize", 0) : 0;
+                int awayVenueSample = awayAway != null
+                    ? awayAway.optInt("sampleSize", 0) : 0;
+
+                // Prefer home-only and away-only records when at least two matches exist.
+                double homeAttack = homeVenueSample >= 2
+                    ? homeAtHome.optDouble("averageScored", homeScored) : homeScored;
+                double homeDefence = homeVenueSample >= 2
+                    ? homeAtHome.optDouble("averageConceded", homeConceded) : homeConceded;
+                double awayAttack = awayVenueSample >= 2
+                    ? awayAway.optDouble("averageScored", awayScored) : awayScored;
+                double awayDefence = awayVenueSample >= 2
+                    ? awayAway.optDouble("averageConceded", awayConceded) : awayConceded;
+
+                // Combine attack and opponent defence; keep only a modest home adjustment.
+                double homeExpected = ((homeAttack + awayDefence) / 2.0) * 1.05;
+                double awayExpected = (awayAttack + homeDefence) / 2.0;
                 homeExpected = Math.max(0.2, Math.min(4.5, homeExpected));
                 awayExpected = Math.max(0.2, Math.min(4.5, awayExpected));
 
@@ -818,6 +840,8 @@ public class MainActivity extends Activity {
                     ? awayTeamStats.optString("name", "Away team") : "Away team";
                 final int homeSample = homeStats.optInt("sampleSize", 0);
                 final int awaySample = awayStats.optInt("sampleSize", 0);
+                final int displayedHomeVenueSample = homeVenueSample;
+                final int displayedAwayVenueSample = awayVenueSample;
 
                 runOnUiThread(() -> {
                     homeGoals.setText(homeValue);
@@ -830,7 +854,11 @@ public class MainActivity extends Activity {
                         awayName + ": " + awayForm + "  |  Analysed: " + awaySample + " matches\n" +
                         "Goals per match: " + awayGoalsStats.optString("averageScored", "0") +
                         " scored, " + awayGoalsStats.optString("averageConceded", "0") + " conceded\n\n" +
-                        "Expected goals have been estimated from these recent results. You can edit them above."
+                        "Venue-specific matches used: " + homeName + " at home: " +
+                        displayedHomeVenueSample + "; " + awayName + " away: " +
+                        displayedAwayVenueSample + ". Where at least 2 venue-specific matches exist, " +
+                        "they help estimate expected goals; otherwise overall recent averages are used.\n\n" +
+                        "Expected goals are estimates, not guarantees. You can edit them above."
                     );
                     Toast.makeText(
                         MainActivity.this,
