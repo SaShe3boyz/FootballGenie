@@ -7,6 +7,7 @@ on:
       - main
       - improve-fixture-statuses
       - prediction-history
+      - prediction-history-details
 
 jobs:
   build:
