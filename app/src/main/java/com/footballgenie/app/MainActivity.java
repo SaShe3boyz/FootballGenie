@@ -1020,7 +1020,7 @@ public class MainActivity extends Activity {
     private String calibrationText(int count, int correct) {\n        if (count == 0) return "no matches";\n        return String.format(Locale.US, "%d matches, %.1f%% correct", count, 100.0 * correct / count);\n    }\n\n    private void showPredictionHistory(int newlyUpdated) {
         JSONArray history = readPredictionHistory();
         int finished = 0, outcomeCorrect = 0, goalsCorrect = 0;
-        int bttsCorrect = 0, exactCorrect = 0;\n        int actualHomeWins = 0, actualDraws = 0, actualAwayWins = 0;
+        int bttsCorrect = 0, exactCorrect = 0;\n        int actualHomeWins = 0, actualDraws = 0, actualAwayWins = 0;\n        int invalidProbabilityRecords = 0;
         double outcomeBrierTotal = 0.0;
         double goalsBrierTotal = 0.0;
         double bttsBrierTotal = 0.0;\n        double homeGoalAbsError = 0.0, awayGoalAbsError = 0.0;\n        double totalGoalAbsError = 0.0;\n        int[] confidenceBinCount = new int[5];\n        int[] confidenceBinCorrect = new int[5];
@@ -1057,7 +1057,7 @@ public class MainActivity extends Activity {
                 .append(record.optInt("predictedAway", 0))
                 .append("\n");
 
-            if ("FINISHED".equals(state)) {
+            double storedHomeP = record.optDouble("homeP", -1);\n            double storedDrawP = record.optDouble("drawP", -1);\n            double storedAwayP = record.optDouble("awayP", -1);\n            if (storedHomeP < 0 || storedDrawP < 0 || storedAwayP < 0 ||\n                    storedHomeP > 100 || storedDrawP > 100 || storedAwayP > 100 ||\n                    Math.abs(storedHomeP + storedDrawP + storedAwayP - 100.0) > 2.0) {\n                invalidProbabilityRecords++;\n            }\n\n            if ("FINISHED".equals(state)) {
                 int ah = record.optInt("actualHome", -1);
                 int aa = record.optInt("actualAway", -1);
                 if (ah >= 0 && aa >= 0) {
@@ -1117,7 +1117,7 @@ public class MainActivity extends Activity {
                 "BTTS pick correct: " + bttsCorrect + "/" + finished +
                 " (" + String.format(Locale.US, "%.1f", 100.0 * bttsCorrect / finished) + "%)\n" +
                 "Exact score: " + exactCorrect + "/" + finished + "\n\n" +
-                "CONFIDENCE CALIBRATION (highest 1X2 probability)\\n" +\n                "0-19%: " + calibrationText(confidenceBinCount[0], confidenceBinCorrect[0]) + "\\n" +\n                "20-39%: " + calibrationText(confidenceBinCount[1], confidenceBinCorrect[1]) + "\\n" +\n                "40-59%: " + calibrationText(confidenceBinCount[2], confidenceBinCorrect[2]) + "\\n" +\n                "60-79%: " + calibrationText(confidenceBinCount[3], confidenceBinCorrect[3]) + "\\n" +\n                "80-100%: " + calibrationText(confidenceBinCount[4], confidenceBinCorrect[4]) + "\\n" +\n                "Small bins are noisy; compare predicted confidence with observed hit rate.\\n\\n" +\n                "PROBABILITY QUALITY (Brier score; lower is better)\n" +
+                "CONFIDENCE CALIBRATION (highest 1X2 probability)\\n" +\n                "0-19%: " + calibrationText(confidenceBinCount[0], confidenceBinCorrect[0]) + "\\n" +\n                "20-39%: " + calibrationText(confidenceBinCount[1], confidenceBinCorrect[1]) + "\\n" +\n                "40-59%: " + calibrationText(confidenceBinCount[2], confidenceBinCorrect[2]) + "\\n" +\n                "60-79%: " + calibrationText(confidenceBinCount[3], confidenceBinCorrect[3]) + "\\n" +\n                "80-100%: " + calibrationText(confidenceBinCount[4], confidenceBinCorrect[4]) + "\\n" +\n                "Small bins are noisy; compare predicted confidence with observed hit rate.\\n\\n" +\n                "Probability data check: " + invalidProbabilityRecords + " records have missing, out-of-range or non-normalized 1X2 probabilities.\\n\\n" +\n                "PROBABILITY QUALITY (Brier score; lower is better)\n" +
                 "Home/Draw/Away: " + String.format(Locale.US, "%.3f", outcomeBrierTotal / finished) + "\n" +
                 "Over 2.5: " + String.format(Locale.US, "%.3f", goalsBrierTotal / finished) + "\n" +
                 "Both teams score: " + String.format(Locale.US, "%.3f", bttsBrierTotal / finished) + "\n\n");
