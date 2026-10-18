@@ -1020,20 +1020,20 @@ public class MainActivity extends Activity {
     private String calibrationText(int count, int correct) {\n        if (count == 0) return "no matches";\n        return String.format(Locale.US, "%d matches, %.1f%% correct", count, 100.0 * correct / count);\n    }\n\n    private void showPredictionHistory(int newlyUpdated) {
         JSONArray history = readPredictionHistory();
         int finished = 0, outcomeCorrect = 0, goalsCorrect = 0;
-        int bttsCorrect = 0, exactCorrect = 0;\n        int actualHomeWins = 0, actualDraws = 0, actualAwayWins = 0;\n        int invalidProbabilityRecords = 0;
+        int bttsCorrect = 0, exactCorrect = 0;\n        int actualHomeWins = 0, actualDraws = 0, actualAwayWins = 0;\n        int invalidProbabilityRecords = 0;\n        int pendingCount = 0;
         double outcomeBrierTotal = 0.0;
         double goalsBrierTotal = 0.0;
         double bttsBrierTotal = 0.0;\n        double homeGoalAbsError = 0.0, awayGoalAbsError = 0.0;\n        double totalGoalAbsError = 0.0;\n        int[] confidenceBinCount = new int[5];\n        int[] confidenceBinCorrect = new int[5];
         StringBuilder summary = new StringBuilder();
         summary.append("PREDICTION HISTORY\n");
-        summary.append("New final results added: ").append(newlyUpdated).append("\n\n");
+        summary.append("New final results added: ").append(newlyUpdated).append("\\n");\n        summary.append("Saved records: ").append(history.length()).append(" | evaluated: ").append(finished).append(" | awaiting results: ").append(pendingCount).append("\\n\\n");\n\n");
 
         for (int i = history.length() - 1; i >= 0; i--) {
             JSONObject record = history.optJSONObject(i);
             if (record == null) continue;
             String home = record.optString("home", "Home");
             String away = record.optString("away", "Away");
-            String state = record.optString("predictionStatus", "PENDING");
+            String state = record.optString("predictionStatus", "PENDING");\n            if (!"FINISHED".equals(state)) pendingCount++;
             summary.append(home).append(" vs ").append(away).append("\n");
             summary.append("Expected goals: ")
                 .append(String.format(Locale.US, "%.2f", record.optDouble("homeXg", 0)))
