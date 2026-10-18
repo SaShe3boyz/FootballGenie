@@ -1024,6 +1024,8 @@ public class MainActivity extends Activity {
         double outcomeBrierTotal = 0.0;
         double goalsBrierTotal = 0.0;
         double bttsBrierTotal = 0.0;
+        double homeGoalAbsError = 0.0, awayGoalAbsError = 0.0;
+        double totalGoalAbsError = 0.0;
         StringBuilder summary = new StringBuilder();
         summary.append("PREDICTION HISTORY\n");
         summary.append("New final results added: ").append(newlyUpdated).append("\n\n");
@@ -1062,6 +1064,9 @@ public class MainActivity extends Activity {
                 int aa = record.optInt("actualAway", -1);
                 if (ah >= 0 && aa >= 0) {
                     finished++;
+                    homeGoalAbsError += Math.abs(record.optInt("predictedHome", 0) - ah);
+                    awayGoalAbsError += Math.abs(record.optInt("predictedAway", 0) - aa);
+                    totalGoalAbsError += Math.abs(record.optInt("predictedHome", 0) + record.optInt("predictedAway", 0) - ah - aa);
                     String predictedOutcome = record.optDouble("homeP", 0) >=
                         Math.max(record.optDouble("drawP", 0), record.optDouble("awayP", 0))
                         ? "HOME" : (record.optDouble("drawP", 0) >= record.optDouble("awayP", 0)
@@ -1116,7 +1121,10 @@ public class MainActivity extends Activity {
                 " (" + String.format(Locale.US, "%.1f", 100.0 * goalsCorrect / finished) + "%)\n" +
                 "BTTS pick correct: " + bttsCorrect + "/" + finished +
                 " (" + String.format(Locale.US, "%.1f", 100.0 * bttsCorrect / finished) + "%)\n" +
-                "Exact score: " + exactCorrect + "/" + finished + "\n\n" +
+                "Exact score: " + exactCorrect + "/" + finished + "\n" +
+                "Mean absolute home-goal error: " + String.format(Locale.US, "%.2f", homeGoalAbsError / finished) + "\n" +
+                "Mean absolute away-goal error: " + String.format(Locale.US, "%.2f", awayGoalAbsError / finished) + "\n" +
+                "Mean absolute total-goal error: " + String.format(Locale.US, "%.2f", totalGoalAbsError / finished) + "\n\n" +
                 "PROBABILITY QUALITY (Brier score; lower is better)\n" +
                 "Home/Draw/Away: " + String.format(Locale.US, "%.3f", outcomeBrierTotal / finished) + "\n" +
                 "Over 2.5: " + String.format(Locale.US, "%.3f", goalsBrierTotal / finished) + "\n" +
