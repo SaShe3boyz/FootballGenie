@@ -1017,13 +1017,13 @@ public class MainActivity extends Activity {
         return value * value;
     }
 
-    private void showPredictionHistory(int newlyUpdated) {
+    private String calibrationText(int count, int correct) {\n        if (count == 0) return "no matches";\n        return String.format(Locale.US, "%d matches, %.1f%% correct", count, 100.0 * correct / count);\n    }\n\n    private void showPredictionHistory(int newlyUpdated) {
         JSONArray history = readPredictionHistory();
         int finished = 0, outcomeCorrect = 0, goalsCorrect = 0;
         int bttsCorrect = 0, exactCorrect = 0;
         double outcomeBrierTotal = 0.0;
         double goalsBrierTotal = 0.0;
-        double bttsBrierTotal = 0.0;\n        double homeGoalAbsError = 0.0, awayGoalAbsError = 0.0;\n        double totalGoalAbsError = 0.0;
+        double bttsBrierTotal = 0.0;\n        double homeGoalAbsError = 0.0, awayGoalAbsError = 0.0;\n        double totalGoalAbsError = 0.0;\n        int[] confidenceBinCount = new int[5];\n        int[] confidenceBinCorrect = new int[5];
         StringBuilder summary = new StringBuilder();
         summary.append("PREDICTION HISTORY\n");
         summary.append("New final results added: ").append(newlyUpdated).append("\n\n");
@@ -1074,7 +1074,7 @@ public class MainActivity extends Activity {
 
                     double hp = record.optDouble("homeP", 0) / 100.0;
                     double dp = record.optDouble("drawP", 0) / 100.0;
-                    double ap = record.optDouble("awayP", 0) / 100.0;
+                    double ap = record.optDouble("awayP", 0) / 100.0;\n                    double topProbability = Math.max(hp, Math.max(dp, ap));\n                    int confidenceBin = Math.min(4, Math.max(0, (int) (topProbability * 5.0)));\n                    confidenceBinCount[confidenceBin]++;\n                    if (predictedOutcome.equals(actualOutcome)) confidenceBinCorrect[confidenceBin]++;
                     outcomeBrierTotal += square(hp - (actualHome ? 1.0 : 0.0))
                         + square(dp - (actualDraw ? 1.0 : 0.0))
                         + square(ap - (actualAway ? 1.0 : 0.0));
@@ -1117,7 +1117,7 @@ public class MainActivity extends Activity {
                 "BTTS pick correct: " + bttsCorrect + "/" + finished +
                 " (" + String.format(Locale.US, "%.1f", 100.0 * bttsCorrect / finished) + "%)\n" +
                 "Exact score: " + exactCorrect + "/" + finished + "\n\n" +
-                "PROBABILITY QUALITY (Brier score; lower is better)\n" +
+                "CONFIDENCE CALIBRATION (highest 1X2 probability)\\n" +\n                "0-19%: " + calibrationText(confidenceBinCount[0], confidenceBinCorrect[0]) + "\\n" +\n                "20-39%: " + calibrationText(confidenceBinCount[1], confidenceBinCorrect[1]) + "\\n" +\n                "40-59%: " + calibrationText(confidenceBinCount[2], confidenceBinCorrect[2]) + "\\n" +\n                "60-79%: " + calibrationText(confidenceBinCount[3], confidenceBinCorrect[3]) + "\\n" +\n                "80-100%: " + calibrationText(confidenceBinCount[4], confidenceBinCorrect[4]) + "\\n" +\n                "Small bins are noisy; compare predicted confidence with observed hit rate.\\n\\n" +\n                "PROBABILITY QUALITY (Brier score; lower is better)\n" +
                 "Home/Draw/Away: " + String.format(Locale.US, "%.3f", outcomeBrierTotal / finished) + "\n" +
                 "Over 2.5: " + String.format(Locale.US, "%.3f", goalsBrierTotal / finished) + "\n" +
                 "Both teams score: " + String.format(Locale.US, "%.3f", bttsBrierTotal / finished) + "\n\n");
