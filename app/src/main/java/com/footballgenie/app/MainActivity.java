@@ -1247,9 +1247,15 @@ public class MainActivity extends Activity {
                 double awayDefence = awayConceded * (1.0 - awayVenueWeight)
                     + awayVenueConceded * awayVenueWeight;
 
-                // First estimate from recent form and venue performance.
-                double homeExpected = ((homeAttack + awayDefence) / 2.0) * 1.05;
-                double awayExpected = (awayAttack + homeDefence) / 2.0;
+                // Combine attack and opposing defence multiplicatively. The geometric
+                // mean limits overreaction when one rate is unusually high or low.
+                // A small floor keeps zero-goal samples from collapsing expected goals.
+                double homeExpected = Math.sqrt(
+                    Math.max(0.10, homeAttack) * Math.max(0.10, awayDefence)
+                ) * 1.05;
+                double awayExpected = Math.sqrt(
+                    Math.max(0.10, awayAttack) * Math.max(0.10, homeDefence)
+                );
 
                 // When available, blend in current competition home/away scoring
                 // rates and season attack/defence strength to account for opposition.
