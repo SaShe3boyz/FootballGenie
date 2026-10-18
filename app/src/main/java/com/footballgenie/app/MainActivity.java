@@ -1529,13 +1529,13 @@ public class MainActivity extends Activity {
                 double rawRatio = Math.max(0.55, Math.min(1.70,
                     opponentConceded / scoringBaseline));
                 double ratio = 1.0 + (rawRatio - 1.0) * reliability;
-                adjustedGoals = goals / ratio;
+                adjustedGoals = Math.max(0.0, Math.min(6.0, goals / ratio));
             } else {
                 if (opponentAttack < 0) continue;
                 double rawRatio = Math.max(0.55, Math.min(1.70,
                     opponentAttack / concedingBaseline));
                 double ratio = 1.0 + (rawRatio - 1.0) * reliability;
-                adjustedGoals = goals / ratio;
+                adjustedGoals = Math.max(0.0, Math.min(6.0, goals / ratio));
             }
             double weight = Math.pow(0.88, usable);
             weightedTotal += adjustedGoals * weight;
