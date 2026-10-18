@@ -156,21 +156,135 @@ public class MainActivity extends Activity {
     }
 
     private void buildHomeShortcuts() {
-        addHeading("01", "YOUR MATCH INTELLIGENCE CENTRE");
-        TextView note = label("All eight app sections are available here. Use the bottom navigation for the main screens, or open any tool below.");
-        note.setTextColor(MUTED);
-        note.setTextSize(13);
-        note.setLineSpacing(dp(3), 1.0f);
-        note.setPadding(dp(2), 0, dp(2), dp(14));
-        mainLayout.addView(note);
+        addHeading("⚽", "MATCH CENTRE");
+        TextView subtitle = label("Select a match or load live fixtures");
+        subtitle.setTextColor(MUTED);
+        subtitle.setTextSize(12);
+        subtitle.setPadding(dp(2), 0, 0, dp(12));
+        mainLayout.addView(subtitle);
 
-        addShortcut("⚽  MATCH CENTRE", "Choose a fixture or enter teams and expected goals.", 1);
-        addShortcut("🌐  LIVE FIXTURES", "Browse scheduled matches and select a fixture.", 5);
-        addShortcut("📊  PREDICTION RESULTS", "Review 1X2, goals-market probabilities and model analysis.", 2);
-        addShortcut("⏱  MATCH SIMULATION", "Inspect the latest simulated match flow and score scenarios.", 3);
-        addShortcut("📜  PREDICTION HISTORY", "Review saved predictions and update completed results.", 4);
-        addShortcut("✓  VALIDATION & PERFORMANCE", "Check evaluated predictions, goal error and calibration metrics.", 6);
-        addShortcut("⚙  SETTINGS", "Data connection, preferences, reset and app information.", 7);
+        Button loadFixturesButton = new Button(this);
+        loadFixturesButton.setText("🌐  LOAD LIVE FIXTURES");
+        loadFixturesButton.setTextColor(Color.rgb(4, 25, 20));
+        loadFixturesButton.setTextSize(14);
+        loadFixturesButton.setTypeface(null, Typeface.BOLD);
+        loadFixturesButton.setAllCaps(false);
+        loadFixturesButton.setBackground(rounded(GREEN, 12));
+        LinearLayout.LayoutParams loadParams = new LinearLayout.LayoutParams(-1, dp(50));
+        loadParams.bottomMargin = dp(12);
+        mainLayout.addView(loadFixturesButton, loadParams);
+        loadFixturesButton.setOnClickListener(v -> {
+            showScreen(5);
+            loadFixtures();
+        });
+
+        LinearLayout fixtureCard = card();
+        fixtureCard.setOrientation(LinearLayout.VERTICAL);
+        TextView league = label("🏆  YOUR NEXT PREDICTION");
+        league.setTextColor(GREEN);
+        league.setTextSize(11);
+        league.setTypeface(null, Typeface.BOLD);
+        fixtureCard.addView(league);
+
+        LinearLayout teams = new LinearLayout(this);
+        teams.setOrientation(LinearLayout.HORIZONTAL);
+        teams.setGravity(Gravity.CENTER_VERTICAL);
+        teams.setPadding(0, dp(14), 0, dp(12));
+
+        LinearLayout homeTeam = new LinearLayout(this);
+        homeTeam.setOrientation(LinearLayout.VERTICAL);
+        homeTeam.setGravity(Gravity.CENTER);
+        TextView homeBadge = label("⚽");
+        homeBadge.setTextSize(28);
+        homeBadge.setGravity(Gravity.CENTER);
+        homeTeam.addView(homeBadge);
+        TextView homeName = label("Home Team");
+        homeName.setTextColor(WHITE);
+        homeName.setTextSize(12);
+        homeName.setTypeface(null, Typeface.BOLD);
+        homeName.setGravity(Gravity.CENTER);
+        homeTeam.addView(homeName);
+        teams.addView(homeTeam, new LinearLayout.LayoutParams(0, -2, 1f));
+
+        TextView vs = label("VS");
+        vs.setTextColor(GREEN);
+        vs.setTextSize(20);
+        vs.setTypeface(null, Typeface.BOLD);
+        vs.setGravity(Gravity.CENTER);
+        teams.addView(vs, new LinearLayout.LayoutParams(dp(48), -2));
+
+        LinearLayout awayTeam = new LinearLayout(this);
+        awayTeam.setOrientation(LinearLayout.VERTICAL);
+        awayTeam.setGravity(Gravity.CENTER);
+        TextView awayBadge = label("⚽");
+        awayBadge.setTextSize(28);
+        awayBadge.setGravity(Gravity.CENTER);
+        awayTeam.addView(awayBadge);
+        TextView awayName = label("Away Team");
+        awayName.setTextColor(WHITE);
+        awayName.setTextSize(12);
+        awayName.setTypeface(null, Typeface.BOLD);
+        awayName.setGravity(Gravity.CENTER);
+        awayTeam.addView(awayName);
+        teams.addView(awayTeam, new LinearLayout.LayoutParams(0, -2, 1f));
+        fixtureCard.addView(teams);
+
+        TextView fixtureHelp = label("Choose a live fixture to fill these teams automatically, or enter a match manually.");
+        fixtureHelp.setTextColor(MUTED);
+        fixtureHelp.setTextSize(11);
+        fixtureHelp.setGravity(Gravity.CENTER);
+        fixtureHelp.setPadding(0, 0, 0, dp(10));
+        fixtureCard.addView(fixtureHelp);
+
+        Button predictButton = new Button(this);
+        predictButton.setText("▶  SIMULATE 10,000 MATCHES");
+        predictButton.setTextColor(Color.rgb(4, 25, 20));
+        predictButton.setTextSize(13);
+        predictButton.setTypeface(null, Typeface.BOLD);
+        predictButton.setAllCaps(false);
+        predictButton.setBackground(rounded(GREEN, 12));
+        fixtureCard.addView(predictButton, new LinearLayout.LayoutParams(-1, dp(50)));
+        predictButton.setOnClickListener(v -> showScreen(1));
+        mainLayout.addView(fixtureCard);
+
+        addHeading("✦", "QUICK ACCESS");
+        LinearLayout rowOne = new LinearLayout(this);
+        rowOne.setOrientation(LinearLayout.HORIZONTAL);
+        mainLayout.addView(rowOne);
+        addHomeTile(rowOne, "🌐", "Live Fixtures", "Get latest matches", 5);
+        addHomeTile(rowOne, "📋", "My Predictions", "View saved picks", 4);
+
+        LinearLayout rowTwo = new LinearLayout(this);
+        rowTwo.setOrientation(LinearLayout.HORIZONTAL);
+        mainLayout.addView(rowTwo);
+        addHomeTile(rowTwo, "✓", "Validation", "Accuracy & performance", 6);
+        addHomeTile(rowTwo, "◷", "History", "Past results & insights", 4);
+    }
+
+    private void addHomeTile(LinearLayout row, String icon, String title,
+            String detail, int target) {
+        LinearLayout tile = card();
+        tile.setOrientation(LinearLayout.VERTICAL);
+        tile.setPadding(dp(12), dp(13), dp(10), dp(13));
+        TextView iconView = label(icon);
+        iconView.setTextColor(GREEN);
+        iconView.setTextSize(22);
+        tile.addView(iconView);
+        TextView titleView = label(title);
+        titleView.setTextColor(WHITE);
+        titleView.setTextSize(12);
+        titleView.setTypeface(null, Typeface.BOLD);
+        titleView.setPadding(0, dp(5), 0, dp(3));
+        tile.addView(titleView);
+        TextView detailView = label(detail);
+        detailView.setTextColor(MUTED);
+        detailView.setTextSize(10);
+        tile.addView(detailView);
+        tile.setClickable(true);
+        tile.setOnClickListener(v -> showScreen(target));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -2, 1f);
+        params.setMargins(dp(3), 0, dp(3), dp(6));
+        row.addView(tile, params);
     }
 
     private void addShortcut(String title, String description, int target) {
@@ -343,65 +457,54 @@ public class MainActivity extends Activity {
     }
 
     private void buildHeader() {
-        TextView eyebrow = label("THE SMARTER WAY TO READ THE GAME");
-        eyebrow.setTextColor(GREEN);
-        eyebrow.setTextSize(10);
-        eyebrow.setTypeface(null, Typeface.BOLD);
-        eyebrow.setGravity(Gravity.CENTER);
-        eyebrow.setLetterSpacing(0.08f);
-        eyebrow.setPadding(0, dp(20), 0, dp(8));
-        mainLayout.addView(eyebrow);
+        LinearLayout brandBar = new LinearLayout(this);
+        brandBar.setOrientation(LinearLayout.HORIZONTAL);
+        brandBar.setGravity(Gravity.CENTER_VERTICAL);
+        brandBar.setPadding(dp(4), dp(8), dp(4), dp(14));
 
-        TextView title = label("FOOTBALL GENIE");
-        title.setTextColor(WHITE);
-        title.setTextSize(30);
-        title.setTypeface(null, Typeface.BOLD);
-        title.setGravity(Gravity.CENTER);
-        title.setLetterSpacing(0.025f);
-        mainLayout.addView(title);
+        TextView mark = label("⚽");
+        mark.setTextColor(GREEN);
+        mark.setTextSize(29);
+        mark.setGravity(Gravity.CENTER);
+        mark.setBackground(rounded(Color.rgb(8, 43, 48), 30));
+        brandBar.addView(mark, new LinearLayout.LayoutParams(dp(52), dp(52)));
 
-        TextView subtitle = label("PREDICT  •  SIMULATE  •  UNDERSTAND");
-        subtitle.setTextColor(MUTED);
-        subtitle.setTextSize(10);
-        subtitle.setGravity(Gravity.CENTER);
-        subtitle.setPadding(0, dp(6), 0, dp(18));
-        mainLayout.addView(subtitle);
+        LinearLayout brandWords = new LinearLayout(this);
+        brandWords.setOrientation(LinearLayout.VERTICAL);
+        brandWords.setPadding(dp(10), 0, 0, 0);
+        TextView name = label("Football");
+        name.setTextColor(WHITE);
+        name.setTextSize(24);
+        name.setTypeface(null, Typeface.BOLD);
+        brandWords.addView(name);
+        TextView genie = label("GENIE");
+        genie.setTextColor(GREEN);
+        genie.setTextSize(24);
+        genie.setTypeface(null, Typeface.BOLD);
+        brandWords.addView(genie);
+        TextView tagline = label("P R E D I C T  •  S I M U L A T E  •  W I N");
+        tagline.setTextColor(MUTED);
+        tagline.setTextSize(8);
+        tagline.setPadding(0, dp(3), 0, 0);
+        brandWords.addView(tagline);
+        brandBar.addView(brandWords, new LinearLayout.LayoutParams(0, -2, 1f));
 
-        LinearLayout hero = card();
-        hero.setOrientation(LinearLayout.VERTICAL);
-        hero.setPadding(dp(18), dp(18), dp(18), dp(18));
-        hero.setBackground(rounded(Color.rgb(17, 49, 52), 20));
+        TextView settings = label("⚙");
+        settings.setTextColor(WHITE);
+        settings.setTextSize(25);
+        settings.setGravity(Gravity.CENTER);
+        settings.setBackground(rounded(CARD, 14));
+        brandBar.addView(settings, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        settings.setOnClickListener(v -> showScreen(7));
+        mainLayout.addView(brandBar);
 
-        TextView live = label("✦  MATCH INTELLIGENCE");
-        live.setTextColor(GREEN);
-        live.setTextSize(11);
-        live.setTypeface(null, Typeface.BOLD);
-        hero.addView(live);
-
-        TextView heroTitle = label("Every match has a story.");
-        heroTitle.setTextColor(WHITE);
-        heroTitle.setTextSize(22);
-        heroTitle.setTypeface(null, Typeface.BOLD);
-        heroTitle.setPadding(0, dp(10), 0, dp(5));
-        hero.addView(heroTitle);
-
-        TextView description = label("Explore probabilities, likely scorelines and match-flow scenarios powered by your football model.");
-        description.setTextColor(Color.rgb(213, 228, 232));
-        description.setTextSize(13);
-        description.setLineSpacing(dp(3), 1.0f);
-        hero.addView(description);
-
-        TextView chip = label("10,000 OUTCOME SIMULATIONS");
-        chip.setTextColor(Color.rgb(8, 25, 22));
-        chip.setTextSize(10);
-        chip.setTypeface(null, Typeface.BOLD);
-        chip.setGravity(Gravity.CENTER);
-        chip.setPadding(dp(12), dp(9), dp(12), dp(9));
-        chip.setBackground(rounded(GREEN, 12));
-        LinearLayout.LayoutParams chipParams = new LinearLayout.LayoutParams(-2, -2);
-        chipParams.topMargin = dp(14);
-        hero.addView(chip, chipParams);
-        mainLayout.addView(hero);
+        TextView slogan = label("SMARTER PREDICTIONS.  DEEPER INSIGHTS.");
+        slogan.setTextColor(GREEN);
+        slogan.setTextSize(10);
+        slogan.setTypeface(null, Typeface.BOLD);
+        slogan.setGravity(Gravity.CENTER);
+        slogan.setPadding(0, 0, 0, dp(15));
+        mainLayout.addView(slogan);
     }
 
     private void buildMatchForm() {
