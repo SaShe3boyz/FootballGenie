@@ -1068,10 +1068,17 @@ public class MainActivity extends Activity {
                     return;
                 }
 
-                double homeScored = homeGoalsStats.optDouble("averageScored", 0);
-                double homeConceded = homeGoalsStats.optDouble("averageConceded", 0);
-                double awayScored = awayGoalsStats.optDouble("averageScored", 0);
-                double awayConceded = awayGoalsStats.optDouble("averageConceded", 0);
+                // Recent matches are ordered newest first. Weight current form more heavily.
+                JSONArray homeRecentMatches = homeStats.optJSONArray("matches");
+                JSONArray awayRecentMatches = awayStats.optJSONArray("matches");
+                double homeScored = weightedRecentAverage(homeRecentMatches, true, null);
+                double homeConceded = weightedRecentAverage(homeRecentMatches, false, null);
+                double awayScored = weightedRecentAverage(awayRecentMatches, true, null);
+                double awayConceded = weightedRecentAverage(awayRecentMatches, false, null);
+                if (homeScored < 0) homeScored = homeGoalsStats.optDouble("averageScored", 0);
+                if (homeConceded < 0) homeConceded = homeGoalsStats.optDouble("averageConceded", 0);
+                if (awayScored < 0) awayScored = awayGoalsStats.optDouble("averageScored", 0);
+                if (awayConceded < 0) awayConceded = awayGoalsStats.optDouble("averageConceded", 0);
 
                 JSONObject homeVenueStats = homeStats.optJSONObject("venueStats");
                 JSONObject awayVenueStats = awayStats.optJSONObject("venueStats");
@@ -1090,13 +1097,17 @@ public class MainActivity extends Activity {
                 double homeVenueWeight = homeVenueSample / (homeVenueSample + 4.0);
                 double awayVenueWeight = awayVenueSample / (awayVenueSample + 4.0);
 
-                double homeVenueScored = homeAtHome != null
+                double homeVenueScored = weightedRecentAverage(homeRecentMatches, true, "HOME");
+                double homeVenueConceded = weightedRecentAverage(homeRecentMatches, false, "HOME");
+                double awayVenueScored = weightedRecentAverage(awayRecentMatches, true, "AWAY");
+                double awayVenueConceded = weightedRecentAverage(awayRecentMatches, false, "AWAY");
+                if (homeVenueScored < 0) homeVenueScored = homeAtHome != null
                     ? homeAtHome.optDouble("averageScored", homeScored) : homeScored;
-                double homeVenueConceded = homeAtHome != null
+                if (homeVenueConceded < 0) homeVenueConceded = homeAtHome != null
                     ? homeAtHome.optDouble("averageConceded", homeConceded) : homeConceded;
-                double awayVenueScored = awayAway != null
+                if (awayVenueScored < 0) awayVenueScored = awayAway != null
                     ? awayAway.optDouble("averageScored", awayScored) : awayScored;
-                double awayVenueConceded = awayAway != null
+                if (awayVenueConceded < 0) awayVenueConceded = awayAway != null
                     ? awayAway.optDouble("averageConceded", awayConceded) : awayConceded;
 
                 double homeAttack = homeScored * (1.0 - homeVenueWeight)
@@ -1145,8 +1156,10 @@ public class MainActivity extends Activity {
                         displayedHomeVenueSample + "; " + awayName + " away: " +
                         displayedAwayVenueSample + ". Venue rates are blended with overall recent rates, " +
                         "so small home/away samples have less influence.\n\n" +
-                        "Expected goals are estimates, not guarantees. Opponent strength and league-wide " +
-                        "scoring baselines are not yet included. You can edit the estimates above."
+                        "Model method: recent matches receive greater weight, then home/away rates " +
+                        "are blended with overall performance and the opponent's defensive record. " +
+                        "A modest home advantage is applied. Opponent strength and league scoring " +
+                        "baselines are not yet included, so treat these as estimates and edit if needed."
                     );
                     Toast.makeText(
                         MainActivity.this,
@@ -1168,6 +1181,26 @@ public class MainActivity extends Activity {
                 });
             }
         }).start();
+    }
+
+    // Newest matches receive the greatest weight (1.0, then 0.88, 0.77...).
+    // Filter by HOME/AWAY for venue-specific form; null uses all recent matches.
+    // Returns -1 if no usable match-level observations are available.
+    private double weightedRecentAverage(JSONArray matches, boolean forGoals, String venueFilter) {
+        if (matches == null || matches.length() == 0) return -1;
+        double weightedTotal = 0.0;
+        double totalWeight = 0.0;
+        for (int i = 0; i < matches.length(); i++) {
+            JSONObject match = matches.optJSONObject(i);
+            if (match == null) continue;
+            if (venueFilter != null && !venueFilter.equals(match.optString("venue", ""))) continue;
+            int goals = match.optInt(forGoals ? "goalsFor" : "goalsAgainst", -1);
+            if (goals < 0) continue;
+            double weight = Math.pow(0.88, i);
+            weightedTotal += goals * weight;
+            totalWeight += weight;
+        }
+        return totalWeight > 0 ? weightedTotal / totalWeight : -1;
     }
 
     private JSONObject fetchTeamStats(String teamId) throws Exception {
