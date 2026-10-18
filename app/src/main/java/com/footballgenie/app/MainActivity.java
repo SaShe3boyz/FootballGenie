@@ -1176,10 +1176,69 @@ public class MainActivity extends Activity {
                 double awayDefence = awayConceded * (1.0 - awayVenueWeight)
                     + awayVenueConceded * awayVenueWeight;
 
-                // Combine attack with the opponent's defensive concession rate.
-                // Apply a modest home advantage and keep estimates within sensible bounds.
+                // First estimate from recent form and venue performance.
                 double homeExpected = ((homeAttack + awayDefence) / 2.0) * 1.05;
                 double awayExpected = (awayAttack + homeDefence) / 2.0;
+
+                // When available, blend in current competition home/away scoring
+                // rates and season attack/defence strength to account for opposition.
+                String competitionId = "";
+                JSONObject competition = fixture.optJSONObject("competition");
+                if (competition != null && competition.optLong("id", 0) > 0) {
+                    competitionId = String.valueOf(competition.optLong("id"));
+                }
+                JSONObject competitionStrength = null;
+                if (!competitionId.isEmpty()) {
+                    try {
+                        competitionStrength = fetchCompetitionStrength(competitionId);
+                    } catch (Exception ignored) {
+                        // Keep the recent-form estimate if standings are unavailable.
+                    }
+                }
+                JSONObject homeSeason = findCompetitionTeamStats(
+                    competitionStrength, homeId
+                );
+                JSONObject awaySeason = findCompetitionTeamStats(
+                    competitionStrength, awayId
+                );
+                boolean usedCompetitionStrength = homeSeason != null
+                    && awaySeason != null
+                    && competitionStrength != null
+                    && competitionStrength.optDouble("homeLeagueGoalsPerMatch", 0) > 0
+                    && competitionStrength.optDouble("awayLeagueGoalsPerMatch", 0) > 0;
+
+                if (usedCompetitionStrength) {
+                    double leagueHomeGoals = competitionStrength.optDouble(
+                        "homeLeagueGoalsPerMatch", 1.45
+                    );
+                    double leagueAwayGoals = competitionStrength.optDouble(
+                        "awayLeagueGoalsPerMatch", 1.15
+                    );
+                    double homeAttackRatio = homeSeason.optDouble("homeScored", leagueHomeGoals)
+                        / leagueHomeGoals;
+                    double awayDefenceRatio = awaySeason.optDouble("awayConceded", leagueHomeGoals)
+                        / leagueHomeGoals;
+                    double awayAttackRatio = awaySeason.optDouble("awayScored", leagueAwayGoals)
+                        / leagueAwayGoals;
+                    double homeDefenceRatio = homeSeason.optDouble("homeConceded", leagueAwayGoals)
+                        / leagueAwayGoals;
+
+                    homeAttackRatio = Math.max(0.55, Math.min(1.70, homeAttackRatio));
+                    awayDefenceRatio = Math.max(0.55, Math.min(1.70, awayDefenceRatio));
+                    awayAttackRatio = Math.max(0.55, Math.min(1.70, awayAttackRatio));
+                    homeDefenceRatio = Math.max(0.55, Math.min(1.70, homeDefenceRatio));
+
+                    double seasonHomeExpected = leagueHomeGoals
+                        * Math.sqrt(homeAttackRatio * awayDefenceRatio);
+                    double seasonAwayExpected = leagueAwayGoals
+                        * Math.sqrt(awayAttackRatio * homeDefenceRatio);
+
+                    // Give recent form the larger share; season strength moderates
+                    // results against unusually strong or weak opposition.
+                    homeExpected = homeExpected * 0.65 + seasonHomeExpected * 0.35;
+                    awayExpected = awayExpected * 0.65 + seasonAwayExpected * 0.35;
+                }
+
                 homeExpected = Math.max(0.2, Math.min(4.5, homeExpected));
                 awayExpected = Math.max(0.2, Math.min(4.5, awayExpected));
 
@@ -1223,10 +1282,12 @@ public class MainActivity extends Activity {
                         displayedHomeVenueSample + "; " + awayName + " away: " +
                         displayedAwayVenueSample + ". Venue rates are blended with overall recent rates, " +
                         "so small home/away samples have less influence.\n\n" +
-                        "Model method: recent matches receive greater weight, then home/away rates " +
-                        "are blended with overall performance and the opponent's defensive record. " +
-                        "A modest home advantage is applied. Opponent strength and league scoring " +
-                        "baselines are not yet included, so treat these as estimates and edit if needed."
+                        "Model method: recent form and venue rates are blended with the opponent's " +
+                        "defensive record and a modest home advantage. " +
+                        (usedCompetitionStrength
+                            ? "Current competition scoring baselines and season home/away strength are also included. "
+                            : "Competition standings were unavailable, so season-strength adjustment was skipped. ") +
+                        "These remain estimates; check team news and edit expected goals if needed."
                     );
                     Toast.makeText(
                         MainActivity.this,
@@ -1248,6 +1309,54 @@ public class MainActivity extends Activity {
                 });
             }
         }).start();
+    }
+
+    private JSONObject fetchCompetitionStrength(String competitionId) throws Exception {
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL(
+                "https://football-genie-api.onrender.com/api/competition-strength?competitionId="
+                    + competitionId
+            );
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(12000);
+            connection.setReadTimeout(12000);
+
+            int code = connection.getResponseCode();
+            if (code < 200 || code >= 300) {
+                throw new java.io.IOException("Competition strength request failed: " + code);
+            }
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(connection.getInputStream())
+            );
+            StringBuilder body = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) body.append(line);
+            reader.close();
+            return new JSONObject(body.toString());
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
+    }
+
+    private JSONObject findCompetitionTeamStats(JSONObject strength, String teamId) {
+        if (strength == null) return null;
+        JSONArray teams = strength.optJSONArray("teams");
+        if (teams == null) return null;
+        long targetId;
+        try {
+            targetId = Long.parseLong(teamId);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        for (int i = 0; i < teams.length(); i++) {
+            JSONObject team = teams.optJSONObject(i);
+            if (team != null && team.optLong("teamId", -1) == targetId) {
+                return team;
+            }
+        }
+        return null;
     }
 
     // Newest matches receive the greatest weight (1.0, then 0.88, 0.77...).
