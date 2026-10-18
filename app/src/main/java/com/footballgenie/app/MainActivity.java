@@ -1175,8 +1175,11 @@ public class MainActivity extends Activity {
             LinearLayout detailCard = new LinearLayout(this);
             detailCard.setOrientation(LinearLayout.VERTICAL);
             detailCard.setPadding(dp(14), dp(13), dp(14), dp(14));
-            detailCard.setBackground(rounded(Color.rgb(20, 31, 51), 14));
-            detailCard.setElevation(dp(1));
+            int accentColor = getAnalysisAccentColor(heading);
+            GradientDrawable cardBackground = rounded(Color.rgb(20, 31, 51), 14);
+            cardBackground.setStroke(dp(1), accentColor);
+            detailCard.setBackground(cardBackground);
+            detailCard.setElevation(dp(2));
             LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
             cardParams.bottomMargin = dp(10);
             detailedAnalysisContainer.addView(detailCard, cardParams);
@@ -1185,23 +1188,26 @@ public class MainActivity extends Activity {
             headingRow.setOrientation(LinearLayout.HORIZONTAL);
             headingRow.setGravity(Gravity.CENTER_VERTICAL);
             TextView iconView = label(getAnalysisIcon(heading));
-            iconView.setTextSize(18);
+            iconView.setTextSize(23);
+            iconView.setTypeface(null, Typeface.BOLD);
             iconView.setGravity(Gravity.CENTER);
-            iconView.setTextColor(GREEN);
-            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(36), dp(36));
-            iconParams.rightMargin = dp(10);
-            iconView.setBackground(rounded(Color.rgb(17, 49, 52), 10));
+            iconView.setTextColor(accentColor);
+            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(44), dp(44));
+            iconParams.rightMargin = dp(12);
+            GradientDrawable iconBackground = rounded(Color.rgb(12, 23, 39), 12);
+            iconBackground.setStroke(dp(1), accentColor);
+            iconView.setBackground(iconBackground);
             headingRow.addView(iconView, iconParams);
             LinearLayout titleColumn = new LinearLayout(this);
             titleColumn.setOrientation(LinearLayout.VERTICAL);
-            TextView eyebrow = label("MATCH INSIGHT");
-            eyebrow.setTextColor(MUTED);
-            eyebrow.setTextSize(9);
+            TextView eyebrow = label("MATCH INSIGHT  •  ANALYSIS");
+            eyebrow.setTextColor(accentColor);
+            eyebrow.setTextSize(10);
             eyebrow.setTypeface(null, Typeface.BOLD);
             titleColumn.addView(eyebrow);
             TextView headingView = label(heading.isEmpty() ? "MATCH INSIGHT" : heading.toUpperCase(Locale.US));
-            headingView.setTextColor(GREEN);
-            headingView.setTextSize(12);
+            headingView.setTextColor(accentColor);
+            headingView.setTextSize(14);
             headingView.setTypeface(null, Typeface.BOLD);
             headingView.setLetterSpacing(0.025f);
             titleColumn.addView(headingView);
@@ -1211,8 +1217,8 @@ public class MainActivity extends Activity {
             if (bodyText.length() > 0) {
                 TextView body = label(bodyText.toString());
                 body.setTextColor(WHITE);
-                body.setTextSize(13);
-                body.setLineSpacing(dp(4), 1.04f);
+                body.setTextSize(14);
+                body.setLineSpacing(dp(5), 1.08f);
                 body.setPadding(0, dp(10), 0, dp(2));
                 body.setGravity(Gravity.START);
                 detailCard.addView(body);
@@ -1244,6 +1250,19 @@ public class MainActivity extends Activity {
         if (h.contains("flow") || h.contains("scenario") || h.contains("comeback")) return "↗";
         if (h.contains("limitation") || h.contains("important")) return "ⓘ";
         return "◆";
+    }
+
+    private int getAnalysisAccentColor(String heading) {
+        String h = heading == null ? "" : heading.toLowerCase(Locale.US);
+        if (h.contains("confidence") || h.contains("outcome")) return Color.rgb(80, 190, 255);
+        if (h.contains("upset") || h.contains("red card")) return Color.rgb(255, 105, 105);
+        if (h.contains("goal") || h.contains("expected")) return Color.rgb(75, 220, 155);
+        if (h.contains("tempo") || h.contains("balance")) return Color.rgb(180, 135, 255);
+        if (h.contains("first") || h.contains("half")) return Color.rgb(255, 190, 75);
+        if (h.contains("score")) return Color.rgb(255, 135, 190);
+        if (h.contains("flow") || h.contains("scenario") || h.contains("comeback")) return Color.rgb(90, 210, 220);
+        if (h.contains("limitation") || h.contains("important")) return Color.rgb(185, 195, 210);
+        return Color.rgb(255, 180, 80);
     }
 
     private void addAnalysisMeter(LinearLayout parent, String labelText, float percentage, int barColor) {
