@@ -29,6 +29,8 @@ public class MainActivity extends Activity {
 
     private EditText homeInput, awayInput, homeGoals, awayGoals;
     private TextView result, status, statsSummary;
+    private TextView homeWinValue, drawValue, awayWinValue;
+    private TextView overValue, underValue, bttsValue;
     private LinearLayout mainLayout;
     private JSONObject selectedFixture;
 
@@ -275,7 +277,7 @@ public class MainActivity extends Activity {
     }
 
     private void buildResults() {
-        addHeading("02", "PREDICTION CENTRE");
+        addHeading("02", "MATCH PREDICTION");
 
         LinearLayout outputCard = card();
         outputCard.setOrientation(LinearLayout.VERTICAL);
@@ -286,27 +288,82 @@ public class MainActivity extends Activity {
         status.setTypeface(null, Typeface.BOLD);
         outputCard.addView(status);
 
-        result = label(
-            "Enter the two teams and their expected goals, " +
-            "then tap the simulation button to see your analysis."
-        );
-        result.setTextColor(WHITE);
-        result.setTextSize(14);
-        result.setPadding(0, dp(16), 0, dp(8));
+        TextView outcomeHeading = label("1X2 WIN PROBABILITIES");
+        outcomeHeading.setTextColor(MUTED);
+        outcomeHeading.setTextSize(10);
+        outcomeHeading.setTypeface(null, Typeface.BOLD);
+        outcomeHeading.setPadding(0, dp(16), 0, dp(8));
+        outputCard.addView(outcomeHeading);
 
+        LinearLayout outcomeRow = new LinearLayout(this);
+        outcomeRow.setOrientation(LinearLayout.HORIZONTAL);
+        homeWinValue = addMetricCard(outcomeRow, "HOME WIN", "--", GREEN);
+        drawValue = addMetricCard(outcomeRow, "DRAW", "--", WHITE);
+        awayWinValue = addMetricCard(outcomeRow, "AWAY WIN", "--", GREEN);
+        outputCard.addView(outcomeRow);
+
+        TextView goalsHeading = label("GOALS MARKETS");
+        goalsHeading.setTextColor(MUTED);
+        goalsHeading.setTextSize(10);
+        goalsHeading.setTypeface(null, Typeface.BOLD);
+        goalsHeading.setPadding(0, dp(16), 0, dp(8));
+        outputCard.addView(goalsHeading);
+
+        LinearLayout goalsRow = new LinearLayout(this);
+        goalsRow.setOrientation(LinearLayout.HORIZONTAL);
+        overValue = addMetricCard(goalsRow, "OVER 2.5", "--", GREEN);
+        underValue = addMetricCard(goalsRow, "UNDER 2.5", "--", WHITE);
+        bttsValue = addMetricCard(goalsRow, "BTTS YES", "--", GREEN);
+        outputCard.addView(goalsRow);
+
+        TextView detailsHeading = label("MODEL ANALYSIS");
+        detailsHeading.setTextColor(GREEN);
+        detailsHeading.setTextSize(11);
+        detailsHeading.setTypeface(null, Typeface.BOLD);
+        detailsHeading.setPadding(0, dp(18), 0, dp(4));
+        outputCard.addView(detailsHeading);
+
+        result = label("Choose a fixture or enter both teams and expected goals, then tap SIMULATE 10,000 MATCHES.");
+        result.setTextColor(WHITE);
+        result.setTextSize(13);
+        result.setLineSpacing(dp(3), 1.0f);
+        result.setPadding(0, dp(10), 0, dp(8));
         outputCard.addView(result);
         mainLayout.addView(outputCard);
 
-        TextView footer = label(
-            "FOOTBALL GENIE  •  STATISTICS, NOT CERTAINTY\n" +
-            "Probabilities describe modelled outcomes. " +
-            "Real matches can differ."
-        );
+        TextView footer = label("FOOTBALL GENIE  •  STATISTICS, NOT CERTAINTY\nProbabilities describe modelled outcomes. Real matches can differ.");
         footer.setTextColor(MUTED);
         footer.setTextSize(11);
         footer.setGravity(Gravity.CENTER);
         footer.setPadding(0, dp(24), 0, dp(10));
         mainLayout.addView(footer);
+    }
+
+    private TextView addMetricCard(LinearLayout row, String heading, String initial, int valueColor) {
+        LinearLayout metric = new LinearLayout(this);
+        metric.setOrientation(LinearLayout.VERTICAL);
+        metric.setGravity(Gravity.CENTER);
+        metric.setPadding(dp(4), dp(12), dp(4), dp(12));
+        metric.setBackground(rounded(Color.rgb(26, 43, 61), 13));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(76), 1f);
+        params.setMargins(dp(3), 0, dp(3), 0);
+        row.addView(metric, params);
+
+        TextView title = label(heading);
+        title.setTextColor(MUTED);
+        title.setTextSize(8);
+        title.setTypeface(null, Typeface.BOLD);
+        title.setGravity(Gravity.CENTER);
+        metric.addView(title);
+
+        TextView value = label(initial);
+        value.setTextColor(valueColor);
+        value.setTextSize(18);
+        value.setTypeface(null, Typeface.BOLD);
+        value.setGravity(Gravity.CENTER);
+        value.setPadding(0, dp(5), 0, 0);
+        metric.addView(value);
+        return value;
     }
 
     private void addHeading(String number, String heading) {
@@ -869,29 +926,22 @@ public class MainActivity extends Activity {
 
             status.setText("✓  SIMULATION COMPLETE");
 
+            homeWinValue.setText(String.format(Locale.US, "%.1f%%", homeP));
+            drawValue.setText(String.format(Locale.US, "%.1f%%", drawP));
+            awayWinValue.setText(String.format(Locale.US, "%.1f%%", awayP));
+            overValue.setText(String.format(Locale.US, "%.1f%%", overP));
+            underValue.setText(String.format(Locale.US, "%.1f%%", underP));
+            bttsValue.setText(String.format(Locale.US, "%.1f%%", bttsP));
+
             result.setText(String.format(Locale.US,
-                "10,000 MATCH SIMULATIONS\n\n" +
-                "MATCH OUTCOME\n" +
-                "%s win       %.1f%%\n" +
-                "Draw              %.1f%%\n" +
-                "%s win       %.1f%%\n\n" +
-                "MODEL CONFIDENCE\n" +
-                "%s\n\n" +
-                "GOALS MARKETS\n" +
-                "Over 2.5 goals       %.1f%%\n" +
-                "Under 2.5 goals     %.1f%%\n" +
-                "Both teams score    %.1f%%\n\n" +
-                "MOST FREQUENT SCORE\n" +
-                "%s %d - %d %s\n\n" +
-                "TOP 3 MOST LIKELY SCORELINES (model probability)\n%s\n\n%s\n\n%s",
-                home, homeP,
-                drawP,
-                away, awayP,
+                "10,000 SIMULATIONS COMPLETED\n\n" +
+                "MODEL LEAN\n%s\n\n" +
+                "MOST FREQUENT SCORE\n%s %d - %d %s\n\n" +
+                "TOP 3 MOST LIKELY SCORELINES\n%s\n\n" +
+                "DETAILED MATCH INTELLIGENCE\n%s",
                 confidence,
-                overP, underP, bttsP,
                 home, bestHome, bestAway, away,
                 topScores.toString(),
-                "━━━━━━━━━━━━━━━━━━",
                 analysis
             ));
 
