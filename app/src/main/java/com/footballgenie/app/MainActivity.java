@@ -110,7 +110,7 @@ public class MainActivity extends Activity {
 
         TextView title = label("FOOTBALL GENIE");
         title.setTextColor(WHITE);
-        title.setTextSize(29);
+        title.setTextSize(30);
         title.setTypeface(null, Typeface.BOLD);
         title.setGravity(Gravity.CENTER);
         title.setLetterSpacing(0.025f);
@@ -333,7 +333,7 @@ public class MainActivity extends Activity {
         bttsValue = addMetricCard(goalsRow, "BTTS YES", "--", GREEN);
         outputCard.addView(goalsRow);
 
-        TextView detailsHeading = label("MODEL ANALYSIS");
+        TextView detailsHeading = label("MATCH INTELLIGENCE & MODEL ANALYSIS");
         detailsHeading.setTextColor(GREEN);
         detailsHeading.setTextSize(11);
         detailsHeading.setTypeface(null, Typeface.BOLD);
@@ -350,7 +350,7 @@ public class MainActivity extends Activity {
 
         TextView footer = label("FOOTBALL GENIE  •  STATISTICS, NOT CERTAINTY\nProbabilities describe modelled outcomes. Real matches can differ.");
         footer.setTextColor(MUTED);
-        footer.setTextSize(11);
+        footer.setTextSize(10);
         footer.setGravity(Gravity.CENTER);
         footer.setPadding(0, dp(24), 0, dp(10));
         mainLayout.addView(footer);
