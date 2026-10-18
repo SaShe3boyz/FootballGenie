@@ -223,6 +223,17 @@ public class MainActivity extends Activity {
         resetParams.bottomMargin = dp(12);
         form.addView(resetHistoryButton, resetParams);
         resetHistoryButton.setOnClickListener(v -> confirmResetPredictionHistory());
+        
+        Button removeFixtureButton = new Button(this);
+        removeFixtureButton.setText("REMOVE ONE FIXTURE FROM HISTORY");
+        removeFixtureButton.setTextColor(Color.WHITE);
+        removeFixtureButton.setTextSize(13);
+        removeFixtureButton.setAllCaps(false);
+        removeFixtureButton.setBackground(rounded(Color.rgb(48, 75, 103), 14));
+        LinearLayout.LayoutParams removeFixtureParams = new LinearLayout.LayoutParams(-1, dp(48));
+        removeFixtureParams.bottomMargin = dp(12);
+        form.addView(removeFixtureButton, removeFixtureParams);
+        removeFixtureButton.setOnClickListener(v -> choosePredictionToRemove());
 
         Button simulateButton = new Button(this);
         simulateButton.setText("⚽  SIMULATE 10,000 MATCHES");
@@ -927,6 +938,71 @@ public class MainActivity extends Activity {
                 predictionPrefs().edit().putString("history", "[]").apply();
                 Toast.makeText(this, "Prediction history cleared. Ready for new testing.", Toast.LENGTH_LONG).show();
             })
+            .show();
+    }
+
+
+    private void choosePredictionToRemove() {
+        JSONArray history = readPredictionHistory();
+        if (history.length() == 0) {
+            new AlertDialog.Builder(this)
+                .setTitle("Prediction history is empty")
+                .setMessage("Save a prediction for an upcoming fixture first.")
+                .setPositiveButton("OK", null)
+                .show();
+            return;
+        }
+
+        ArrayList<JSONObject> records = new ArrayList<>();
+        ArrayList<String> labels = new ArrayList<>();
+        for (int i = 0; i < history.length(); i++) {
+            JSONObject record = history.optJSONObject(i);
+            if (record == null) continue;
+            records.add(record);
+            String label = record.optString("home", "Home") + " vs "
+                + record.optString("away", "Away");
+            String kickoff = record.optString("kickoff", "");
+            if (kickoff.length() >= 16) {
+                label += " • " + kickoff.substring(0, 10) + " "
+                    + kickoff.substring(11, 16) + " UTC";
+            }
+            labels.add(label);
+        }
+        if (records.isEmpty()) return;
+
+        new AlertDialog.Builder(this)
+            .setTitle("Choose fixture to remove")
+            .setItems(labels.toArray(new String[0]), (dialog, which) -> {
+                JSONObject selected = records.get(which);
+                String home = selected.optString("home", "Home");
+                String away = selected.optString("away", "Away");
+                new AlertDialog.Builder(this)
+                    .setTitle("Remove this prediction?")
+                    .setMessage("Remove " + home + " vs " + away
+                        + " and its saved evaluation data from this phone? Other fixtures will remain.")
+                    .setNegativeButton("Cancel", (d, w) -> d.dismiss())
+                    .setPositiveButton("Remove fixture", (d, w) -> {
+                        String targetId = selected.optString("fixtureId", "");
+                        JSONArray current = readPredictionHistory();
+                        JSONArray updated = new JSONArray();
+                        for (int i = 0; i < current.length(); i++) {
+                            JSONObject item = current.optJSONObject(i);
+                            if (item == null) continue;
+                            boolean sameId = !targetId.isEmpty()
+                                && targetId.equals(item.optString("fixtureId", ""));
+                            boolean sameFallback = targetId.isEmpty()
+                                && home.equals(item.optString("home", ""))
+                                && away.equals(item.optString("away", ""))
+                                && selected.optLong("savedAt", -1L) == item.optLong("savedAt", -2L);
+                            if (!sameId && !sameFallback) updated.put(item);
+                        }
+                        predictionPrefs().edit().putString("history", updated.toString()).apply();
+                        Toast.makeText(this, "Fixture removed. Other history entries were kept.",
+                            Toast.LENGTH_LONG).show();
+                    })
+                    .show();
+            })
+            .setNegativeButton("Cancel", null)
             .show();
     }
 
