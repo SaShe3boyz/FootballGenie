@@ -582,12 +582,16 @@ public class MainActivity extends Activity {
             }
             double secondHalfGoalProbability = 1.0
                 - Math.exp(-0.55 * totalExpectedGoals);
-            double anyGoalProbability = 1.0 - Math.exp(-totalExpectedGoals);
+            double noGoalProbability = (
+                poissonProbability(0, homeXg) * poissonProbability(0, awayXg)
+                * lowScoreCorrection(0, 0, homeXg, awayXg)
+            ) / Math.max(0.000001, rankedScoreProbabilityTotal);
+            noGoalProbability = Math.max(0.0, Math.min(1.0, noGoalProbability));
+            double anyGoalProbability = 1.0 - noGoalProbability;
             double homeFirstScoreProbability = totalExpectedGoals > 0
                 ? (homeXg / totalExpectedGoals) * anyGoalProbability : 0.0;
             double awayFirstScoreProbability = totalExpectedGoals > 0
                 ? (awayXg / totalExpectedGoals) * anyGoalProbability : 0.0;
-            double noGoalProbability = Math.exp(-totalExpectedGoals);
             String tempoProfile;
             if (totalExpectedGoals < 1.8) {
                 tempoProfile = "LOW-SCORING PROFILE";
