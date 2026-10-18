@@ -1028,6 +1028,7 @@ public class MainActivity extends Activity {
         int bttsCorrect = 0, exactCorrect = 0;
         int actualHomeWins = 0, actualDraws = 0, actualAwayWins = 0;
         int invalidProbabilityRecords = 0;
+        int pendingCount = 0;
         double outcomeBrierTotal = 0.0;
         double goalsBrierTotal = 0.0;
         double bttsBrierTotal = 0.0;
@@ -1037,7 +1038,9 @@ public class MainActivity extends Activity {
         int[] confidenceBinCorrect = new int[5];
         StringBuilder summary = new StringBuilder();
         summary.append("PREDICTION HISTORY\n");
-        summary.append("New final results added: ").append(newlyUpdated).append("\n\n");
+        summary.append("New final results added: ").append(newlyUpdated).append("\n");
+        summary.append("Saved records: ").append(history.length()).append(" | evaluated: ").append(finished)
+            .append(" | awaiting results: ").append(pendingCount).append("\n\n");
 
         for (int i = history.length() - 1; i >= 0; i--) {
             JSONObject record = history.optJSONObject(i);
@@ -1045,6 +1048,7 @@ public class MainActivity extends Activity {
             String home = record.optString("home", "Home");
             String away = record.optString("away", "Away");
             String state = record.optString("predictionStatus", "PENDING");
+            if (!"FINISHED".equals(state)) pendingCount++;
             summary.append(home).append(" vs ").append(away).append("\n");
             summary.append("Expected goals: ")
                 .append(String.format(Locale.US, "%.2f", record.optDouble("homeXg", 0)))
