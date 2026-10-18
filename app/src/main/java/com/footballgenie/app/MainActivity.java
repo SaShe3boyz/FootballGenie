@@ -1038,6 +1038,7 @@ public class MainActivity extends Activity {
         int[] confidenceBinCorrect = new int[5];
         StringBuilder summary = new StringBuilder();
         summary.append("PREDICTION HISTORY\n");
+        summary.append("VALIDATION REPORT • v1\\n");
         summary.append("New final results added: ").append(newlyUpdated).append("\n");
         summary.append("Saved records: ").append(history.length()).append(" | evaluated: ").append(finished)
             .append(" | awaiting results: ").append(pendingCount).append("\n\n");
@@ -1154,13 +1155,13 @@ public class MainActivity extends Activity {
                 "Mean absolute home-goal error: " + String.format(Locale.US, "%.2f", homeGoalAbsError / finished) + "\n" +
                 "Mean absolute away-goal error: " + String.format(Locale.US, "%.2f", awayGoalAbsError / finished) + "\n" +
                 "Mean absolute total-goal error: " + String.format(Locale.US, "%.2f", totalGoalAbsError / finished) + "\n\n" +
-                "CONFIDENCE CALIBRATION (highest 1X2 probability)\\n" +
-                "0-19%: " + calibrationText(confidenceBinCount[0], confidenceBinCorrect[0]) + "\\n" +
-                "20-39%: " + calibrationText(confidenceBinCount[1], confidenceBinCorrect[1]) + "\\n" +
-                "40-59%: " + calibrationText(confidenceBinCount[2], confidenceBinCorrect[2]) + "\\n" +
-                "60-79%: " + calibrationText(confidenceBinCount[3], confidenceBinCorrect[3]) + "\\n" +
-                "80-100%: " + calibrationText(confidenceBinCount[4], confidenceBinCorrect[4]) + "\\n" +
-                "Small bins are noisy; compare predicted confidence with observed hit rate.\\n\\n" +
+                "CONFIDENCE CALIBRATION (highest 1X2 probability)\n" +
+                "0-19%: " + calibrationText(confidenceBinCount[0], confidenceBinCorrect[0]) + "\n" +
+                "20-39%: " + calibrationText(confidenceBinCount[1], confidenceBinCorrect[1]) + "\n" +
+                "40-59%: " + calibrationText(confidenceBinCount[2], confidenceBinCorrect[2]) + "\n" +
+                "60-79%: " + calibrationText(confidenceBinCount[3], confidenceBinCorrect[3]) + "\n" +
+                "80-100%: " + calibrationText(confidenceBinCount[4], confidenceBinCorrect[4]) + "\n" +
+                "Small bins are noisy; compare predicted confidence with observed hit rate.\n\n" +
                 "Probability data check: " + invalidProbabilityRecords + " records have missing, out-of-range or non-normalized 1X2 probabilities.\n\n" +
                 "HOW TO READ THESE METRICS\\n" +
                 "Hit rate measures pick frequency; Brier score measures probability quality, and lower is better. " +
