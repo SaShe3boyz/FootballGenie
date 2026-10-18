@@ -678,6 +678,11 @@ public class MainActivity extends Activity {
             String awayRedCardScenario = scenarioOutcomeSummary(home, away, homeXg, awayXg,
                 60, 0, 0, 1.20, 0.65);
 
+            String homeAggressiveScenario = scenarioOutcomeSummary(home, away, homeXg, awayXg,
+                60, 0, 0, 1.25, 1.10);
+            String awayAggressiveScenario = scenarioOutcomeSummary(home, away, homeXg, awayXg,
+                60, 0, 0, 1.10, 1.25);
+
             String analysis =
                 "\n\n━━━━━━━━━━━━━━━━━━\n" +
                 "WHY THIS PREDICTION?\n\n" +
@@ -761,6 +766,9 @@ public class MainActivity extends Activity {
                 "Red card for " + home + ": " + homeRedCardScenario + "\\n" +
                 "Red card for " + away + ": " + awayRedCardScenario + "\\n" +
                 "Illustrative effect only; red-card impact is not calibrated from event data.\\n\\n" +
+                "If " + home + " attacks more aggressively from 60 minutes: " + homeAggressiveScenario + "\\n" +
+                "If " + away + " attacks more aggressively from 60 minutes: " + awayAggressiveScenario + "\\n" +
+                "Urgency multipliers are assumptions, not observed tactical behaviour.\\n\\n" +
                 "IMPORTANT LIMITATIONS\n" +
                 "Expected goals can be estimated from recent completed matches " +
                 "when you select a fixture, or entered manually. This model does " +
