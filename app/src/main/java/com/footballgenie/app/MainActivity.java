@@ -1531,6 +1531,25 @@ public class MainActivity extends Activity {
                 final String homeConcedingTrend = recentTrendText(homeRecentMatches, false);
                 final String awayScoringTrend = recentTrendText(awayRecentMatches, true);
                 final String awayConcedingTrend = recentTrendText(awayRecentMatches, false);
+                final String relativeStrengthSummary;
+                if (usedCompetitionStrength) {
+                    double leagueHomeBaseline = competitionStrength.optDouble(
+                        "homeLeagueGoalsPerMatch", 1.45
+                    );
+                    double leagueAwayBaseline = competitionStrength.optDouble(
+                        "awayLeagueGoalsPerMatch", 1.15
+                    );
+                    relativeStrengthSummary =
+                        "Relative attack / defensive-vulnerability indices (1.00 = competition baseline):\n" +
+                        homeName + " attack " + String.format(Locale.US, "%.2f", homeAttack / leagueHomeBaseline) +
+                        "x; vulnerability " + String.format(Locale.US, "%.2f", homeDefence / leagueAwayBaseline) + "x\n" +
+                        awayName + " attack " + String.format(Locale.US, "%.2f", awayAttack / leagueAwayBaseline) +
+                        "x; vulnerability " + String.format(Locale.US, "%.2f", awayDefence / leagueHomeBaseline) + "x.\n" +
+                        "Higher vulnerability means conceding more goals than the relevant baseline.";
+                } else {
+                    relativeStrengthSummary =
+                        "Relative attack/defence indices unavailable because competition baselines could not be loaded.";
+                }
 
                 runOnUiThread(() -> {
                     homeGoals.setText(homeValue);
@@ -1557,6 +1576,7 @@ public class MainActivity extends Activity {
                         displayedHomeVenueSample + "; " + awayName + " away: " +
                         displayedAwayVenueSample + ". Venue rates are blended with overall recent rates, " +
                         "so small home/away samples have less influence.\n\n" +
+                        relativeStrengthSummary + "\n\n" +
                         "Model method: recent form and venue rates are blended with the opponent's " +
                         "defensive record and a modest home advantage. " +
                         (usedCompetitionStrength
