@@ -769,6 +769,9 @@ public class MainActivity extends Activity {
                 "If " + home + " attacks more aggressively from 60 minutes: " + homeAggressiveScenario + "\\n" +
                 "If " + away + " attacks more aggressively from 60 minutes: " + awayAggressiveScenario + "\\n" +
                 "Urgency multipliers are assumptions, not observed tactical behaviour.\\n\\n" +
+                "SCENARIO COMPARISON\\n" +
+                "Compare level, leading, trailing, red-card and aggressive-approach scenarios above. " +
+                "A changed probability reflects changed assumptions and score state, not certainty.\\n\\n" +
                 "IMPORTANT LIMITATIONS\n" +
                 "Expected goals can be estimated from recent completed matches " +
                 "when you select a fixture, or entered manually. This model does " +
