@@ -418,6 +418,34 @@ public class MainActivity extends Activity {
                 }
             }
 
+            // Rank the three most frequent exact scores from the simulation.
+            int[][] rankedScores = new int[9][9];
+            for (int h = 0; h < 9; h++) {
+                System.arraycopy(scores[h], 0, rankedScores[h], 0, 9);
+            }
+            StringBuilder topScores = new StringBuilder();
+            for (int rank = 0; rank < 3; rank++) {
+                int rankHome = -1;
+                int rankAway = -1;
+                int rankCount = 0;
+                for (int h = 0; h < 9; h++) {
+                    for (int a = 0; a < 9; a++) {
+                        if (rankedScores[h][a] > rankCount) {
+                            rankCount = rankedScores[h][a];
+                            rankHome = h;
+                            rankAway = a;
+                        }
+                    }
+                }
+                if (rankCount == 0) break;
+                if (topScores.length() > 0) topScores.append("\\n");
+                topScores.append(rank + 1).append(". ")
+                    .append(rankHome).append("-").append(rankAway)
+                    .append("  (").append(String.format(Locale.US, "%.1f",
+                        rankCount / 100.0)).append("%)");
+                rankedScores[rankHome][rankAway] = 0;
+            }
+
             double homeP = homeWins / 100.0;
             double drawP = draws / 100.0;
             double awayP = awayWins / 100.0;
@@ -533,20 +561,21 @@ public class MainActivity extends Activity {
                 "Over 2.5 goals       %.1f%%\n" +
                 "Under 2.5 goals     %.1f%%\n" +
                 "Both teams score    %.1f%%\n\n" +
-                "MOST FREQUENT SCORE\n" +
-                "%s %d - %d %s\n" +
-                "%s\n\n%s",
+                "MOST FREQUENT SCORE\\n" +
+                "%s %d - %d %s\\n\\n" +
+                "TOP 3 SCORELINES (simulation frequency)\\n%s\\n\\n%s\\n\\n%s",
                 home, homeP,
                 drawP,
                 away, awayP,
                 confidence,
                 overP, underP, bttsP,
                 home, bestHome, bestAway, away,
+                topScores.toString(),
                 "━━━━━━━━━━━━━━━━━━",
                 analysis
             ));
 
-            savePredictionIfEligible(home, away, homeXg, awayXg,
+            savePredictionIfEligible            savePredictionIfEligible(home, away, homeXg, awayXg,
                 homeP, drawP, awayP, overP, bttsP, bestHome, bestAway);
 
         } catch (Exception e) {
