@@ -670,6 +670,9 @@ public class MainActivity extends Activity {
             String awayTrailsAt60 = scenarioOutcomeSummary(home, away, homeXg, awayXg,
                 60, 1, 0, 0.85, 1.20);
 
+            double homeSecondHalfGoalChance = 1.0 - Math.exp(-homeXg * 0.55);
+            double awaySecondHalfGoalChance = 1.0 - Math.exp(-awayXg * 0.55);
+
             String analysis =
                 "\n\n━━━━━━━━━━━━━━━━━━\n" +
                 "WHY THIS PREDICTION?\n\n" +
@@ -746,6 +749,9 @@ public class MainActivity extends Activity {
 
                 "Comeback outlook if trailing 0-1 at 60: " + homeTrailsAt60 + "\n" +
                 "Comeback outlook if trailing 1-0 at 60: " + awayTrailsAt60 + "\n\n" +
+                "Second-half scoring outlook (time-scaled xG): " + home + " to score " +
+                String.format(Locale.US, "%.1f", homeSecondHalfGoalChance * 100.0) + "%; " +
+                away + " to score " + String.format(Locale.US, "%.1f", awaySecondHalfGoalChance * 100.0) + "%\\n\\n" +
                 "IMPORTANT LIMITATIONS\n" +
                 "Expected goals can be estimated from recent completed matches " +
                 "when you select a fixture, or entered manually. This model does " +
