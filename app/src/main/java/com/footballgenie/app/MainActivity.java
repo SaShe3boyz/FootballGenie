@@ -122,27 +122,42 @@ public class MainActivity extends Activity {
         LinearLayout nav = new LinearLayout(this);
         nav.setOrientation(LinearLayout.HORIZONTAL);
         nav.setGravity(Gravity.CENTER);
-        nav.setPadding(dp(4), dp(5), dp(4), dp(5));
+        nav.setPadding(dp(4), dp(5), dp(4), dp(6));
         nav.setBackground(rounded(Color.rgb(5, 13, 26), 0));
-        String[] labels = {"⌂\\nHOME", "⚽\\nPREDICT", "▥\\nRESULTS",
-            "◉\\nSIMULATE", "◷\\nHISTORY"};
+
+        String[] icons = {"⌂", "⚽", "▥", "◉", "◷"};
+        String[] labels = {"HOME", "PREDICT", "RESULTS", "SIMULATE", "HISTORY"};
         int[] targets = {0, 1, 2, 3, 4};
+
         for (int i = 0; i < labels.length; i++) {
             final int target = targets[i];
-            Button button = new Button(this);
-            button.setText(labels[i]);
-            button.setTextColor(WHITE);
-            button.setTextSize(9);
-            button.setTypeface(null, Typeface.BOLD);
-            button.setAllCaps(false);
-            button.setMinHeight(dp(48));
-            button.setPadding(0, 0, 0, 0);
-            button.setBackground(rounded(Color.rgb(5, 13, 26), 10));
+            LinearLayout item = new LinearLayout(this);
+            item.setOrientation(LinearLayout.VERTICAL);
+            item.setGravity(Gravity.CENTER);
+            item.setPadding(dp(2), dp(5), dp(2), dp(4));
+            item.setBackground(rounded(Color.rgb(5, 13, 26), 10));
+            item.setClickable(true);
+            item.setFocusable(true);
+
+            TextView icon = label(icons[i]);
+            icon.setTextColor(GREEN);
+            icon.setTextSize(22);
+            icon.setGravity(Gravity.CENTER);
+            item.addView(icon, new LinearLayout.LayoutParams(-1, dp(28)));
+
+            TextView title = label(labels[i]);
+            title.setTextColor(WHITE);
+            title.setTextSize(10);
+            title.setTypeface(null, Typeface.BOLD);
+            title.setGravity(Gravity.CENTER);
+            title.setSingleLine(true);
+            item.addView(title, new LinearLayout.LayoutParams(-1, dp(18)));
+
             LinearLayout.LayoutParams params =
-                new LinearLayout.LayoutParams(0, dp(52), 1f);
+                new LinearLayout.LayoutParams(0, dp(62), 1f);
             params.setMargins(dp(2), 0, dp(2), 0);
-            nav.addView(button, params);
-            button.setOnClickListener(v -> showScreen(target));
+            nav.addView(item, params);
+            item.setOnClickListener(v -> showScreen(target));
         }
         return nav;
     }
