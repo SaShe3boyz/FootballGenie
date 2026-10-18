@@ -1017,23 +1017,23 @@ public class MainActivity extends Activity {
         return value * value;
     }
 
-    private String calibrationText(int count, int correct) {\n        if (count == 0) return "no matches";\n        return String.format(Locale.US, "%d matches, %.1f%% correct", count, 100.0 * correct / count);\n    }\n\n    private void showPredictionHistory(int newlyUpdated) {
+    private void showPredictionHistory(int newlyUpdated) {
         JSONArray history = readPredictionHistory();
         int finished = 0, outcomeCorrect = 0, goalsCorrect = 0;
-        int bttsCorrect = 0, exactCorrect = 0;\n        int actualHomeWins = 0, actualDraws = 0, actualAwayWins = 0;\n        int invalidProbabilityRecords = 0;\n        int pendingCount = 0;
+        int bttsCorrect = 0, exactCorrect = 0;
         double outcomeBrierTotal = 0.0;
         double goalsBrierTotal = 0.0;
-        double bttsBrierTotal = 0.0;\n        double homeGoalAbsError = 0.0, awayGoalAbsError = 0.0;\n        double totalGoalAbsError = 0.0;\n        int[] confidenceBinCount = new int[5];\n        int[] confidenceBinCorrect = new int[5];
+        double bttsBrierTotal = 0.0;
         StringBuilder summary = new StringBuilder();
         summary.append("PREDICTION HISTORY\n");
-        summary.append("New final results added: ").append(newlyUpdated).append("\\n");\n        summary.append("Saved records: ").append(history.length()).append(" | evaluated: ").append(finished).append(" | awaiting results: ").append(pendingCount).append("\\n\\n");\n\n");
+        summary.append("New final results added: ").append(newlyUpdated).append("\n\n");
 
         for (int i = history.length() - 1; i >= 0; i--) {
             JSONObject record = history.optJSONObject(i);
             if (record == null) continue;
             String home = record.optString("home", "Home");
             String away = record.optString("away", "Away");
-            String state = record.optString("predictionStatus", "PENDING");\n            if (!"FINISHED".equals(state)) pendingCount++;
+            String state = record.optString("predictionStatus", "PENDING");
             summary.append(home).append(" vs ").append(away).append("\n");
             summary.append("Expected goals: ")
                 .append(String.format(Locale.US, "%.2f", record.optDouble("homeXg", 0)))
@@ -1057,11 +1057,11 @@ public class MainActivity extends Activity {
                 .append(record.optInt("predictedAway", 0))
                 .append("\n");
 
-            double storedHomeP = record.optDouble("homeP", -1);\n            double storedDrawP = record.optDouble("drawP", -1);\n            double storedAwayP = record.optDouble("awayP", -1);\n            if (storedHomeP < 0 || storedDrawP < 0 || storedAwayP < 0 ||\n                    storedHomeP > 100 || storedDrawP > 100 || storedAwayP > 100 ||\n                    Math.abs(storedHomeP + storedDrawP + storedAwayP - 100.0) > 2.0) {\n                invalidProbabilityRecords++;\n            }\n\n            if ("FINISHED".equals(state)) {
+            if ("FINISHED".equals(state)) {
                 int ah = record.optInt("actualHome", -1);
                 int aa = record.optInt("actualAway", -1);
                 if (ah >= 0 && aa >= 0) {
-                    finished++;\n                    homeGoalAbsError += Math.abs(record.optInt("predictedHome", 0) - ah);\n                    awayGoalAbsError += Math.abs(record.optInt("predictedAway", 0) - aa);\n                    totalGoalAbsError += Math.abs(record.optInt("predictedHome", 0) + record.optInt("predictedAway", 0) - ah - aa);
+                    finished++;
                     String predictedOutcome = record.optDouble("homeP", 0) >=
                         Math.max(record.optDouble("drawP", 0), record.optDouble("awayP", 0))
                         ? "HOME" : (record.optDouble("drawP", 0) >= record.optDouble("awayP", 0)
@@ -1070,11 +1070,11 @@ public class MainActivity extends Activity {
                     boolean actualDraw = ah == aa;
                     boolean actualAway = ah < aa;
                     String actualOutcome = actualHome ? "HOME" : (actualDraw ? "DRAW" : "AWAY");
-                    if (actualHome) actualHomeWins++; else if (actualDraw) actualDraws++; else actualAwayWins++;\n                    if (predictedOutcome.equals(actualOutcome)) outcomeCorrect++;
+                    if (predictedOutcome.equals(actualOutcome)) outcomeCorrect++;
 
                     double hp = record.optDouble("homeP", 0) / 100.0;
                     double dp = record.optDouble("drawP", 0) / 100.0;
-                    double ap = record.optDouble("awayP", 0) / 100.0;\n                    double topProbability = Math.max(hp, Math.max(dp, ap));\n                    int confidenceBin = Math.min(4, Math.max(0, (int) (topProbability * 5.0)));\n                    confidenceBinCount[confidenceBin]++;\n                    if (predictedOutcome.equals(actualOutcome)) confidenceBinCorrect[confidenceBin]++;
+                    double ap = record.optDouble("awayP", 0) / 100.0;
                     outcomeBrierTotal += square(hp - (actualHome ? 1.0 : 0.0))
                         + square(dp - (actualDraw ? 1.0 : 0.0))
                         + square(ap - (actualAway ? 1.0 : 0.0));
@@ -1110,14 +1110,14 @@ public class MainActivity extends Activity {
             summary.insert("PREDICTION HISTORY\n".length(),
                 "Evaluated matches: " + finished + "\n" +
                 sampleGuidance + "\n\n" +
-                "Majority-result baseline (retrospective): " + Math.max(actualHomeWins, Math.max(actualDraws, actualAwayWins)) + "/" + finished + " (" + String.format(Locale.US, "%.1f", 100.0 * Math.max(actualHomeWins, Math.max(actualDraws, actualAwayWins)) / finished) + "%)\\n" +\n                "Actual outcomes: home " + actualHomeWins + ", draw " + actualDraws + ", away " + actualAwayWins + "\\n" +\n                "Outcome pick correct: " + outcomeCorrect + "/" + finished +
+                "Outcome pick correct: " + outcomeCorrect + "/" + finished +
                 " (" + String.format(Locale.US, "%.1f", 100.0 * outcomeCorrect / finished) + "%)\n" +
                 "Over/Under pick correct: " + goalsCorrect + "/" + finished +
                 " (" + String.format(Locale.US, "%.1f", 100.0 * goalsCorrect / finished) + "%)\n" +
                 "BTTS pick correct: " + bttsCorrect + "/" + finished +
                 " (" + String.format(Locale.US, "%.1f", 100.0 * bttsCorrect / finished) + "%)\n" +
                 "Exact score: " + exactCorrect + "/" + finished + "\n\n" +
-                "CONFIDENCE CALIBRATION (highest 1X2 probability)\\n" +\n                "0-19%: " + calibrationText(confidenceBinCount[0], confidenceBinCorrect[0]) + "\\n" +\n                "20-39%: " + calibrationText(confidenceBinCount[1], confidenceBinCorrect[1]) + "\\n" +\n                "40-59%: " + calibrationText(confidenceBinCount[2], confidenceBinCorrect[2]) + "\\n" +\n                "60-79%: " + calibrationText(confidenceBinCount[3], confidenceBinCorrect[3]) + "\\n" +\n                "80-100%: " + calibrationText(confidenceBinCount[4], confidenceBinCorrect[4]) + "\\n" +\n                "Small bins are noisy; compare predicted confidence with observed hit rate.\\n\\n" +\n                "Probability data check: " + invalidProbabilityRecords + " records have missing, out-of-range or non-normalized 1X2 probabilities.\\n\\n" +\n                "PROBABILITY QUALITY (Brier score; lower is better)\n" +
+                "PROBABILITY QUALITY (Brier score; lower is better)\n" +
                 "Home/Draw/Away: " + String.format(Locale.US, "%.3f", outcomeBrierTotal / finished) + "\n" +
                 "Over 2.5: " + String.format(Locale.US, "%.3f", goalsBrierTotal / finished) + "\n" +
                 "Both teams score: " + String.format(Locale.US, "%.3f", bttsBrierTotal / finished) + "\n\n");
