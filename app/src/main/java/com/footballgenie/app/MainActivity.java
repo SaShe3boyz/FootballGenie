@@ -1020,7 +1020,7 @@ public class MainActivity extends Activity {
     private String calibrationText(int count, int correct) {\n        if (count == 0) return "no matches";\n        return String.format(Locale.US, "%d matches, %.1f%% correct", count, 100.0 * correct / count);\n    }\n\n    private void showPredictionHistory(int newlyUpdated) {
         JSONArray history = readPredictionHistory();
         int finished = 0, outcomeCorrect = 0, goalsCorrect = 0;
-        int bttsCorrect = 0, exactCorrect = 0;
+        int bttsCorrect = 0, exactCorrect = 0;\n        int actualHomeWins = 0, actualDraws = 0, actualAwayWins = 0;
         double outcomeBrierTotal = 0.0;
         double goalsBrierTotal = 0.0;
         double bttsBrierTotal = 0.0;\n        double homeGoalAbsError = 0.0, awayGoalAbsError = 0.0;\n        double totalGoalAbsError = 0.0;\n        int[] confidenceBinCount = new int[5];\n        int[] confidenceBinCorrect = new int[5];
@@ -1070,7 +1070,7 @@ public class MainActivity extends Activity {
                     boolean actualDraw = ah == aa;
                     boolean actualAway = ah < aa;
                     String actualOutcome = actualHome ? "HOME" : (actualDraw ? "DRAW" : "AWAY");
-                    if (predictedOutcome.equals(actualOutcome)) outcomeCorrect++;
+                    if (actualHome) actualHomeWins++; else if (actualDraw) actualDraws++; else actualAwayWins++;\n                    if (predictedOutcome.equals(actualOutcome)) outcomeCorrect++;
 
                     double hp = record.optDouble("homeP", 0) / 100.0;
                     double dp = record.optDouble("drawP", 0) / 100.0;
@@ -1110,7 +1110,7 @@ public class MainActivity extends Activity {
             summary.insert("PREDICTION HISTORY\n".length(),
                 "Evaluated matches: " + finished + "\n" +
                 sampleGuidance + "\n\n" +
-                "Outcome pick correct: " + outcomeCorrect + "/" + finished +
+                "Majority-result baseline (retrospective): " + Math.max(actualHomeWins, Math.max(actualDraws, actualAwayWins)) + "/" + finished + " (" + String.format(Locale.US, "%.1f", 100.0 * Math.max(actualHomeWins, Math.max(actualDraws, actualAwayWins)) / finished) + "%)\\n" +\n                "Actual outcomes: home " + actualHomeWins + ", draw " + actualDraws + ", away " + actualAwayWins + "\\n" +\n                "Outcome pick correct: " + outcomeCorrect + "/" + finished +
                 " (" + String.format(Locale.US, "%.1f", 100.0 * outcomeCorrect / finished) + "%)\n" +
                 "Over/Under pick correct: " + goalsCorrect + "/" + finished +
                 " (" + String.format(Locale.US, "%.1f", 100.0 * goalsCorrect / finished) + "%)\n" +
