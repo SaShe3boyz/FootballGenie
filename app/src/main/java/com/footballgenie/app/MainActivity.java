@@ -29,7 +29,8 @@ import java.util.ArrayList;
 public class MainActivity extends Activity {
 
     private EditText homeInput, awayInput, homeGoals, awayGoals;
-    private TextView result, status, statsSummary;
+    private TextView result, status;
+    private LinearLayout statsSummary;
     private TextView homeWinValue, drawValue, awayWinValue;
     private TextView overValue, underValue, bttsValue;
     // Home-screen fixture card must reflect the same selected fixture as Predict.
@@ -618,7 +619,7 @@ public class MainActivity extends Activity {
             }
 
             if (statsSummary != null) {
-                statsSummary.setText("RECENT TEAM FORM\nLoading recent completed matches for both teams...");
+                renderRecentFormMessage("LOADING RECENT FORM", "Loading completed matches and team statistics...");
             }
             loadTeamStatsForFixture(selected);
             Toast.makeText(this, "Fixture selected: " + homeName + " vs " + awayName, Toast.LENGTH_SHORT).show();
@@ -865,13 +866,13 @@ public class MainActivity extends Activity {
         formTitle.setPadding(0, 0, 0, dp(8));
         formCard.addView(formTitle);
 
-        statsSummary = label("Select a fixture to load recent completed results and available team statistics.");
-        statsSummary.setTextColor(WHITE);
-        statsSummary.setTextSize(13);
-        statsSummary.setLineSpacing(dp(5), 1.0f);
-        statsSummary.setPadding(dp(13), dp(13), dp(13), dp(13));
-        statsSummary.setBackground(rounded(Color.rgb(31, 44, 65), 12));
-        formCard.addView(statsSummary);
+        statsSummary = new LinearLayout(this);
+        statsSummary.setOrientation(LinearLayout.VERTICAL);
+        statsSummary.setPadding(dp(10), dp(10), dp(10), dp(10));
+        statsSummary.setBackground(rounded(Color.rgb(8, 23, 39), 14));
+        formCard.addView(statsSummary, new LinearLayout.LayoutParams(-1, -2));
+        renderRecentFormMessage("TEAM FORM NOT LOADED",
+            "Choose a live fixture to compare both teams' recent results, scoring, and defensive records.");
         mainLayout.addView(formCard);
 
         LinearLayout runCard = card();
@@ -2270,10 +2271,8 @@ public class MainActivity extends Activity {
                         || homeStats.optInt("sampleSize", 0) == 0
                         || awayStats.optInt("sampleSize", 0) == 0) {
                     runOnUiThread(() -> {
-                        statsSummary.setText(
-                            "RECENT TEAM FORM\nStatistics are unavailable for one or both teams. " +
-                            "Please enter expected goals manually."
-                        );
+                        renderRecentFormMessage("STATISTICS UNAVAILABLE",
+                            "Recent results could not be loaded for one or both teams. Enter expected goals manually.");
                         Toast.makeText(
                             MainActivity.this,
                             "Recent stats unavailable. You can enter expected goals manually.",
@@ -2586,39 +2585,27 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> {
                     homeGoals.setText(homeValue);
                     awayGoals.setText(awayValue);
-                    statsSummary.setText(
-                        "RECENT TEAM FORM (latest first)\n" +
-                        homeName + ": " + homeForm + "  |  Analysed: " + homeSample + " matches\n" +
-                        "Overall goals per match: " + homeGoalsStats.optString("averageScored", "0") +
-                        " scored, " + homeGoalsStats.optString("averageConceded", "0") + " conceded\n" +
-                        "Recency-weighted form: " + homeWeightedScoredText +
-                        " scored, " + homeWeightedConcededText + " conceded per match\n" +
-                        "Estimated match xG: " + homeValue + "\n" +
-                        "Recent trend: scoring " + homeScoringTrend +
-                        "; conceding " + homeConcedingTrend + "\n\n" +
-                        awayName + ": " + awayForm + "  |  Analysed: " + awaySample + " matches\n" +
-                        "Overall goals per match: " + awayGoalsStats.optString("averageScored", "0") +
-                        " scored, " + awayGoalsStats.optString("averageConceded", "0") + " conceded\n" +
-                        "Recency-weighted form: " + awayWeightedScoredText +
-                        " scored, " + awayWeightedConcededText + " conceded per match\n" +
-                        "Estimated match xG: " + awayValue + "\n" +
-                        "Recent trend: scoring " + awayScoringTrend +
-                        "; conceding " + awayConcedingTrend + "\n\n" +
-                        "Venue-specific matches: " + homeName + " at home: " +
-                        displayedHomeVenueSample + "; " + awayName + " away: " +
-                        displayedAwayVenueSample + ". Venue rates are blended with overall recent rates, " +
-                        "so small home/away samples have less influence.\n\n" +
-                        relativeStrengthSummary + "\n\n" +
-                        "Model method: recent form and venue rates are blended with the opponent's " +
-                        "defensive record and a modest home advantage. " +
+                    renderRecentFormData(
+                        homeName, homeForm, homeSample,
+                        homeGoalsStats.optString("averageScored", "0"),
+                        homeGoalsStats.optString("averageConceded", "0"),
+                        homeWeightedScoredText, homeWeightedConcededText,
+                        homeValue, homeScoringTrend, homeConcedingTrend,
+                        awayName, awayForm, awaySample,
+                        awayGoalsStats.optString("averageScored", "0"),
+                        awayGoalsStats.optString("averageConceded", "0"),
+                        awayWeightedScoredText, awayWeightedConcededText,
+                        awayValue, awayScoringTrend, awayConcedingTrend,
+                        displayedHomeVenueSample, displayedAwayVenueSample,
+                        relativeStrengthSummary,
                         (usedCompetitionStrength
-                            ? "Current competition scoring baselines and season home/away strength are also included. "
-                            : "Competition standings were unavailable, so season-strength adjustment was skipped. ") +
+                            ? "Competition baselines and season home/away strength are included. "
+                            : "Competition standings unavailable; season-strength adjustment skipped. ") +
                         (appliedOpponentAdjustment
-                            ? "Recent form was adjusted using available opponent strengths. "
-                            : "No usable same-competition opponent ratings were available for recent-form adjustment. ") +
-                        dataQualitySummary + "\n" + opponentCoverageSummary + "\n" +
-                        "These remain estimates; check team news and edit expected goals if needed."
+                            ? "Recent form includes available opponent-strength adjustments. "
+                            : "Opponent-strength ratings were unavailable for recent-form adjustment. ") +
+                        dataQualitySummary + " " + opponentCoverageSummary +
+                        " Estimates only—check team news and adjust xG if needed."
                     );
                     Toast.makeText(
                         MainActivity.this,
@@ -2628,10 +2615,8 @@ public class MainActivity extends Activity {
                 });
             } catch (Exception e) {
                 runOnUiThread(() -> {
-                    statsSummary.setText(
-                        "RECENT TEAM FORM\nCould not load team statistics. Check your connection and try again, " +
-                        "or enter expected goals manually."
-                    );
+                    renderRecentFormMessage("COULD NOT LOAD TEAM FORM",
+                        "Check your connection and try again, or enter expected goals manually.");
                     Toast.makeText(
                         MainActivity.this,
                         "Could not load team stats. Manual entry is still available.",
