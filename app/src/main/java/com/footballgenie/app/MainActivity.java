@@ -1144,7 +1144,10 @@ public class MainActivity extends Activity {
     private void renderDetailedAnalysis(String analysisText) {
         if (detailedAnalysisContainer == null) return;
         detailedAnalysisContainer.removeAllViews();
-        String source = analysisText == null ? "" : analysisText.trim();
+        String source = analysisText == null ? "" : analysisText
+                .replace("\\n", "\n")
+                .replace("/n", "\n")
+                .trim();
         if (source.isEmpty()) {
             TextView empty = label("Your full match breakdown will appear here after the simulation. Each topic will be shown in its own easy-to-read card.");
             empty.setTextColor(MUTED);
@@ -1165,7 +1168,7 @@ public class MainActivity extends Activity {
             for (int i = 1; i < lines.length; i++) {
                 String line = lines[i].trim();
                 if (!line.isEmpty()) {
-                    if (bodyText.length() > 0) bodyText.append("\\n");
+                    if (bodyText.length() > 0) bodyText.append("\n");
                     bodyText.append(line);
                 }
             }
