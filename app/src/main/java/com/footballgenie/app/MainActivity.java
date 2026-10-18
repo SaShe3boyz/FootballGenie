@@ -165,21 +165,23 @@ public class MainActivity extends Activity {
         LinearLayout form = card();
         form.setOrientation(LinearLayout.VERTICAL);
 
-        homeInput = addInput(
-            form, "Home team name", false
-        );
+        LinearLayout teamsRow = new LinearLayout(this);
+        teamsRow.setOrientation(LinearLayout.HORIZONTAL);
+        form.addView(teamsRow, new LinearLayout.LayoutParams(-1, -2));
 
-        awayInput = addInput(
-            form, "Away team name", false
-        );
+        homeInput = addInput(teamsRow, "HOME TEAM", false);
+        awayInput = addInput(teamsRow, "AWAY TEAM", false);
+        makeCompactInput(homeInput);
+        makeCompactInput(awayInput);
 
-        homeGoals = addInput(
-            form, "Home expected goals (e.g. 1.6)", true
-        );
+        LinearLayout xgRow = new LinearLayout(this);
+        xgRow.setOrientation(LinearLayout.HORIZONTAL);
+        form.addView(xgRow, new LinearLayout.LayoutParams(-1, -2));
 
-        awayGoals = addInput(
-            form, "Away expected goals (e.g. 1.1)", true
-        );
+        homeGoals = addInput(xgRow, "HOME xG (e.g. 1.6)", true);
+        awayGoals = addInput(xgRow, "AWAY xG (e.g. 1.1)", true);
+        makeCompactInput(homeGoals);
+        makeCompactInput(awayGoals);
 
         TextView note = label(
             "Select a fixture to estimate expected goals from recent completed matches. " +
@@ -401,6 +403,13 @@ public class MainActivity extends Activity {
     }
 
     
+
+    private void makeCompactInput(EditText input) {
+        LinearLayout.LayoutParams params =
+            new LinearLayout.LayoutParams(0, dp(52), 1f);
+        params.setMargins(dp(4), 0, dp(4), dp(12));
+        input.setLayoutParams(params);
+    }
 
     private EditText addInput(
             LinearLayout parent,
