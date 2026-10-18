@@ -575,7 +575,7 @@ public class MainActivity extends Activity {
                 analysis
             ));
 
-            savePredictionIfEligible            savePredictionIfEligible(home, away, homeXg, awayXg,
+            savePredictionIfEligible(home, away, homeXg, awayXg,
                 homeP, drawP, awayP, overP, bttsP, bestHome, bestAway);
 
         } catch (Exception e) {
