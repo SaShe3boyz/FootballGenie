@@ -375,7 +375,8 @@ public class MainActivity extends Activity {
             int over25 = 0;
             int btts = 0;
 
-            int[][] scores = new int[9][9];
+            // Keep a wider score grid so high-scoring simulations are not discarded from scoreline rankings.
+            int[][] scores = new int[13][13];
 
             Random random = new Random();
 
@@ -399,7 +400,7 @@ public class MainActivity extends Activity {
                     btts++;
                 }
 
-                if (hg < 9 && ag < 9) {
+                if (hg < scores.length && ag < scores[0].length) {
                     scores[hg][ag]++;
                 }
             }
@@ -408,8 +409,8 @@ public class MainActivity extends Activity {
             int bestAway = 0;
             int bestCount = 0;
 
-            for (int h = 0; h < 9; h++) {
-                for (int a = 0; a < 9; a++) {
+            for (int h = 0; h < scores.length; h++) {
+                for (int a = 0; a < scores[h].length; a++) {
                     if (scores[h][a] > bestCount) {
                         bestCount = scores[h][a];
                         bestHome = h;
@@ -419,17 +420,17 @@ public class MainActivity extends Activity {
             }
 
             // Rank the three most frequent exact scores from the simulation.
-            int[][] rankedScores = new int[9][9];
-            for (int h = 0; h < 9; h++) {
-                System.arraycopy(scores[h], 0, rankedScores[h], 0, 9);
+            int[][] rankedScores = new int[scores.length][scores[0].length];
+            for (int h = 0; h < scores.length; h++) {
+                System.arraycopy(scores[h], 0, rankedScores[h], 0, scores[h].length);
             }
             StringBuilder topScores = new StringBuilder();
             for (int rank = 0; rank < 3; rank++) {
                 int rankHome = -1;
                 int rankAway = -1;
                 int rankCount = 0;
-                for (int h = 0; h < 9; h++) {
-                    for (int a = 0; a < 9; a++) {
+                for (int h = 0; h < rankedScores.length; h++) {
+                    for (int a = 0; a < rankedScores[h].length; a++) {
                         if (rankedScores[h][a] > rankCount) {
                             rankCount = rankedScores[h][a];
                             rankHome = h;
