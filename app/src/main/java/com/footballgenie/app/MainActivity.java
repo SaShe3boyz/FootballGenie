@@ -552,6 +552,16 @@ public class MainActivity extends Activity {
             }
 
             double totalExpectedGoals = homeXg + awayXg;
+            // Approximate first-half scoring using 45% of each team's match xG.
+            // First-to-score uses proportional scoring rates and is not a live event forecast.
+            double firstHalfGoalProbability = 1.0
+                - Math.exp(-0.45 * totalExpectedGoals);
+            double anyGoalProbability = 1.0 - Math.exp(-totalExpectedGoals);
+            double homeFirstScoreProbability = totalExpectedGoals > 0
+                ? (homeXg / totalExpectedGoals) * anyGoalProbability : 0.0;
+            double awayFirstScoreProbability = totalExpectedGoals > 0
+                ? (awayXg / totalExpectedGoals) * anyGoalProbability : 0.0;
+            double noGoalProbability = Math.exp(-totalExpectedGoals);
             String tempoProfile;
             if (totalExpectedGoals < 1.8) {
                 tempoProfile = "LOW-SCORING PROFILE";
@@ -622,7 +632,16 @@ public class MainActivity extends Activity {
                 "\n" + bttsTrend +
                 "\n\n" +
 
-                "6. Most frequent score\n" +
+                "6. First-half and first-goal outlook\n" +
+                "At least one first-half goal: " +
+                String.format(Locale.US, "%.1f", firstHalfGoalProbability * 100.0) + "%\n" +
+                home + " to score first: " +
+                String.format(Locale.US, "%.1f", homeFirstScoreProbability * 100.0) + "%\n" +
+                away + " to score first: " +
+                String.format(Locale.US, "%.1f", awayFirstScoreProbability * 100.0) + "%\n" +
+                "No goals in the match: " +
+                String.format(Locale.US, "%.1f", noGoalProbability * 100.0) + "%\n\n" +
+                "7. Most frequent score\n" +
                 home + " " + bestHome + " - " +
                 bestAway + " " + away +
                 " was the most frequent exact score in " +
