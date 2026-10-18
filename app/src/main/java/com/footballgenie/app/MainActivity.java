@@ -1171,29 +1171,109 @@ public class MainActivity extends Activity {
             }
             LinearLayout detailCard = new LinearLayout(this);
             detailCard.setOrientation(LinearLayout.VERTICAL);
-            detailCard.setPadding(dp(14), dp(12), dp(14), dp(13));
-            detailCard.setBackground(rounded(Color.rgb(20, 31, 51), 13));
+            detailCard.setPadding(dp(14), dp(13), dp(14), dp(14));
+            detailCard.setBackground(rounded(Color.rgb(20, 31, 51), 14));
+            detailCard.setElevation(dp(1));
             LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
-            cardParams.bottomMargin = dp(9);
+            cardParams.bottomMargin = dp(10);
             detailedAnalysisContainer.addView(detailCard, cardParams);
 
+            LinearLayout headingRow = new LinearLayout(this);
+            headingRow.setOrientation(LinearLayout.HORIZONTAL);
+            headingRow.setGravity(Gravity.CENTER_VERTICAL);
+            TextView iconView = label(getAnalysisIcon(heading));
+            iconView.setTextSize(18);
+            iconView.setGravity(Gravity.CENTER);
+            iconView.setTextColor(GREEN);
+            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(36), dp(36));
+            iconParams.rightMargin = dp(10);
+            iconView.setBackground(rounded(Color.rgb(17, 49, 52), 10));
+            headingRow.addView(iconView, iconParams);
+            LinearLayout titleColumn = new LinearLayout(this);
+            titleColumn.setOrientation(LinearLayout.VERTICAL);
+            TextView eyebrow = label("MATCH INSIGHT");
+            eyebrow.setTextColor(MUTED);
+            eyebrow.setTextSize(9);
+            eyebrow.setTypeface(null, Typeface.BOLD);
+            titleColumn.addView(eyebrow);
             TextView headingView = label(heading.isEmpty() ? "MATCH INSIGHT" : heading.toUpperCase(Locale.US));
             headingView.setTextColor(GREEN);
-            headingView.setTextSize(11);
+            headingView.setTextSize(12);
             headingView.setTypeface(null, Typeface.BOLD);
-            headingView.setLetterSpacing(0.04f);
-            detailCard.addView(headingView);
+            headingView.setLetterSpacing(0.025f);
+            titleColumn.addView(headingView);
+            headingRow.addView(titleColumn, new LinearLayout.LayoutParams(0, -2, 1f));
+            detailCard.addView(headingRow);
 
             if (bodyText.length() > 0) {
                 TextView body = label(bodyText.toString());
                 body.setTextColor(WHITE);
                 body.setTextSize(13);
                 body.setLineSpacing(dp(4), 1.04f);
-                body.setPadding(0, dp(7), 0, 0);
+                body.setPadding(0, dp(10), 0, dp(2));
                 body.setGravity(Gravity.START);
                 detailCard.addView(body);
+
+                java.util.regex.Matcher matcher = java.util.regex.Pattern
+                    .compile("(\\d+(?:\\.\\d+)?)%").matcher(bodyText.toString());
+                int visualCount = 0;
+                while (matcher.find() && visualCount < 3) {
+                    try {
+                        float pct = Math.max(0f, Math.min(100f, Float.parseFloat(matcher.group(1))));
+                        addAnalysisMeter(detailCard, "MODEL PROBABILITY", pct,
+                            visualCount == 0 ? GREEN : (visualCount == 1
+                                ? Color.rgb(90, 165, 255) : Color.rgb(244, 190, 80)));
+                        visualCount++;
+                    } catch (Exception ignored) {}
+                }
             }
         }
+    }
+
+    private String getAnalysisIcon(String heading) {
+        String h = heading == null ? "" : heading.toLowerCase(Locale.US);
+        if (h.contains("expected") || h.contains("goal")) return "⚽";
+        if (h.contains("outcome") || h.contains("confidence")) return "◉";
+        if (h.contains("upset")) return "⚡";
+        if (h.contains("tempo") || h.contains("balance")) return "↔";
+        if (h.contains("first") || h.contains("half")) return "◷";
+        if (h.contains("score")) return "▦";
+        if (h.contains("flow") || h.contains("scenario") || h.contains("comeback")) return "↗";
+        if (h.contains("limitation") || h.contains("important")) return "ⓘ";
+        return "◆";
+    }
+
+    private void addAnalysisMeter(LinearLayout parent, String labelText, float percentage, int barColor) {
+        LinearLayout meter = new LinearLayout(this);
+        meter.setOrientation(LinearLayout.VERTICAL);
+        meter.setPadding(dp(10), dp(7), dp(10), dp(8));
+        meter.setBackground(rounded(Color.rgb(15, 26, 43), 10));
+        LinearLayout.LayoutParams mp = new LinearLayout.LayoutParams(-1, -2);
+        mp.topMargin = dp(7);
+        parent.addView(meter, mp);
+        LinearLayout top = new LinearLayout(this);
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        TextView name = label(labelText);
+        name.setTextColor(MUTED);
+        name.setTextSize(9);
+        name.setTypeface(null, Typeface.BOLD);
+        top.addView(name, new LinearLayout.LayoutParams(0, -2, 1f));
+        TextView pct = label(String.format(Locale.US, "%.1f%%", percentage));
+        pct.setTextColor(barColor);
+        pct.setTextSize(10);
+        pct.setTypeface(null, Typeface.BOLD);
+        top.addView(pct);
+        meter.addView(top);
+        android.widget.FrameLayout track = new android.widget.FrameLayout(this);
+        track.setBackground(rounded(Color.rgb(42, 55, 73), 5));
+        LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(-1, dp(6));
+        tp.topMargin = dp(5);
+        meter.addView(track, tp);
+        View fill = new View(this);
+        fill.setBackground(rounded(barColor, 5));
+        track.addView(fill, new android.widget.FrameLayout.LayoutParams(0, -1, Gravity.START));
+        track.post(() -> fill.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+            (int) (track.getWidth() * percentage / 100f), -1, Gravity.START)));
     }
 
     private TextView addMetricCard(LinearLayout row, String heading, String initial, int valueColor) {
