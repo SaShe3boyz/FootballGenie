@@ -32,6 +32,8 @@ public class MainActivity extends Activity {
     private TextView result, status, statsSummary;
     private TextView homeWinValue, drawValue, awayWinValue;
     private TextView overValue, underValue, bttsValue;
+    // Home-screen fixture card must reflect the same selected fixture as Predict.
+    private TextView homeDisplayName, awayDisplayName, homeDisplayLeague;
     private LinearLayout mainLayout;
     private FrameLayout screenHost;
     private final View[] appScreens = new View[8];
@@ -180,11 +182,11 @@ public class MainActivity extends Activity {
 
         LinearLayout fixtureCard = card();
         fixtureCard.setOrientation(LinearLayout.VERTICAL);
-        TextView league = label("🏆  YOUR NEXT PREDICTION");
-        league.setTextColor(GREEN);
-        league.setTextSize(11);
-        league.setTypeface(null, Typeface.BOLD);
-        fixtureCard.addView(league);
+        homeDisplayLeague = label("🏆  YOUR NEXT PREDICTION");
+        homeDisplayLeague.setTextColor(GREEN);
+        homeDisplayLeague.setTextSize(11);
+        homeDisplayLeague.setTypeface(null, Typeface.BOLD);
+        fixtureCard.addView(homeDisplayLeague);
 
         LinearLayout teams = new LinearLayout(this);
         teams.setOrientation(LinearLayout.HORIZONTAL);
@@ -198,12 +200,14 @@ public class MainActivity extends Activity {
         homeBadge.setTextSize(28);
         homeBadge.setGravity(Gravity.CENTER);
         homeTeam.addView(homeBadge);
-        TextView homeName = label("Home Team");
-        homeName.setTextColor(WHITE);
-        homeName.setTextSize(12);
-        homeName.setTypeface(null, Typeface.BOLD);
-        homeName.setGravity(Gravity.CENTER);
-        homeTeam.addView(homeName);
+        homeDisplayName = label("Home Team");
+        homeDisplayName.setTextColor(WHITE);
+        homeDisplayName.setTextSize(12);
+        homeDisplayName.setTypeface(null, Typeface.BOLD);
+        homeDisplayName.setGravity(Gravity.CENTER);
+        homeDisplayName.setMaxLines(2);
+        homeDisplayName.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        homeTeam.addView(homeDisplayName);
         teams.addView(homeTeam, new LinearLayout.LayoutParams(0, -2, 1f));
 
         TextView vs = label("VS");
@@ -220,12 +224,14 @@ public class MainActivity extends Activity {
         awayBadge.setTextSize(28);
         awayBadge.setGravity(Gravity.CENTER);
         awayTeam.addView(awayBadge);
-        TextView awayName = label("Away Team");
-        awayName.setTextColor(WHITE);
-        awayName.setTextSize(12);
-        awayName.setTypeface(null, Typeface.BOLD);
-        awayName.setGravity(Gravity.CENTER);
-        awayTeam.addView(awayName);
+        awayDisplayName = label("Away Team");
+        awayDisplayName.setTextColor(WHITE);
+        awayDisplayName.setTextSize(12);
+        awayDisplayName.setTypeface(null, Typeface.BOLD);
+        awayDisplayName.setGravity(Gravity.CENTER);
+        awayDisplayName.setMaxLines(2);
+        awayDisplayName.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        awayTeam.addView(awayDisplayName);
         teams.addView(awayTeam, new LinearLayout.LayoutParams(0, -2, 1f));
         fixtureCard.addView(teams);
 
@@ -1931,6 +1937,23 @@ public class MainActivity extends Activity {
                                 selectedFixture = selected;
                                 homeInput.setText(homeName);
                                 awayInput.setText(awayName);
+
+                                // Keep the Home Match Centre card synchronized with the
+                                // fixture selector, regardless of which screen opened it.
+                                if (homeDisplayName != null) {
+                                    homeDisplayName.setText(homeName.isEmpty() ? "Home Team" : homeName);
+                                }
+                                if (awayDisplayName != null) {
+                                    awayDisplayName.setText(awayName.isEmpty() ? "Away Team" : awayName);
+                                }
+                                if (homeDisplayLeague != null) {
+                                    JSONObject competition = selected.optJSONObject("competition");
+                                    String competitionName = competition == null
+                                        ? "" : competition.optString("name", "");
+                                    homeDisplayLeague.setText(competitionName.isEmpty()
+                                        ? "🏆  YOUR NEXT PREDICTION"
+                                        : "🏆  " + competitionName);
+                                }
 
                                 statsSummary.setText(
                                     "RECENT TEAM FORM\nLoading recent completed matches for both teams..."
