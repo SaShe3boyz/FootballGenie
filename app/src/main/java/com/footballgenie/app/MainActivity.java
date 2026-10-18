@@ -2627,6 +2627,225 @@ public class MainActivity extends Activity {
         }).start();
     }
 
+
+    private void renderRecentFormMessage(String title, String message) {
+        if (statsSummary == null) return;
+        statsSummary.removeAllViews();
+        TextView heading = label(title);
+        heading.setTextColor(GREEN);
+        heading.setTextSize(11);
+        heading.setTypeface(null, Typeface.BOLD);
+        heading.setPadding(0, 0, 0, dp(6));
+        statsSummary.addView(heading);
+        TextView body = label(message);
+        body.setTextColor(MUTED);
+        body.setTextSize(12);
+        body.setLineSpacing(dp(3), 1.0f);
+        statsSummary.addView(body);
+    }
+
+    private void renderRecentFormData(
+            String homeName, String homeForm, int homeSample,
+            String homeScored, String homeConceded, String homeWeightedScored,
+            String homeWeightedConceded, String homeXg, String homeScoringTrend,
+            String homeConcedingTrend,
+            String awayName, String awayForm, int awaySample,
+            String awayScored, String awayConceded, String awayWeightedScored,
+            String awayWeightedConceded, String awayXg, String awayScoringTrend,
+            String awayConcedingTrend, int homeVenueSample, int awayVenueSample,
+            String relativeStrength, String modelNotes) {
+        if (statsSummary == null) return;
+        statsSummary.removeAllViews();
+
+        TextView caption = label("LAST MATCHES  •  MOST RECENT FIRST");
+        caption.setTextColor(MUTED);
+        caption.setTextSize(10);
+        caption.setTypeface(null, Typeface.BOLD);
+        caption.setPadding(0, 0, 0, dp(10));
+        statsSummary.addView(caption);
+
+        addRecentTeamFormCard(statsSummary, homeName, homeForm, homeSample,
+            homeScored, homeConceded, homeWeightedScored, homeWeightedConceded,
+            homeXg, homeScoringTrend, homeConcedingTrend, true);
+        addRecentTeamFormCard(statsSummary, awayName, awayForm, awaySample,
+            awayScored, awayConceded, awayWeightedScored, awayWeightedConceded,
+            awayXg, awayScoringTrend, awayConcedingTrend, false);
+
+        TextView venue = label("VENUE SPLIT   Home team at home: " + homeVenueSample
+            + " matches   •   Away team away: " + awayVenueSample + " matches");
+        venue.setTextColor(MUTED);
+        venue.setTextSize(10);
+        venue.setPadding(dp(2), dp(8), dp(2), dp(2));
+        venue.setLineSpacing(dp(2), 1.0f);
+        statsSummary.addView(venue);
+
+        TextView details = label("＋  MODEL NOTES & DATA QUALITY");
+        details.setTextColor(GREEN);
+        details.setTextSize(11);
+        details.setTypeface(null, Typeface.BOLD);
+        details.setPadding(dp(2), dp(12), dp(2), dp(7));
+        details.setClickable(true);
+        statsSummary.addView(details);
+
+        LinearLayout detailPanel = new LinearLayout(this);
+        detailPanel.setOrientation(LinearLayout.VERTICAL);
+        detailPanel.setPadding(dp(10), dp(9), dp(10), dp(9));
+        detailPanel.setBackground(rounded(Color.rgb(17, 34, 51), 10));
+        TextView strength = label(relativeStrength);
+        strength.setTextColor(WHITE);
+        strength.setTextSize(11);
+        strength.setLineSpacing(dp(3), 1.0f);
+        detailPanel.addView(strength);
+        TextView notes = label(modelNotes);
+        notes.setTextColor(MUTED);
+        notes.setTextSize(10);
+        notes.setLineSpacing(dp(3), 1.0f);
+        LinearLayout.LayoutParams noteParams = new LinearLayout.LayoutParams(-1, -2);
+        noteParams.topMargin = dp(8);
+        detailPanel.addView(notes, noteParams);
+        detailPanel.setVisibility(View.GONE);
+        statsSummary.addView(detailPanel);
+        details.setOnClickListener(v -> {
+            boolean show = detailPanel.getVisibility() != View.VISIBLE;
+            detailPanel.setVisibility(show ? View.VISIBLE : View.GONE);
+            details.setText(show ? "−  HIDE MODEL NOTES & DATA QUALITY"
+                : "＋  MODEL NOTES & DATA QUALITY");
+        });
+    }
+
+    private void addRecentTeamFormCard(LinearLayout parent, String teamName, String form,
+            int sample, String overallScored, String overallConceded,
+            String weightedScored, String weightedConceded, String xg,
+            String scoringTrend, String concedingTrend, boolean homeTeam) {
+        LinearLayout teamCard = new LinearLayout(this);
+        teamCard.setOrientation(LinearLayout.VERTICAL);
+        teamCard.setPadding(dp(10), dp(10), dp(10), dp(10));
+        teamCard.setBackground(rounded(Color.rgb(16, 37, 57), 12));
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
+        cardParams.bottomMargin = dp(9);
+        parent.addView(teamCard, cardParams);
+
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        teamCard.addView(header, new LinearLayout.LayoutParams(-1, -2));
+
+        TextView team = label(teamName);
+        team.setTextColor(WHITE);
+        team.setTextSize(13);
+        team.setTypeface(null, Typeface.BOLD);
+        team.setMaxLines(2);
+        team.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        header.addView(team, new LinearLayout.LayoutParams(0, -2, 1f));
+
+        TextView venueTag = label(homeTeam ? "HOME" : "AWAY");
+        venueTag.setTextColor(homeTeam ? GREEN : Color.rgb(105, 190, 255));
+        venueTag.setTextSize(9);
+        venueTag.setTypeface(null, Typeface.BOLD);
+        venueTag.setGravity(Gravity.CENTER);
+        venueTag.setPadding(dp(8), dp(4), dp(8), dp(4));
+        venueTag.setBackground(rounded(Color.rgb(28, 54, 70), 8));
+        header.addView(venueTag);
+
+        TextView sampleLabel = label(sample + " matches analysed");
+        sampleLabel.setTextColor(MUTED);
+        sampleLabel.setTextSize(10);
+        sampleLabel.setPadding(0, dp(3), 0, dp(7));
+        teamCard.addView(sampleLabel);
+
+        LinearLayout formRow = new LinearLayout(this);
+        formRow.setOrientation(LinearLayout.HORIZONTAL);
+        formRow.setGravity(Gravity.CENTER_VERTICAL);
+        teamCard.addView(formRow, new LinearLayout.LayoutParams(-1, -2));
+        String upperForm = form == null ? "" : form.toUpperCase(Locale.US);
+        String cleanedForm = upperForm.replaceAll("[^WDL]", "");
+        if (cleanedForm.isEmpty() || upperForm.contains("NOT") || upperForm.contains("UNAVAILABLE")) {
+            TextView noForm = label("Recent form unavailable");
+            noForm.setTextColor(MUTED);
+            noForm.setTextSize(11);
+            formRow.addView(noForm);
+        } else {
+            for (int i = 0; i < cleanedForm.length(); i++) {
+                String outcome = cleanedForm.substring(i, i + 1);
+                int tone = "W".equals(outcome) ? GREEN
+                    : ("D".equals(outcome) ? Color.rgb(135, 163, 187)
+                    : Color.rgb(255, 91, 105));
+                TextView badge = label(outcome);
+                badge.setTextColor(Color.rgb(7, 23, 20));
+                badge.setTextSize(10);
+                badge.setTypeface(null, Typeface.BOLD);
+                badge.setGravity(Gravity.CENTER);
+                badge.setBackground(rounded(tone, 6));
+                LinearLayout.LayoutParams badgeParams = new LinearLayout.LayoutParams(dp(25), dp(25));
+                badgeParams.rightMargin = dp(5);
+                formRow.addView(badge, badgeParams);
+            }
+        }
+
+        LinearLayout metrics = new LinearLayout(this);
+        metrics.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams metricsParams = new LinearLayout.LayoutParams(-1, -2);
+        metricsParams.topMargin = dp(10);
+        teamCard.addView(metrics, metricsParams);
+        addRecentMetric(metrics, "SCORED / GAME", weightedScored, GREEN);
+        addRecentMetric(metrics, "CONCEDED / GAME", weightedConceded, Color.rgb(255, 117, 125));
+
+        LinearLayout xgRow = new LinearLayout(this);
+        xgRow.setOrientation(LinearLayout.HORIZONTAL);
+        xgRow.setGravity(Gravity.CENTER_VERTICAL);
+        xgRow.setPadding(dp(9), dp(8), dp(9), dp(8));
+        xgRow.setBackground(rounded(Color.rgb(7, 24, 38), 8));
+        LinearLayout.LayoutParams xgParams = new LinearLayout.LayoutParams(-1, -2);
+        xgParams.topMargin = dp(9);
+        teamCard.addView(xgRow, xgParams);
+        TextView xgLabel = label("ESTIMATED xG");
+        xgLabel.setTextColor(MUTED);
+        xgLabel.setTextSize(10);
+        xgLabel.setTypeface(null, Typeface.BOLD);
+        xgRow.addView(xgLabel, new LinearLayout.LayoutParams(0, -2, 1f));
+        TextView xgValue = label(xg);
+        xgValue.setTextColor(GREEN);
+        xgValue.setTextSize(18);
+        xgValue.setTypeface(null, Typeface.BOLD);
+        xgRow.addView(xgValue);
+
+        TextView trend = label("Scoring trend: " + scoringTrend + "   •   Conceding: " + concedingTrend);
+        trend.setTextColor(MUTED);
+        trend.setTextSize(10);
+        trend.setLineSpacing(dp(2), 1.0f);
+        trend.setPadding(dp(1), dp(8), dp(1), 0);
+        teamCard.addView(trend);
+
+        TextView baseline = label("Overall average: " + overallScored + " scored  •  " + overallConceded + " conceded per match");
+        baseline.setTextColor(Color.rgb(155, 177, 194));
+        baseline.setTextSize(9);
+        baseline.setPadding(dp(1), dp(5), dp(1), 0);
+        teamCard.addView(baseline);
+    }
+
+    private void addRecentMetric(LinearLayout row, String title, String value, int accent) {
+        LinearLayout metric = new LinearLayout(this);
+        metric.setOrientation(LinearLayout.VERTICAL);
+        metric.setPadding(dp(8), dp(8), dp(8), dp(8));
+        metric.setBackground(rounded(Color.rgb(9, 27, 43), 8));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -2, 1f);
+        params.rightMargin = dp(5);
+        row.addView(metric, params);
+        TextView metricTitle = label(title);
+        metricTitle.setTextColor(MUTED);
+        metricTitle.setTextSize(8);
+        metricTitle.setTypeface(null, Typeface.BOLD);
+        metricTitle.setMaxLines(2);
+        metric.addView(metricTitle);
+        TextView metricValue = label(value);
+        metricValue.setTextColor(accent);
+        metricValue.setTextSize(17);
+        metricValue.setTypeface(null, Typeface.BOLD);
+        LinearLayout.LayoutParams valueParams = new LinearLayout.LayoutParams(-1, -2);
+        valueParams.topMargin = dp(3);
+        metric.addView(metricValue, valueParams);
+    }
+
     private JSONObject fetchCompetitionStrength(String competitionId) throws Exception {
         HttpURLConnection connection = null;
         try {
