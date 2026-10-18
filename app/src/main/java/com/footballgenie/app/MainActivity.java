@@ -1027,6 +1027,7 @@ public class MainActivity extends Activity {
         int finished = 0, outcomeCorrect = 0, goalsCorrect = 0;
         int bttsCorrect = 0, exactCorrect = 0;
         int actualHomeWins = 0, actualDraws = 0, actualAwayWins = 0;
+        int invalidProbabilityRecords = 0;
         double outcomeBrierTotal = 0.0;
         double goalsBrierTotal = 0.0;
         double bttsBrierTotal = 0.0;
@@ -1066,6 +1067,15 @@ public class MainActivity extends Activity {
                 .append(" - ")
                 .append(record.optInt("predictedAway", 0))
                 .append("\n");
+
+            double storedHomeP = record.optDouble("homeP", -1);
+            double storedDrawP = record.optDouble("drawP", -1);
+            double storedAwayP = record.optDouble("awayP", -1);
+            if (storedHomeP < 0 || storedDrawP < 0 || storedAwayP < 0
+                    || storedHomeP > 100 || storedDrawP > 100 || storedAwayP > 100
+                    || Math.abs(storedHomeP + storedDrawP + storedAwayP - 100.0) > 2.0) {
+                invalidProbabilityRecords++;
+            }
 
             if ("FINISHED".equals(state)) {
                 int ah = record.optInt("actualHome", -1);
@@ -1147,6 +1157,7 @@ public class MainActivity extends Activity {
                 "60-79%: " + calibrationText(confidenceBinCount[3], confidenceBinCorrect[3]) + "\\n" +
                 "80-100%: " + calibrationText(confidenceBinCount[4], confidenceBinCorrect[4]) + "\\n" +
                 "Small bins are noisy; compare predicted confidence with observed hit rate.\\n\\n" +
+                "Probability data check: " + invalidProbabilityRecords + " records have missing, out-of-range or non-normalized 1X2 probabilities.\n\n" +
                 "PROBABILITY QUALITY (Brier score; lower is better)\n" +
                 "Home/Draw/Away: " + String.format(Locale.US, "%.3f", outcomeBrierTotal / finished) + "\n" +
                 "Over 2.5: " + String.format(Locale.US, "%.3f", goalsBrierTotal / finished) + "\n" +
