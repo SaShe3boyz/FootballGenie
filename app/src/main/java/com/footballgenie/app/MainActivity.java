@@ -1281,6 +1281,7 @@ public class MainActivity extends Activity {
                 // Partly normalize recent goal rates for the strength of opponents faced.
                 // This is a conservative adjustment using current season venue rates;
                 // it falls back to unadjusted form when opponent IDs/stats are missing.
+                boolean usedOpponentAdjustment = false;
                 if (usedCompetitionStrength) {
                     double adjustedHomeScored = opponentAdjustedRecentAverage(
                         homeRecentMatches, true, competitionStrength, competitionId
@@ -1294,6 +1295,10 @@ public class MainActivity extends Activity {
                     double adjustedAwayConceded = opponentAdjustedRecentAverage(
                         awayRecentMatches, false, competitionStrength, competitionId
                     );
+                    usedOpponentAdjustment = adjustedHomeScored >= 0
+                        || adjustedHomeConceded >= 0
+                        || adjustedAwayScored >= 0
+                        || adjustedAwayConceded >= 0;
                     if (adjustedHomeScored >= 0) homeScored = 0.5 * homeScored + 0.5 * adjustedHomeScored;
                     if (adjustedHomeConceded >= 0) homeConceded = 0.5 * homeConceded + 0.5 * adjustedHomeConceded;
                     if (adjustedAwayScored >= 0) awayScored = 0.5 * awayScored + 0.5 * adjustedAwayScored;
@@ -1367,6 +1372,7 @@ public class MainActivity extends Activity {
                 final int awaySample = awayStats.optInt("sampleSize", 0);
                 final int displayedHomeVenueSample = homeVenueSample;
                 final int displayedAwayVenueSample = awayVenueSample;
+                final boolean appliedOpponentAdjustment = usedOpponentAdjustment;
                 final String homeWeightedScoredText = String.format(Locale.US, "%.2f", homeScored);
                 final String homeWeightedConcededText = String.format(Locale.US, "%.2f", homeConceded);
                 final String awayWeightedScoredText = String.format(Locale.US, "%.2f", awayScored);
@@ -1398,6 +1404,9 @@ public class MainActivity extends Activity {
                         (usedCompetitionStrength
                             ? "Current competition scoring baselines and season home/away strength are also included. "
                             : "Competition standings were unavailable, so season-strength adjustment was skipped. ") +
+                        (appliedOpponentAdjustment
+                            ? "Recent form was also adjusted using available opponent strengths from this competition. "
+                            : "No usable same-competition opponent ratings were available for recent-form adjustment. ") +
                         "These remain estimates; check team news and edit expected goals if needed."
                     );
                     Toast.makeText(
