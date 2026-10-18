@@ -772,6 +772,11 @@ public class MainActivity extends Activity {
                 "SCENARIO COMPARISON\\n" +
                 "Compare level, leading, trailing, red-card and aggressive-approach scenarios above. " +
                 "A changed probability reflects changed assumptions and score state, not certainty.\\n\\n" +
+                "MATCH-FLOW SUMMARY\\n" +
+                "This panel explores conditional outcomes at the 60-minute mark, second-half scoring " +
+                "and illustrative red-card or urgency scenarios. It does not track a live match or " +
+                "predict exact tactical reactions. Use confirmed live score, minute and event data " +
+                "before interpreting a real in-play situation.\\n\\n" +
                 "IMPORTANT LIMITATIONS\n" +
                 "Expected goals can be estimated from recent completed matches " +
                 "when you select a fixture, or entered manually. This model does " +
