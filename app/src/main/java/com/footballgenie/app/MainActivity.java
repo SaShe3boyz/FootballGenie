@@ -673,6 +673,11 @@ public class MainActivity extends Activity {
             double homeSecondHalfGoalChance = 1.0 - Math.exp(-homeXg * 0.55);
             double awaySecondHalfGoalChance = 1.0 - Math.exp(-awayXg * 0.55);
 
+            String homeRedCardScenario = scenarioOutcomeSummary(home, away, homeXg, awayXg,
+                60, 0, 0, 0.65, 1.20);
+            String awayRedCardScenario = scenarioOutcomeSummary(home, away, homeXg, awayXg,
+                60, 0, 0, 1.20, 0.65);
+
             String analysis =
                 "\n\n━━━━━━━━━━━━━━━━━━\n" +
                 "WHY THIS PREDICTION?\n\n" +
@@ -752,6 +757,10 @@ public class MainActivity extends Activity {
                 "Second-half scoring outlook (time-scaled xG): " + home + " to score " +
                 String.format(Locale.US, "%.1f", homeSecondHalfGoalChance * 100.0) + "%; " +
                 away + " to score " + String.format(Locale.US, "%.1f", awaySecondHalfGoalChance * 100.0) + "%\\n\\n" +
+                "Hypothetical red card at 60 minutes, score 0-0:\\n" +
+                "Red card for " + home + ": " + homeRedCardScenario + "\\n" +
+                "Red card for " + away + ": " + awayRedCardScenario + "\\n" +
+                "Illustrative effect only; red-card impact is not calibrated from event data.\\n\\n" +
                 "IMPORTANT LIMITATIONS\n" +
                 "Expected goals can be estimated from recent completed matches " +
                 "when you select a fixture, or entered manually. This model does " +
