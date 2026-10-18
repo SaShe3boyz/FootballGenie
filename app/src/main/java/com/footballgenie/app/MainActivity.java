@@ -330,8 +330,8 @@ public class MainActivity extends Activity {
         result = label("Choose a fixture or enter both teams and expected goals, then tap SIMULATE 10,000 MATCHES.");
         result.setTextColor(WHITE);
         result.setTextSize(13);
-        result.setLineSpacing(dp(3), 1.0f);
-        result.setPadding(0, dp(10), 0, dp(8));
+        result.setLineSpacing(dp(4), 1.05f);
+        result.setPadding(0, dp(10), 0, dp(10));
         outputCard.addView(result);
         mainLayout.addView(outputCard);
 
@@ -347,8 +347,9 @@ public class MainActivity extends Activity {
         LinearLayout metric = new LinearLayout(this);
         metric.setOrientation(LinearLayout.VERTICAL);
         metric.setGravity(Gravity.CENTER);
-        metric.setPadding(dp(4), dp(12), dp(4), dp(12));
+        metric.setPadding(dp(3), dp(12), dp(3), dp(12));
         metric.setBackground(rounded(Color.rgb(26, 43, 61), 13));
+        metric.setElevation(dp(2));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(76), 1f);
         params.setMargins(dp(3), 0, dp(3), 0);
         row.addView(metric, params);
