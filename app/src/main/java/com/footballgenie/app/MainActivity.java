@@ -39,6 +39,8 @@ public class MainActivity extends Activity {
     private final View[] appScreens = new View[8];
     private TextView simulationSummary;
     private JSONObject selectedFixture;
+    private LinearLayout fixtureListLayout;
+    private TextView fixtureListStatus;
 
     private final int BG = Color.rgb(9, 16, 31);
     private final int CARD = Color.rgb(20, 31, 51);
@@ -365,34 +367,204 @@ public class MainActivity extends Activity {
 
     private void buildLiveFixturesScreen() {
         addHeading("05", "LIVE FIXTURES");
-        TextView note = label("Load fixtures from the connected football data service. Select a match to bring it into Match Centre for team statistics and expected-goal estimates.");
+        TextView note = label("Browse matches by competition and kickoff. Tap any fixture card to select it for your prediction.");
         note.setTextColor(MUTED);
         note.setTextSize(13);
         note.setLineSpacing(dp(3), 1.0f);
-        note.setPadding(0, 0, 0, dp(14));
+        note.setPadding(0, 0, 0, dp(12));
         mainLayout.addView(note);
 
-        LinearLayout fixturesCard = card();
-        TextView title = label("FIXTURE BROWSER");
+        LinearLayout toolbar = card();
+        toolbar.setPadding(dp(12), dp(12), dp(12), dp(12));
+        TextView title = label("MATCH SCHEDULE");
         title.setTextColor(GREEN);
         title.setTextSize(14);
         title.setTypeface(null, Typeface.BOLD);
-        fixturesCard.addView(title);
-        TextView detail = label("Fixtures are loaded from the Football Genie API. Availability depends on the data provider and competition coverage.");
-        detail.setTextColor(MUTED);
-        detail.setTextSize(12);
-        detail.setPadding(0, dp(6), 0, dp(12));
-        fixturesCard.addView(detail);
+        toolbar.addView(title);
+        fixtureListStatus = label("Load the latest fixtures to see the schedule here.");
+        fixtureListStatus.setTextColor(MUTED);
+        fixtureListStatus.setTextSize(12);
+        fixtureListStatus.setPadding(0, dp(5), 0, dp(10));
+        toolbar.addView(fixtureListStatus);
         Button load = new Button(this);
-        load.setText("🌐  LOAD LIVE FIXTURES");
+        load.setText("↻  REFRESH FIXTURES");
         load.setTextColor(Color.rgb(8, 25, 22));
         load.setTextSize(13);
         load.setTypeface(null, Typeface.BOLD);
         load.setAllCaps(false);
         load.setBackground(rounded(GREEN, 13));
-        fixturesCard.addView(load, new LinearLayout.LayoutParams(-1, dp(50)));
+        toolbar.addView(load, new LinearLayout.LayoutParams(-1, dp(48)));
         load.setOnClickListener(v -> loadFixtures());
-        mainLayout.addView(fixturesCard);
+        mainLayout.addView(toolbar);
+
+        fixtureListLayout = new LinearLayout(this);
+        fixtureListLayout.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams listParams = new LinearLayout.LayoutParams(-1, -2);
+        listParams.topMargin = dp(12);
+        mainLayout.addView(fixtureListLayout, listParams);
+
+        addFixtureEmptyState("Your fixture schedule will appear here after refresh.");
+    }
+
+    private void addFixtureEmptyState(String message) {
+        if (fixtureListLayout == null) return;
+        fixtureListLayout.removeAllViews();
+        LinearLayout empty = card();
+        TextView text = label("⚽  " + message);
+        text.setTextColor(MUTED);
+        text.setTextSize(13);
+        text.setGravity(Gravity.CENTER);
+        text.setPadding(dp(8), dp(18), dp(8), dp(18));
+        empty.addView(text);
+        fixtureListLayout.addView(empty);
+    }
+
+    private String fixtureStatusLabel(String status) {
+        switch (status) {
+            case "IN_PLAY": return "● LIVE";
+            case "PAUSED": return "● HALF-TIME";
+            case "EXTRA_TIME": return "● EXTRA TIME";
+            case "PENALTY_SHOOTOUT": return "● PENALTIES";
+            case "FINISHED": return "FULL-TIME";
+            case "POSTPONED": return "POSTPONED";
+            case "SUSPENDED": return "SUSPENDED";
+            case "CANCELLED": return "CANCELLED";
+            case "AWARDED": return "RESULT AWARDED";
+            default: return "UPCOMING";
+        }
+    }
+
+    private void renderFixtureCards(ArrayList<JSONObject> fixtures) {
+        if (fixtureListLayout == null) return;
+        fixtureListLayout.removeAllViews();
+        if (fixtures.isEmpty()) {
+            addFixtureEmptyState("No fixtures are available for the current date range.");
+            return;
+        }
+
+        int shown = 0;
+        for (JSONObject match : fixtures) {
+            JSONObject home = match.optJSONObject("homeTeam");
+            JSONObject away = match.optJSONObject("awayTeam");
+            if (home == null || away == null) continue;
+
+            String homeName = home.optString("name", "Home team");
+            String awayName = away.optString("name", "Away team");
+            String status = match.optString("status", "SCHEDULED");
+            String kickoff = match.optString("utcDate", "");
+            JSONObject competition = match.optJSONObject("competition");
+            String competitionName = competition == null ? "" : competition.optString("name", "");
+            JSONObject score = match.optJSONObject("score");
+            JSONObject fullTime = score == null ? null : score.optJSONObject("fullTime");
+            String scoreText = "";
+            if (fullTime != null && !fullTime.isNull("home") && !fullTime.isNull("away")) {
+                scoreText = fullTime.optInt("home") + "  -  " + fullTime.optInt("away");
+            } else if ("IN_PLAY".equals(status) || "PAUSED".equals(status)
+                    || "EXTRA_TIME".equals(status) || "PENALTY_SHOOTOUT".equals(status)) {
+                JSONObject current = score == null ? null : score.optJSONObject("regularTime");
+                if (current != null && !current.isNull("home") && !current.isNull("away")) {
+                    scoreText = current.optInt("home") + "  -  " + current.optInt("away");
+                } else {
+                    scoreText = "LIVE";
+                }
+            }
+
+            LinearLayout fixtureCard = card();
+            fixtureCard.setPadding(dp(12), dp(12), dp(12), dp(12));
+            LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
+            cardParams.bottomMargin = dp(10);
+            fixtureListLayout.addView(fixtureCard, cardParams);
+
+            LinearLayout top = new LinearLayout(this);
+            top.setOrientation(LinearLayout.HORIZONTAL);
+            top.setGravity(Gravity.CENTER_VERTICAL);
+            TextView league = label(competitionName.isEmpty() ? "FOOTBALL FIXTURE" : competitionName.toUpperCase());
+            league.setTextColor(GREEN);
+            league.setTextSize(10);
+            league.setTypeface(null, Typeface.BOLD);
+            top.addView(league, new LinearLayout.LayoutParams(0, -2, 1f));
+            TextView statusView = label(fixtureStatusLabel(status));
+            statusView.setTextColor(("IN_PLAY".equals(status) || "PAUSED".equals(status)
+                    || "EXTRA_TIME".equals(status) || "PENALTY_SHOOTOUT".equals(status)) ? GREEN : MUTED);
+            statusView.setTextSize(10);
+            statusView.setTypeface(null, Typeface.BOLD);
+            top.addView(statusView);
+            fixtureCard.addView(top);
+
+            if (kickoff.length() >= 16) {
+                TextView date = label(kickoff.substring(0, 10) + "  •  " + kickoff.substring(11, 16) + " UTC");
+                date.setTextColor(MUTED);
+                date.setTextSize(11);
+                date.setPadding(0, dp(6), 0, dp(10));
+                fixtureCard.addView(date);
+            }
+
+            LinearLayout teams = new LinearLayout(this);
+            teams.setOrientation(LinearLayout.HORIZONTAL);
+            teams.setGravity(Gravity.CENTER_VERTICAL);
+            TextView homeView = label(homeName);
+            homeView.setTextColor(WHITE);
+            homeView.setTextSize(13);
+            homeView.setTypeface(null, Typeface.BOLD);
+            homeView.setGravity(Gravity.CENTER);
+            TextView vs = label(scoreText.isEmpty() ? "VS" : scoreText);
+            vs.setTextColor(GREEN);
+            vs.setTextSize(12);
+            vs.setTypeface(null, Typeface.BOLD);
+            vs.setGravity(Gravity.CENTER);
+            TextView awayView = label(awayName);
+            awayView.setTextColor(WHITE);
+            awayView.setTextSize(13);
+            awayView.setTypeface(null, Typeface.BOLD);
+            awayView.setGravity(Gravity.CENTER);
+            teams.addView(homeView, new LinearLayout.LayoutParams(0, -2, 1f));
+            teams.addView(vs, new LinearLayout.LayoutParams(dp(62), -2));
+            teams.addView(awayView, new LinearLayout.LayoutParams(0, -2, 1f));
+            fixtureCard.addView(teams);
+
+            TextView choose = label("TAP TO SELECT  →");
+            choose.setTextColor(MUTED);
+            choose.setTextSize(10);
+            choose.setGravity(Gravity.RIGHT);
+            choose.setPadding(0, dp(10), 0, 0);
+            fixtureCard.addView(choose);
+
+            fixtureCard.setClickable(true);
+            fixtureCard.setFocusable(true);
+            fixtureCard.setOnClickListener(v -> selectFixture(match));
+            shown++;
+        }
+        if (fixtureListStatus != null) {
+            fixtureListStatus.setText(shown + " fixtures available  •  Tap a card to use that match");
+        }
+    }
+
+    private void selectFixture(JSONObject selected) {
+        try {
+            String homeName = selected.getJSONObject("homeTeam").optString("name", "");
+            String awayName = selected.getJSONObject("awayTeam").optString("name", "");
+            selectedFixture = selected;
+            homeInput.setText(homeName);
+            awayInput.setText(awayName);
+
+            if (homeDisplayName != null) homeDisplayName.setText(homeName.isEmpty() ? "Home Team" : homeName);
+            if (awayDisplayName != null) awayDisplayName.setText(awayName.isEmpty() ? "Away Team" : awayName);
+            if (homeDisplayLeague != null) {
+                JSONObject competition = selected.optJSONObject("competition");
+                String competitionName = competition == null ? "" : competition.optString("name", "");
+                homeDisplayLeague.setText(competitionName.isEmpty()
+                    ? "🏆  YOUR NEXT PREDICTION" : "🏆  " + competitionName);
+            }
+
+            if (statsSummary != null) {
+                statsSummary.setText("RECENT TEAM FORM\nLoading recent completed matches for both teams...");
+            }
+            loadTeamStatsForFixture(selected);
+            Toast.makeText(this, "Fixture selected: " + homeName + " vs " + awayName, Toast.LENGTH_SHORT).show();
+            showScreen(1);
+        } catch (Exception e) {
+            Toast.makeText(this, "Could not select this fixture.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void buildValidationScreen() {
@@ -1924,73 +2096,23 @@ public class MainActivity extends Activity {
                 }
 
                 runOnUiThread(() -> {
+                    if (fixtureListStatus != null) {
+                        fixtureListStatus.setText(fixtures.size() + " fixtures loaded");
+                    }
+                    renderFixtureCards(fixtures);
                     if (fixtures.isEmpty()) {
                         Toast.makeText(
                             MainActivity.this,
                             "No matches found in the available date range.",
                             Toast.LENGTH_LONG
                         ).show();
-                        return;
+                    } else {
+                        Toast.makeText(
+                            MainActivity.this,
+                            fixtures.size() + " fixtures loaded in Live Fixtures.",
+                            Toast.LENGTH_SHORT
+                        ).show();
                     }
-
-                    String[] choices = fixtureNames.toArray(new String[0]);
-
-                    new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Select a Fixture")
-                        .setItems(choices, (dialog, which) -> {
-                            try {
-                                JSONObject selected = fixtures.get(which);
-
-                                String homeName = selected
-                                    .getJSONObject("homeTeam")
-                                    .optString("name", "");
-
-                                String awayName = selected
-                                    .getJSONObject("awayTeam")
-                                    .optString("name", "");
-
-                                selectedFixture = selected;
-                                homeInput.setText(homeName);
-                                awayInput.setText(awayName);
-
-                                // Keep the Home Match Centre card synchronized with the
-                                // fixture selector, regardless of which screen opened it.
-                                if (homeDisplayName != null) {
-                                    homeDisplayName.setText(homeName.isEmpty() ? "Home Team" : homeName);
-                                }
-                                if (awayDisplayName != null) {
-                                    awayDisplayName.setText(awayName.isEmpty() ? "Away Team" : awayName);
-                                }
-                                if (homeDisplayLeague != null) {
-                                    JSONObject competition = selected.optJSONObject("competition");
-                                    String competitionName = competition == null
-                                        ? "" : competition.optString("name", "");
-                                    homeDisplayLeague.setText(competitionName.isEmpty()
-                                        ? "🏆  YOUR NEXT PREDICTION"
-                                        : "🏆  " + competitionName);
-                                }
-
-                                statsSummary.setText(
-                                    "RECENT TEAM FORM\nLoading recent completed matches for both teams..."
-                                );
-                                loadTeamStatsForFixture(selected);
-
-                                Toast.makeText(
-                                    MainActivity.this,
-                                    "Fixture selected. Loading recent team statistics...",
-                                    Toast.LENGTH_LONG
-                                ).show();
-
-                            } catch (Exception e) {
-                                Toast.makeText(
-                                    MainActivity.this,
-                                    "Could not select this fixture.",
-                                    Toast.LENGTH_SHORT
-                                ).show();
-                            }
-                        })
-                        .setNegativeButton("Cancel", null)
-                        .show();
                 });
 
             } catch (Exception e) {
