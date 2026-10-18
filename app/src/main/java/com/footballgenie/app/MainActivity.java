@@ -1196,6 +1196,10 @@ public class MainActivity extends Activity {
                 final int awaySample = awayStats.optInt("sampleSize", 0);
                 final int displayedHomeVenueSample = homeVenueSample;
                 final int displayedAwayVenueSample = awayVenueSample;
+                final String homeWeightedScoredText = String.format(Locale.US, "%.2f", homeScored);
+                final String homeWeightedConcededText = String.format(Locale.US, "%.2f", homeConceded);
+                final String awayWeightedScoredText = String.format(Locale.US, "%.2f", awayScored);
+                final String awayWeightedConcededText = String.format(Locale.US, "%.2f", awayConceded);
 
                 runOnUiThread(() -> {
                     homeGoals.setText(homeValue);
@@ -1205,14 +1209,14 @@ public class MainActivity extends Activity {
                         homeName + ": " + homeForm + "  |  Analysed: " + homeSample + " matches\n" +
                         "Overall goals per match: " + homeGoalsStats.optString("averageScored", "0") +
                         " scored, " + homeGoalsStats.optString("averageConceded", "0") + " conceded\n" +
-                        "Recency-weighted form: " + String.format(Locale.US, "%.2f", homeScored) +
-                        " scored, " + String.format(Locale.US, "%.2f", homeConceded) + " conceded per match\n" +
+                        "Recency-weighted form: " + homeWeightedScoredText +
+                        " scored, " + homeWeightedConcededText + " conceded per match\n" +
                         "Estimated match xG: " + homeValue + "\n\n" +
                         awayName + ": " + awayForm + "  |  Analysed: " + awaySample + " matches\n" +
                         "Overall goals per match: " + awayGoalsStats.optString("averageScored", "0") +
                         " scored, " + awayGoalsStats.optString("averageConceded", "0") + " conceded\n" +
-                        "Recency-weighted form: " + String.format(Locale.US, "%.2f", awayScored) +
-                        " scored, " + String.format(Locale.US, "%.2f", awayConceded) + " conceded per match\n" +
+                        "Recency-weighted form: " + awayWeightedScoredText +
+                        " scored, " + awayWeightedConcededText + " conceded per match\n" +
                         "Estimated match xG: " + awayValue + "\n\n" +
                         "Venue-specific matches: " + homeName + " at home: " +
                         displayedHomeVenueSample + "; " + awayName + " away: " +
