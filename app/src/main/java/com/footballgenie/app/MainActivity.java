@@ -463,12 +463,37 @@ public class MainActivity extends Activity {
                 rankedScoreProbabilities[rankHome][rankAway] = 0.0;
             }
 
-            double homeP = homeWins / 100.0;
-            double drawP = draws / 100.0;
-            double awayP = awayWins / 100.0;
-            double overP = over25 / 100.0;
+            // Calculate market probabilities from the Poisson score distribution.
+            // This removes Monte Carlo sampling noise from displayed probabilities.
+            double homeProbability = 0.0;
+            double drawProbability = 0.0;
+            double awayProbability = 0.0;
+            double overProbability = 0.0;
+            double bttsProbability = 0.0;
+            for (int h = 0; h < scores.length; h++) {
+                double homeGoalProbability = poissonProbability(h, homeXg);
+                for (int a = 0; a < scores[h].length; a++) {
+                    double jointProbability = homeGoalProbability
+                        * poissonProbability(a, awayXg);
+                    if (h > a) homeProbability += jointProbability;
+                    else if (h == a) drawProbability += jointProbability;
+                    else awayProbability += jointProbability;
+                    if (h + a > 2) overProbability += jointProbability;
+                    if (h > 0 && a > 0) bttsProbability += jointProbability;
+                }
+            }
+            double probabilityTotal = homeProbability + drawProbability + awayProbability;
+            if (probabilityTotal > 0.0) {
+                homeProbability /= probabilityTotal;
+                drawProbability /= probabilityTotal;
+                awayProbability /= probabilityTotal;
+            }
+            double homeP = homeProbability * 100.0;
+            double drawP = drawProbability * 100.0;
+            double awayP = awayProbability * 100.0;
+            double overP = overProbability * 100.0;
             double underP = 100.0 - overP;
-            double bttsP = btts / 100.0;
+            double bttsP = bttsProbability * 100.0;
 
             String outcome;
             double highest;
