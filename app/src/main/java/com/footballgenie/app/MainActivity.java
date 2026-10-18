@@ -509,6 +509,8 @@ public class MainActivity extends Activity {
                 homeProbability /= probabilityTotal;
                 drawProbability /= probabilityTotal;
                 awayProbability /= probabilityTotal;
+                overProbability /= probabilityTotal;
+                bttsProbability /= probabilityTotal;
             }
             double homeP = homeProbability * 100.0;
             double drawP = drawProbability * 100.0;
