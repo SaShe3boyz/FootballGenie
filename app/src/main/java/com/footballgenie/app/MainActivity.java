@@ -57,6 +57,7 @@ public class MainActivity extends Activity {
         buildHeader();
         buildMatchForm();
         buildResults();
+        buildHistoryTools();
         buildQuickNavigation(scroll);
 
         setContentView(scroll);
@@ -221,40 +222,6 @@ public class MainActivity extends Activity {
 
         fixturesButton.setOnClickListener(v -> loadFixtures());
 
-        Button historyButton = new Button(this);
-        historyButton.setText("📊  PREDICTION HISTORY / UPDATE RESULTS");
-        historyButton.setTextColor(WHITE);
-        historyButton.setTextSize(13);
-        historyButton.setAllCaps(false);
-        historyButton.setBackground(rounded(CARD, 14));
-        LinearLayout.LayoutParams historyParams =
-            new LinearLayout.LayoutParams(-1, dp(50));
-        historyParams.bottomMargin = dp(12);
-        form.addView(historyButton, historyParams);
-        historyButton.setOnClickListener(v -> syncPredictionHistory());
-
-        Button resetHistoryButton = new Button(this);
-        resetHistoryButton.setText("RESET PREDICTION HISTORY");
-        resetHistoryButton.setTextColor(Color.rgb(255, 235, 235));
-        resetHistoryButton.setTextSize(13);
-        resetHistoryButton.setAllCaps(false);
-        resetHistoryButton.setBackground(rounded(Color.rgb(125, 39, 53), 14));
-        LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(-1, dp(48));
-        resetParams.bottomMargin = dp(12);
-        form.addView(resetHistoryButton, resetParams);
-        resetHistoryButton.setOnClickListener(v -> confirmResetPredictionHistory());
-        
-        Button removeFixtureButton = new Button(this);
-        removeFixtureButton.setText("REMOVE ONE FIXTURE FROM HISTORY");
-        removeFixtureButton.setTextColor(Color.WHITE);
-        removeFixtureButton.setTextSize(13);
-        removeFixtureButton.setAllCaps(false);
-        removeFixtureButton.setBackground(rounded(Color.rgb(48, 75, 103), 14));
-        LinearLayout.LayoutParams removeFixtureParams = new LinearLayout.LayoutParams(-1, dp(48));
-        removeFixtureParams.bottomMargin = dp(12);
-        form.addView(removeFixtureButton, removeFixtureParams);
-        removeFixtureButton.setOnClickListener(v -> choosePredictionToRemove());
-
         Button simulateButton = new Button(this);
         simulateButton.setText("⚽  SIMULATE 10,000 MATCHES");
         simulateButton.setTextColor(Color.rgb(8, 25, 22));
@@ -276,6 +243,52 @@ public class MainActivity extends Activity {
         });
 
         mainLayout.addView(form);
+    }
+
+    private void buildHistoryTools() {
+        addHeading("03", "PREDICTION HISTORY & TESTING");
+        LinearLayout historyCard = card();
+        historyCard.setOrientation(LinearLayout.VERTICAL);
+        TextView historyNote = label("Review saved predictions, update finished match results, or remove records you no longer need.");
+        historyNote.setTextColor(MUTED);
+        historyNote.setTextSize(12);
+        historyNote.setLineSpacing(dp(3), 1.0f);
+        historyNote.setPadding(0, 0, 0, dp(10));
+        historyCard.addView(historyNote);
+        Button historyButton = new Button(this);
+        historyButton.setText("📊  PREDICTION HISTORY / UPDATE RESULTS");
+        historyButton.setTextColor(WHITE);
+        historyButton.setTextSize(13);
+        historyButton.setAllCaps(false);
+        historyButton.setBackground(rounded(CARD, 14));
+        LinearLayout.LayoutParams historyParams =
+        new LinearLayout.LayoutParams(-1, dp(50));
+        historyParams.bottomMargin = dp(12);
+        form.addView(historyButton, historyParams);
+        historyButton.setOnClickListener(v -> syncPredictionHistory());
+        
+        Button resetHistoryButton = new Button(this);
+        resetHistoryButton.setText("RESET PREDICTION HISTORY");
+        resetHistoryButton.setTextColor(Color.rgb(255, 235, 235));
+        resetHistoryButton.setTextSize(13);
+        resetHistoryButton.setAllCaps(false);
+        resetHistoryButton.setBackground(rounded(Color.rgb(125, 39, 53), 14));
+        LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(-1, dp(48));
+        resetParams.bottomMargin = dp(12);
+        form.addView(resetHistoryButton, resetParams);
+        resetHistoryButton.setOnClickListener(v -> confirmResetPredictionHistory());
+        
+        Button removeFixtureButton = new Button(this);
+        removeFixtureButton.setText("REMOVE ONE FIXTURE FROM HISTORY");
+        removeFixtureButton.setTextColor(Color.WHITE);
+        removeFixtureButton.setTextSize(13);
+        removeFixtureButton.setAllCaps(false);
+        removeFixtureButton.setBackground(rounded(Color.rgb(48, 75, 103), 14));
+        LinearLayout.LayoutParams removeFixtureParams = new LinearLayout.LayoutParams(-1, dp(48));
+        removeFixtureParams.bottomMargin = dp(12);
+        form.addView(removeFixtureButton, removeFixtureParams);
+        removeFixtureButton.setOnClickListener(v -> choosePredictionToRemove());
+        mainLayout.addView(historyCard);
     }
 
     private void buildResults() {
