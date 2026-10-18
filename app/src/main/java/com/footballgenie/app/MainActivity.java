@@ -1511,15 +1511,21 @@ public class MainActivity extends Activity {
             if (goals < 0) continue;
 
             double adjustedGoals;
+            int opponentVenueGames = ourTeamHome
+                ? opponent.optInt("awayPlayed", 0)
+                : opponent.optInt("homePlayed", 0);
+            double reliability = opponentVenueGames / (opponentVenueGames + 4.0);
             if (forGoals) {
                 if (opponentConceded < 0) continue;
-                double ratio = Math.max(0.55, Math.min(1.70,
+                double rawRatio = Math.max(0.55, Math.min(1.70,
                     opponentConceded / scoringBaseline));
+                double ratio = 1.0 + (rawRatio - 1.0) * reliability;
                 adjustedGoals = goals / ratio;
             } else {
                 if (opponentAttack < 0) continue;
-                double ratio = Math.max(0.55, Math.min(1.70,
+                double rawRatio = Math.max(0.55, Math.min(1.70,
                     opponentAttack / concedingBaseline));
+                double ratio = 1.0 + (rawRatio - 1.0) * reliability;
                 adjustedGoals = goals / ratio;
             }
             double weight = Math.pow(0.88, usable);
