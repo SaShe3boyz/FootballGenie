@@ -658,6 +658,13 @@ public class MainActivity extends Activity {
                 ? "Both teams scoring is more likely than not."
                 : "At least one team failing to score is more likely.";
 
+            String levelAt60 = scenarioOutcomeSummary(home, away, homeXg, awayXg,
+                60, 0, 0, 1.0, 1.0);
+            String homeLeadsAt60 = scenarioOutcomeSummary(home, away, homeXg, awayXg,
+                60, 1, 0, 0.85, 1.20);
+            String awayLeadsAt60 = scenarioOutcomeSummary(home, away, homeXg, awayXg,
+                60, 0, 1, 1.20, 0.85);
+
             String analysis =
                 "\n\n━━━━━━━━━━━━━━━━━━\n" +
                 "WHY THIS PREDICTION?\n\n" +
@@ -725,6 +732,12 @@ public class MainActivity extends Activity {
                 bestAway + " " + away +
                 " was the most frequent exact score in " +
                 "these simulation runs.\n\n" +
+
+                "9. Hypothetical match flow at 60 minutes\n" +
+                "If level at 0-0: " + levelAt60 + "\n" +
+                "If " + home + " leads 1-0: " + homeLeadsAt60 + "\n" +
+                "If " + away + " leads 1-0: " + awayLeadsAt60 + "\n" +
+                "These are conditional model scenarios, not live match readings.\n\n" +
 
                 "IMPORTANT LIMITATIONS\n" +
                 "Expected goals can be estimated from recent completed matches " +
