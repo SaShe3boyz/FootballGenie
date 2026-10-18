@@ -764,64 +764,124 @@ public class MainActivity extends Activity {
     private void buildMatchForm() {
         addHeading("01", "MATCH SETUP");
 
-        LinearLayout form = card();
-        form.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout introCard = card();
+        introCard.setPadding(dp(16), dp(16), dp(16), dp(16));
+        TextView introTag = label("⚽  MATCH INTELLIGENCE");
+        introTag.setTextColor(GREEN);
+        introTag.setTextSize(11);
+        introTag.setTypeface(null, Typeface.BOLD);
+        introCard.addView(introTag);
 
-        LinearLayout teamsRow = new LinearLayout(this);
-        teamsRow.setOrientation(LinearLayout.HORIZONTAL);
-        form.addView(teamsRow, new LinearLayout.LayoutParams(-1, -2));
+        TextView introTitle = label("Build your match prediction");
+        introTitle.setTextColor(WHITE);
+        introTitle.setTextSize(21);
+        introTitle.setTypeface(null, Typeface.BOLD);
+        introTitle.setPadding(0, dp(7), 0, dp(5));
+        introCard.addView(introTitle);
 
-        homeInput = addInput(teamsRow, "HOME TEAM", false);
-        awayInput = addInput(teamsRow, "AWAY TEAM", false);
-        makeCompactInput(homeInput);
-        makeCompactInput(awayInput);
+        TextView introNote = label("Choose a fixture or enter both teams and their expected goals (xG). Football Genie will model 10,000 possible scorelines.");
+        introNote.setTextColor(MUTED);
+        introNote.setTextSize(13);
+        introNote.setLineSpacing(dp(3), 1.0f);
+        introCard.addView(introNote);
+        mainLayout.addView(introCard);
+
+        LinearLayout teamsCard = card();
+        TextView teamsTitle = label("01  •  SELECT THE TEAMS");
+        teamsTitle.setTextColor(GREEN);
+        teamsTitle.setTextSize(12);
+        teamsTitle.setTypeface(null, Typeface.BOLD);
+        teamsTitle.setPadding(0, 0, 0, dp(12));
+        teamsCard.addView(teamsTitle);
+
+        TextView homeLabel = label("HOME TEAM");
+        homeLabel.setTextColor(MUTED);
+        homeLabel.setTextSize(10);
+        homeLabel.setTypeface(null, Typeface.BOLD);
+        teamsCard.addView(homeLabel);
+        homeInput = addInput(teamsCard, "Enter home team", false);
+        homeInput.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(52)));
+
+        TextView vs = label("VS");
+        vs.setTextColor(GREEN);
+        vs.setTextSize(11);
+        vs.setTypeface(null, Typeface.BOLD);
+        vs.setGravity(Gravity.CENTER);
+        vs.setBackground(rounded(Color.rgb(17, 49, 52), 9));
+        LinearLayout.LayoutParams vsParams = new LinearLayout.LayoutParams(dp(48), dp(28));
+        vsParams.gravity = Gravity.CENTER_HORIZONTAL;
+        vsParams.setMargins(0, 0, 0, dp(10));
+        teamsCard.addView(vs, vsParams);
+
+        TextView awayLabel = label("AWAY TEAM");
+        awayLabel.setTextColor(MUTED);
+        awayLabel.setTextSize(10);
+        awayLabel.setTypeface(null, Typeface.BOLD);
+        teamsCard.addView(awayLabel);
+        awayInput = addInput(teamsCard, "Enter away team", false);
+        awayInput.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(52)));
+
+        Button fixturesButton = new Button(this);
+        fixturesButton.setText("🌐  BROWSE LIVE FIXTURES");
+        fixturesButton.setTextColor(WHITE);
+        fixturesButton.setTextSize(13);
+        fixturesButton.setTypeface(null, Typeface.BOLD);
+        fixturesButton.setAllCaps(false);
+        fixturesButton.setBackground(rounded(Color.rgb(37, 57, 78), 13));
+        LinearLayout.LayoutParams fixturesParams = new LinearLayout.LayoutParams(-1, dp(50));
+        fixturesParams.topMargin = dp(4);
+        teamsCard.addView(fixturesButton, fixturesParams);
+        fixturesButton.setOnClickListener(v -> showScreen(5));
+        mainLayout.addView(teamsCard);
+
+        LinearLayout xgCard = card();
+        TextView xgTitle = label("02  •  EXPECTED GOALS (xG)");
+        xgTitle.setTextColor(GREEN);
+        xgTitle.setTextSize(12);
+        xgTitle.setTypeface(null, Typeface.BOLD);
+        xgTitle.setPadding(0, 0, 0, dp(5));
+        xgCard.addView(xgTitle);
+        TextView xgNote = label("Estimate each team's scoring strength. Use recent form and available statistics where possible.");
+        xgNote.setTextColor(MUTED);
+        xgNote.setTextSize(12);
+        xgNote.setLineSpacing(dp(2), 1.0f);
+        xgNote.setPadding(0, 0, 0, dp(10));
+        xgCard.addView(xgNote);
 
         LinearLayout xgRow = new LinearLayout(this);
         xgRow.setOrientation(LinearLayout.HORIZONTAL);
-        form.addView(xgRow, new LinearLayout.LayoutParams(-1, -2));
-
-        homeGoals = addInput(xgRow, "HOME xG (e.g. 1.6)", true);
-        awayGoals = addInput(xgRow, "AWAY xG (e.g. 1.1)", true);
+        xgCard.addView(xgRow, new LinearLayout.LayoutParams(-1, -2));
+        homeGoals = addInput(xgRow, "Home xG (e.g. 1.6)", true);
+        awayGoals = addInput(xgRow, "Away xG (e.g. 1.1)", true);
         makeCompactInput(homeGoals);
         makeCompactInput(awayGoals);
+        mainLayout.addView(xgCard);
 
-        TextView note = label(
-            "Choose a scheduled match to load recent form and estimate expected goals. " +
-            "Or enter the teams and expected goals yourself."
-        );
-        note.setTextColor(MUTED);
-        note.setTextSize(12);
-        note.setPadding(0, dp(8), 0, dp(10));
-        form.addView(note);
+        LinearLayout formCard = card();
+        TextView formTitle = label("03  •  RECENT TEAM FORM");
+        formTitle.setTextColor(GREEN);
+        formTitle.setTextSize(12);
+        formTitle.setTypeface(null, Typeface.BOLD);
+        formTitle.setPadding(0, 0, 0, dp(8));
+        formCard.addView(formTitle);
 
-        statsSummary = label(
-            "RECENT TEAM FORM\nSelect a fixture to load recent results and statistics."
-        );
+        statsSummary = label("Select a fixture to load recent completed results and available team statistics.");
         statsSummary.setTextColor(WHITE);
         statsSummary.setTextSize(13);
-        statsSummary.setPadding(dp(12), dp(12), dp(12), dp(12));
-        statsSummary.setBackground(rounded(Color.rgb(31, 44, 65), 10));
-        LinearLayout.LayoutParams statsParams =
-            new LinearLayout.LayoutParams(-1, -2);
-        statsParams.bottomMargin = dp(12);
-        form.addView(statsSummary, statsParams);
+        statsSummary.setLineSpacing(dp(5), 1.0f);
+        statsSummary.setPadding(dp(13), dp(13), dp(13), dp(13));
+        statsSummary.setBackground(rounded(Color.rgb(31, 44, 65), 12));
+        formCard.addView(statsSummary);
+        mainLayout.addView(formCard);
 
-                Button fixturesButton = new Button(this);
-        fixturesButton.setText("⚽  CHOOSE A LIVE FIXTURE");
-        fixturesButton.setTextColor(WHITE);
-        fixturesButton.setTextSize(14);
-        fixturesButton.setTypeface(null, Typeface.BOLD);
-        fixturesButton.setAllCaps(false);
-        fixturesButton.setBackground(rounded(CARD, 14));
-
-        LinearLayout.LayoutParams fixturesParams =
-            new LinearLayout.LayoutParams(-1, dp(54));
-
-        fixturesParams.bottomMargin = dp(12);
-
-        form.addView(fixturesButton, fixturesParams);
-
-        fixturesButton.setOnClickListener(v -> loadFixtures());
+        LinearLayout runCard = card();
+        TextView runNote = label("READY TO ANALYSE?");
+        runNote.setTextColor(MUTED);
+        runNote.setTextSize(10);
+        runNote.setTypeface(null, Typeface.BOLD);
+        runNote.setGravity(Gravity.CENTER);
+        runNote.setPadding(0, 0, 0, dp(8));
+        runCard.addView(runNote);
 
         Button simulateButton = new Button(this);
         simulateButton.setText("⚽  SIMULATE 10,000 MATCHES");
@@ -830,20 +890,13 @@ public class MainActivity extends Activity {
         simulateButton.setTypeface(null, Typeface.BOLD);
         simulateButton.setAllCaps(false);
         simulateButton.setBackground(rounded(GREEN, 14));
-
-        form.addView(
-            simulateButton,
-            new LinearLayout.LayoutParams(
-                -1, dp(54)
-            )
-        );
-
+        runCard.addView(simulateButton, new LinearLayout.LayoutParams(-1, dp(56)));
         simulateButton.setOnClickListener(v -> {
             hideKeyboard();
             simulate();
+            showScreen(2);
         });
-
-        mainLayout.addView(form);
+        mainLayout.addView(runCard);
     }
 
     private void buildHistoryTools() {
@@ -941,11 +994,20 @@ public class MainActivity extends Activity {
         detailsHeading.setPadding(0, dp(18), 0, dp(4));
         outputCard.addView(detailsHeading);
 
-        result = label("Choose a fixture or enter both teams and expected goals, then tap SIMULATE 10,000 MATCHES.");
+        TextView analysisLabel = label("DETAILED MATCH INTELLIGENCE");
+        analysisLabel.setTextColor(GREEN);
+        analysisLabel.setTextSize(13);
+        analysisLabel.setTypeface(null, Typeface.BOLD);
+        analysisLabel.setPadding(0, dp(18), 0, dp(8));
+        outputCard.addView(analysisLabel);
+
+        result = label("Run a match simulation to generate the prediction summary, scoreline outlook, goal probabilities and match-flow analysis.");
         result.setTextColor(WHITE);
-        result.setTextSize(13);
-        result.setLineSpacing(dp(4), 1.05f);
-        result.setPadding(0, dp(10), 0, dp(10));
+        result.setTextSize(14);
+        result.setLineSpacing(dp(6), 1.08f);
+        result.setPadding(dp(14), dp(16), dp(14), dp(16));
+        result.setBackground(rounded(Color.rgb(15, 26, 43), 14));
+        result.setGravity(Gravity.START);
         outputCard.addView(result);
         mainLayout.addView(outputCard);
 
