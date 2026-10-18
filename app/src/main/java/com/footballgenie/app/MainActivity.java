@@ -454,11 +454,13 @@ public class MainActivity extends Activity {
             // This avoids ranking noise caused by random variation in the 10,000 simulations.
             double[][] rankedScoreProbabilities =
                 new double[scores.length][scores[0].length];
+            double rankedScoreProbabilityTotal = 0.0;
             for (int h = 0; h < rankedScoreProbabilities.length; h++) {
                 for (int a = 0; a < rankedScoreProbabilities[h].length; a++) {
                     rankedScoreProbabilities[h][a] =
                         poissonProbability(h, homeXg) * poissonProbability(a, awayXg)
                         * lowScoreCorrection(h, a, homeXg, awayXg);
+                    rankedScoreProbabilityTotal += rankedScoreProbabilities[h][a];
                 }
             }
             StringBuilder topScores = new StringBuilder();
@@ -480,7 +482,9 @@ public class MainActivity extends Activity {
                 topScores.append(rank + 1).append(". ")
                     .append(rankHome).append("-").append(rankAway)
                     .append("  (").append(String.format(Locale.US, "%.1f",
-                        rankProbability * 100.0)).append("%)");
+                        rankedScoreProbabilityTotal > 0.0
+                            ? rankProbability * 100.0 / rankedScoreProbabilityTotal
+                            : rankProbability * 100.0)).append("%)");
                 rankedScoreProbabilities[rankHome][rankAway] = 0.0;
             }
 
@@ -681,7 +685,7 @@ public class MainActivity extends Activity {
                 "Both teams score    %.1f%%\n\n" +
                 "MOST FREQUENT SCORE\n" +
                 "%s %d - %d %s\n\n" +
-                "TOP 3 SCORELINES (simulation frequency)\n%s\n\n%s\n\n%s",
+                "TOP 3 MOST LIKELY SCORELINES (model probability)\n%s\n\n%s\n\n%s",
                 home, homeP,
                 drawP,
                 away, awayP,
