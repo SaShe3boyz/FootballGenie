@@ -747,10 +747,17 @@ public class MainActivity extends Activity {
         }).start();
     }
 
+    private double square(double value) {
+        return value * value;
+    }
+
     private void showPredictionHistory(int newlyUpdated) {
         JSONArray history = readPredictionHistory();
         int finished = 0, outcomeCorrect = 0, goalsCorrect = 0;
         int bttsCorrect = 0, exactCorrect = 0;
+        double outcomeBrierTotal = 0.0;
+        double goalsBrierTotal = 0.0;
+        double bttsBrierTotal = 0.0;
         StringBuilder summary = new StringBuilder();
         summary.append("PREDICTION HISTORY\n");
         summary.append("New final results added: ").append(newlyUpdated).append("\n\n");
@@ -793,13 +800,29 @@ public class MainActivity extends Activity {
                         Math.max(record.optDouble("drawP", 0), record.optDouble("awayP", 0))
                         ? "HOME" : (record.optDouble("drawP", 0) >= record.optDouble("awayP", 0)
                             ? "DRAW" : "AWAY");
-                    String actualOutcome = ah > aa ? "HOME" : (ah == aa ? "DRAW" : "AWAY");
+                    boolean actualHome = ah > aa;
+                    boolean actualDraw = ah == aa;
+                    boolean actualAway = ah < aa;
+                    String actualOutcome = actualHome ? "HOME" : (actualDraw ? "DRAW" : "AWAY");
                     if (predictedOutcome.equals(actualOutcome)) outcomeCorrect++;
 
-                    boolean predictedOver = record.optDouble("overP", 0) >= 50.0;
-                    if (predictedOver == (ah + aa > 2)) goalsCorrect++;
-                    boolean predictedBtts = record.optDouble("bttsP", 0) >= 50.0;
-                    if (predictedBtts == (ah > 0 && aa > 0)) bttsCorrect++;
+                    double hp = record.optDouble("homeP", 0) / 100.0;
+                    double dp = record.optDouble("drawP", 0) / 100.0;
+                    double ap = record.optDouble("awayP", 0) / 100.0;
+                    outcomeBrierTotal += square(hp - (actualHome ? 1.0 : 0.0))
+                        + square(dp - (actualDraw ? 1.0 : 0.0))
+                        + square(ap - (actualAway ? 1.0 : 0.0));
+
+                    boolean actualOver = ah + aa > 2;
+                    double overProbability = record.optDouble("overP", 0) / 100.0;
+                    if ((overProbability >= 0.5) == actualOver) goalsCorrect++;
+                    goalsBrierTotal += square(overProbability - (actualOver ? 1.0 : 0.0));
+
+                    boolean actualBtts = ah > 0 && aa > 0;
+                    double bttsProbability = record.optDouble("bttsP", 0) / 100.0;
+                    if ((bttsProbability >= 0.5) == actualBtts) bttsCorrect++;
+                    bttsBrierTotal += square(bttsProbability - (actualBtts ? 1.0 : 0.0));
+
                     if (ah == record.optInt("predictedHome", -2)
                             && aa == record.optInt("predictedAway", -2)) exactCorrect++;
 
@@ -821,7 +844,11 @@ public class MainActivity extends Activity {
                 " (" + String.format(Locale.US, "%.1f", 100.0 * goalsCorrect / finished) + "%)\n" +
                 "BTTS pick correct: " + bttsCorrect + "/" + finished +
                 " (" + String.format(Locale.US, "%.1f", 100.0 * bttsCorrect / finished) + "%)\n" +
-                "Exact score: " + exactCorrect + "/" + finished + "\n\n");
+                "Exact score: " + exactCorrect + "/" + finished + "\n\n" +
+                "PROBABILITY QUALITY (Brier score; lower is better)\n" +
+                "Home/Draw/Away: " + String.format(Locale.US, "%.3f", outcomeBrierTotal / finished) + "\n" +
+                "Over 2.5: " + String.format(Locale.US, "%.3f", goalsBrierTotal / finished) + "\n" +
+                "Both teams score: " + String.format(Locale.US, "%.3f", bttsBrierTotal / finished) + "\n\n");
         } else {
             summary.append("\nNo saved predictions have a final result yet. Save predictions for upcoming matches, then use this button again after they finish.\n");
         }
