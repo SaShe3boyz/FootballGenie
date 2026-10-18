@@ -560,6 +560,28 @@ public class MainActivity extends Activity {
             // First-to-score uses proportional scoring rates and is not a live event forecast.
             double firstHalfGoalProbability = 1.0
                 - Math.exp(-0.45 * totalExpectedGoals);
+            double firstHalfHomeLead = 0.0;
+            double firstHalfDraw = 0.0;
+            double firstHalfAwayLead = 0.0;
+            double firstHalfOutcomeTotal = 0.0;
+            for (int halfHome = 0; halfHome <= 8; halfHome++) {
+                for (int halfAway = 0; halfAway <= 8; halfAway++) {
+                    double halfProbability =
+                        poissonProbability(halfHome, homeXg * 0.45)
+                        * poissonProbability(halfAway, awayXg * 0.45);
+                    firstHalfOutcomeTotal += halfProbability;
+                    if (halfHome > halfAway) firstHalfHomeLead += halfProbability;
+                    else if (halfHome == halfAway) firstHalfDraw += halfProbability;
+                    else firstHalfAwayLead += halfProbability;
+                }
+            }
+            if (firstHalfOutcomeTotal > 0.0) {
+                firstHalfHomeLead /= firstHalfOutcomeTotal;
+                firstHalfDraw /= firstHalfOutcomeTotal;
+                firstHalfAwayLead /= firstHalfOutcomeTotal;
+            }
+            double secondHalfGoalProbability = 1.0
+                - Math.exp(-0.55 * totalExpectedGoals);
             double anyGoalProbability = 1.0 - Math.exp(-totalExpectedGoals);
             double homeFirstScoreProbability = totalExpectedGoals > 0
                 ? (homeXg / totalExpectedGoals) * anyGoalProbability : 0.0;
@@ -650,6 +672,13 @@ public class MainActivity extends Activity {
                 "7. First-half and first-goal outlook\n" +
                 "At least one first-half goal: " +
                 String.format(Locale.US, "%.1f", firstHalfGoalProbability * 100.0) + "%\n" +
+                "Approximate half-time: " + home + " leading " +
+                String.format(Locale.US, "%.1f", firstHalfHomeLead * 100.0) + "%, draw " +
+                String.format(Locale.US, "%.1f", firstHalfDraw * 100.0) + "%, " +
+                away + " leading " +
+                String.format(Locale.US, "%.1f", firstHalfAwayLead * 100.0) + "%\n" +
+                "At least one second-half goal: " +
+                String.format(Locale.US, "%.1f", secondHalfGoalProbability * 100.0) + "%\n" +
                 home + " to score first: " +
                 String.format(Locale.US, "%.1f", homeFirstScoreProbability * 100.0) + "%\n" +
                 away + " to score first: " +
