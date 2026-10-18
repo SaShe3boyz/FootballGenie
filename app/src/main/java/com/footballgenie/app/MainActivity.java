@@ -1017,6 +1017,11 @@ public class MainActivity extends Activity {
         return value * value;
     }
 
+    private String calibrationText(int count, int correct) {
+        if (count == 0) return "no matches";
+        return String.format(Locale.US, "%d matches, %.1f%% correct", count, 100.0 * correct / count);
+    }
+
     private void showPredictionHistory(int newlyUpdated) {
         JSONArray history = readPredictionHistory();
         int finished = 0, outcomeCorrect = 0, goalsCorrect = 0;
@@ -1026,6 +1031,8 @@ public class MainActivity extends Activity {
         double bttsBrierTotal = 0.0;
         double homeGoalAbsError = 0.0, awayGoalAbsError = 0.0;
         double totalGoalAbsError = 0.0;
+        int[] confidenceBinCount = new int[5];
+        int[] confidenceBinCorrect = new int[5];
         StringBuilder summary = new StringBuilder();
         summary.append("PREDICTION HISTORY\n");
         summary.append("New final results added: ").append(newlyUpdated).append("\n\n");
@@ -1080,6 +1087,10 @@ public class MainActivity extends Activity {
                     double hp = record.optDouble("homeP", 0) / 100.0;
                     double dp = record.optDouble("drawP", 0) / 100.0;
                     double ap = record.optDouble("awayP", 0) / 100.0;
+                    double topProbability = Math.max(hp, Math.max(dp, ap));
+                    int confidenceBin = Math.min(4, Math.max(0, (int) (topProbability * 5.0)));
+                    confidenceBinCount[confidenceBin]++;
+                    if (predictedOutcome.equals(actualOutcome)) confidenceBinCorrect[confidenceBin]++;
                     outcomeBrierTotal += square(hp - (actualHome ? 1.0 : 0.0))
                         + square(dp - (actualDraw ? 1.0 : 0.0))
                         + square(ap - (actualAway ? 1.0 : 0.0));
@@ -1125,6 +1136,13 @@ public class MainActivity extends Activity {
                 "Mean absolute home-goal error: " + String.format(Locale.US, "%.2f", homeGoalAbsError / finished) + "\n" +
                 "Mean absolute away-goal error: " + String.format(Locale.US, "%.2f", awayGoalAbsError / finished) + "\n" +
                 "Mean absolute total-goal error: " + String.format(Locale.US, "%.2f", totalGoalAbsError / finished) + "\n\n" +
+                "CONFIDENCE CALIBRATION (highest 1X2 probability)\\n" +
+                "0-19%: " + calibrationText(confidenceBinCount[0], confidenceBinCorrect[0]) + "\\n" +
+                "20-39%: " + calibrationText(confidenceBinCount[1], confidenceBinCorrect[1]) + "\\n" +
+                "40-59%: " + calibrationText(confidenceBinCount[2], confidenceBinCorrect[2]) + "\\n" +
+                "60-79%: " + calibrationText(confidenceBinCount[3], confidenceBinCorrect[3]) + "\\n" +
+                "80-100%: " + calibrationText(confidenceBinCount[4], confidenceBinCorrect[4]) + "\\n" +
+                "Small bins are noisy; compare predicted confidence with observed hit rate.\\n\\n" +
                 "PROBABILITY QUALITY (Brier score; lower is better)\n" +
                 "Home/Draw/Away: " + String.format(Locale.US, "%.3f", outcomeBrierTotal / finished) + "\n" +
                 "Over 2.5: " + String.format(Locale.US, "%.3f", goalsBrierTotal / finished) + "\n" +
