@@ -40,7 +40,10 @@ public class MainActivity extends Activity {
     private TextView simulationSummary;
     private JSONObject selectedFixture;
     private LinearLayout fixtureListLayout;
+    private LinearLayout fixtureFiltersLayout;
     private TextView fixtureListStatus;
+    private final ArrayList<JSONObject> loadedFixtures = new ArrayList<>();
+    private String activeFixtureFilter = "ALL";
 
     private final int BG = Color.rgb(9, 16, 31);
     private final int CARD = Color.rgb(20, 31, 51);
@@ -397,13 +400,60 @@ public class MainActivity extends Activity {
         load.setOnClickListener(v -> loadFixtures());
         mainLayout.addView(toolbar);
 
+        fixtureFiltersLayout = new LinearLayout(this);
+        fixtureFiltersLayout.setOrientation(LinearLayout.HORIZONTAL);
+        fixtureFiltersLayout.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams filterParams = new LinearLayout.LayoutParams(-1, dp(44));
+        filterParams.topMargin = dp(12);
+        mainLayout.addView(fixtureFiltersLayout, filterParams);
+        buildFixtureFilterTabs();
+
         fixtureListLayout = new LinearLayout(this);
         fixtureListLayout.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams listParams = new LinearLayout.LayoutParams(-1, -2);
-        listParams.topMargin = dp(12);
+        listParams.topMargin = dp(10);
         mainLayout.addView(fixtureListLayout, listParams);
 
         addFixtureEmptyState("Your fixture schedule will appear here after refresh.");
+    }
+
+    private void buildFixtureFilterTabs() {
+        if (fixtureFiltersLayout == null) return;
+        fixtureFiltersLayout.removeAllViews();
+        String[] filters = {"FINISHED", "LIVE", "UPCOMING", "ALL"};
+        for (String filter : filters) {
+            TextView tab = label(filter);
+            tab.setGravity(Gravity.CENTER);
+            tab.setTextSize(10);
+            tab.setSingleLine(true);
+            tab.setTypeface(null, Typeface.BOLD);
+            boolean selected = filter.equals(activeFixtureFilter);
+            tab.setTextColor(selected ? Color.rgb(7, 23, 20) : MUTED);
+            tab.setBackground(rounded(selected ? GREEN : CARD, 10));
+            tab.setPadding(dp(2), 0, dp(2), 0);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, -1, 1f);
+            params.setMargins(dp(3), 0, dp(3), 0);
+            fixtureFiltersLayout.addView(tab, params);
+            tab.setOnClickListener(v -> {
+                activeFixtureFilter = filter;
+                buildFixtureFilterTabs();
+                renderFixtureCards(loadedFixtures);
+            });
+        }
+    }
+
+    private boolean fixtureMatchesFilter(JSONObject match) {
+        String status = match.optString("status", "SCHEDULED");
+        boolean live = "IN_PLAY".equals(status) || "PAUSED".equals(status)
+            || "EXTRA_TIME".equals(status) || "PENALTY_SHOOTOUT".equals(status);
+        boolean finished = "FINISHED".equals(status) || "AWARDED".equals(status);
+        if ("FINISHED".equals(activeFixtureFilter)) return finished;
+        if ("LIVE".equals(activeFixtureFilter)) return live;
+        if ("UPCOMING".equals(activeFixtureFilter)) {
+            return !live && !finished && !"POSTPONED".equals(status)
+                && !"SUSPENDED".equals(status) && !"CANCELLED".equals(status);
+        }
+        return true;
     }
 
     private void addFixtureEmptyState(String message) {
@@ -437,13 +487,23 @@ public class MainActivity extends Activity {
     private void renderFixtureCards(ArrayList<JSONObject> fixtures) {
         if (fixtureListLayout == null) return;
         fixtureListLayout.removeAllViews();
-        if (fixtures.isEmpty()) {
-            addFixtureEmptyState("No fixtures are available for the current date range.");
+        ArrayList<JSONObject> visibleFixtures = new ArrayList<>();
+        for (JSONObject fixture : fixtures) {
+            if (fixtureMatchesFilter(fixture)) visibleFixtures.add(fixture);
+        }
+        if (visibleFixtures.isEmpty()) {
+            String message = fixtures.isEmpty()
+                ? "No fixtures are available for the current date range."
+                : "No " + activeFixtureFilter.toLowerCase() + " matches in the loaded fixtures.";
+            addFixtureEmptyState(message);
+            if (fixtureListStatus != null) {
+                fixtureListStatus.setText(fixtures.size() + " total fixtures  •  0 " + activeFixtureFilter.toLowerCase());
+            }
             return;
         }
 
         int shown = 0;
-        for (JSONObject match : fixtures) {
+        for (JSONObject match : visibleFixtures) {
             JSONObject home = match.optJSONObject("homeTeam");
             JSONObject away = match.optJSONObject("awayTeam");
             if (home == null || away == null) continue;
@@ -535,7 +595,8 @@ public class MainActivity extends Activity {
             shown++;
         }
         if (fixtureListStatus != null) {
-            fixtureListStatus.setText(shown + " fixtures available  •  Tap a card to use that match");
+            fixtureListStatus.setText(shown + " " + activeFixtureFilter.toLowerCase()
+                + " fixtures shown  •  " + fixtures.size() + " total");
         }
     }
 
@@ -2096,10 +2157,12 @@ public class MainActivity extends Activity {
                 }
 
                 runOnUiThread(() -> {
+                    loadedFixtures.clear();
+                    loadedFixtures.addAll(fixtures);
                     if (fixtureListStatus != null) {
                         fixtureListStatus.setText(fixtures.size() + " fixtures loaded");
                     }
-                    renderFixtureCards(fixtures);
+                    renderFixtureCards(loadedFixtures);
                     if (fixtures.isEmpty()) {
                         Toast.makeText(
                             MainActivity.this,
