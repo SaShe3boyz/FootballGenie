@@ -1203,11 +1203,17 @@ public class MainActivity extends Activity {
                     statsSummary.setText(
                         "RECENT TEAM FORM (latest first)\n" +
                         homeName + ": " + homeForm + "  |  Analysed: " + homeSample + " matches\n" +
-                        "Goals per match: " + homeGoalsStats.optString("averageScored", "0") +
-                        " scored, " + homeGoalsStats.optString("averageConceded", "0") + " conceded\n\n" +
+                        "Overall goals per match: " + homeGoalsStats.optString("averageScored", "0") +
+                        " scored, " + homeGoalsStats.optString("averageConceded", "0") + " conceded\n" +
+                        "Recency-weighted form: " + String.format(Locale.US, "%.2f", homeScored) +
+                        " scored, " + String.format(Locale.US, "%.2f", homeConceded) + " conceded per match\n" +
+                        "Estimated match xG: " + homeValue + "\n\n" +
                         awayName + ": " + awayForm + "  |  Analysed: " + awaySample + " matches\n" +
-                        "Goals per match: " + awayGoalsStats.optString("averageScored", "0") +
-                        " scored, " + awayGoalsStats.optString("averageConceded", "0") + " conceded\n\n" +
+                        "Overall goals per match: " + awayGoalsStats.optString("averageScored", "0") +
+                        " scored, " + awayGoalsStats.optString("averageConceded", "0") + " conceded\n" +
+                        "Recency-weighted form: " + String.format(Locale.US, "%.2f", awayScored) +
+                        " scored, " + String.format(Locale.US, "%.2f", awayConceded) + " conceded per match\n" +
+                        "Estimated match xG: " + awayValue + "\n\n" +
                         "Venue-specific matches: " + homeName + " at home: " +
                         displayedHomeVenueSample + "; " + awayName + " away: " +
                         displayedAwayVenueSample + ". Venue rates are blended with overall recent rates, " +
