@@ -1236,10 +1236,19 @@ public class MainActivity extends Activity {
                     double seasonAwayExpected = leagueAwayGoals
                         * Math.sqrt(awayAttackRatio * homeDefenceRatio);
 
-                    // Give recent form the larger share; season strength moderates
-                    // results against unusually strong or weak opposition.
-                    homeExpected = homeExpected * 0.65 + seasonHomeExpected * 0.35;
-                    awayExpected = awayExpected * 0.65 + seasonAwayExpected * 0.35;
+                    // Trust season strength more as the relevant home/away sample grows.
+                    // Early-season standings are noisy, so shrink them toward recent form.
+                    int homeSeasonGames = homeSeason.optInt("homePlayed", 0);
+                    int awaySeasonGames = awaySeason.optInt("awayPlayed", 0);
+                    int reliableSeasonGames = Math.max(0,
+                        Math.min(homeSeasonGames, awaySeasonGames));
+                    double seasonWeight = 0.35 * reliableSeasonGames
+                        / (reliableSeasonGames + 4.0);
+                    double recentFormWeight = 1.0 - seasonWeight;
+                    homeExpected = homeExpected * recentFormWeight
+                        + seasonHomeExpected * seasonWeight;
+                    awayExpected = awayExpected * recentFormWeight
+                        + seasonAwayExpected * seasonWeight;
                 }
 
                 homeExpected = Math.max(0.2, Math.min(4.5, homeExpected));
