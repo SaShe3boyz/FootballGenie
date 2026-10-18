@@ -264,7 +264,7 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams historyParams =
         new LinearLayout.LayoutParams(-1, dp(50));
         historyParams.bottomMargin = dp(12);
-        form.addView(historyButton, historyParams);
+        historyCard.addView(historyButton, historyParams);
         historyButton.setOnClickListener(v -> syncPredictionHistory());
         
         Button resetHistoryButton = new Button(this);
@@ -275,7 +275,7 @@ public class MainActivity extends Activity {
         resetHistoryButton.setBackground(rounded(Color.rgb(125, 39, 53), 14));
         LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(-1, dp(48));
         resetParams.bottomMargin = dp(12);
-        form.addView(resetHistoryButton, resetParams);
+        historyCard.addView(resetHistoryButton, resetParams);
         resetHistoryButton.setOnClickListener(v -> confirmResetPredictionHistory());
         
         Button removeFixtureButton = new Button(this);
@@ -286,7 +286,7 @@ public class MainActivity extends Activity {
         removeFixtureButton.setBackground(rounded(Color.rgb(48, 75, 103), 14));
         LinearLayout.LayoutParams removeFixtureParams = new LinearLayout.LayoutParams(-1, dp(48));
         removeFixtureParams.bottomMargin = dp(12);
-        form.addView(removeFixtureButton, removeFixtureParams);
+        historyCard.addView(removeFixtureButton, removeFixtureParams);
         removeFixtureButton.setOnClickListener(v -> choosePredictionToRemove());
         mainLayout.addView(historyCard);
     }
