@@ -439,6 +439,24 @@ public class MainActivity extends Activity {
                 highest = awayP;
             }
 
+            double secondHighest = Math.max(
+                Math.min(homeP, drawP),
+                Math.max(Math.min(homeP, awayP), Math.min(drawP, awayP))
+            );
+            double probabilityGap = highest - secondHighest;
+            String confidence;
+            String confidenceReason;
+            if (highest >= 60.0 && probabilityGap >= 15.0) {
+                confidence = "STRONGER MODEL LEAN";
+                confidenceReason = "The leading outcome has a clearer probability advantage, but an upset remains possible.";
+            } else if (highest >= 45.0 && probabilityGap >= 8.0) {
+                confidence = "MODERATE MODEL LEAN";
+                confidenceReason = "One outcome leads, although the alternatives remain realistic.";
+            } else {
+                confidence = "LOW CONFIDENCE / CLOSE MATCH";
+                confidenceReason = "The outcome probabilities are relatively close; avoid treating one pick as a safe result.";
+            }
+
             String goalTrend = overP >= 50
                 ? "Over 2.5 goals is more likely than Under 2.5."
                 : "Under 2.5 goals is more likely than Over 2.5.";
@@ -480,11 +498,15 @@ public class MainActivity extends Activity {
                 String.format(Locale.US, "%.1f", highest) +
                 "%). This is not a guarantee.\n\n" +
 
-                "3. Goals analysis\n" + goalTrend +
+                "3. Confidence assessment\n" + confidence + "\n" +
+                confidenceReason + "\n" +
+                "This rating reflects simulation probabilities only; it is not a guarantee of accuracy.\n\n" +
+
+                "4. Goals analysis\n" + goalTrend +
                 "\n" + bttsTrend +
                 "\n\n" +
 
-                "4. Most frequent score\n" +
+                "5. Most frequent score\n" +
                 home + " " + bestHome + " - " +
                 bestAway + " " + away +
                 " was the most frequent exact score in " +
@@ -505,6 +527,8 @@ public class MainActivity extends Activity {
                 "%s win       %.1f%%\n" +
                 "Draw              %.1f%%\n" +
                 "%s win       %.1f%%\n\n" +
+                "MODEL CONFIDENCE\n" +
+                "%s\n\n" +
                 "GOALS MARKETS\n" +
                 "Over 2.5 goals       %.1f%%\n" +
                 "Under 2.5 goals     %.1f%%\n" +
@@ -515,6 +539,7 @@ public class MainActivity extends Activity {
                 home, homeP,
                 drawP,
                 away, awayP,
+                confidence,
                 overP, underP, bttsP,
                 home, bestHome, bestAway, away,
                 "━━━━━━━━━━━━━━━━━━",
