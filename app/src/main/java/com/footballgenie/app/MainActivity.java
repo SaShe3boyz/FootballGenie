@@ -55,9 +55,42 @@ public class MainActivity extends Activity {
         buildHeader();
         buildMatchForm();
         buildResults();
+        buildQuickNavigation(scroll);
 
         setContentView(scroll);
         checkApiConnection();
+    }
+
+    private void buildQuickNavigation(ScrollView scroll) {
+        LinearLayout nav = new LinearLayout(this);
+        nav.setOrientation(LinearLayout.HORIZONTAL);
+        nav.setGravity(Gravity.CENTER);
+        nav.setPadding(dp(6), dp(8), dp(6), dp(8));
+        nav.setBackground(rounded(Color.rgb(12, 28, 45), 16));
+        String[] labels = {"⌂ Home", "⚽ Predict", "◉ Results", "◷ History"};
+        for (int i = 0; i < labels.length; i++) {
+            final int target = i;
+            Button button = new Button(this);
+            button.setText(labels[i]);
+            button.setTextColor(i == 0 ? GREEN : WHITE);
+            button.setTextSize(10);
+            button.setAllCaps(false);
+            button.setMinHeight(dp(42));
+            button.setPadding(dp(2), 0, dp(2), 0);
+            button.setBackground(rounded(Color.rgb(20, 42, 62), 12));
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dp(46), 1);
+            p.setMargins(dp(3), 0, dp(3), 0);
+            nav.addView(button, p);
+            button.setOnClickListener(v -> {
+                if (target == 3) {
+                    syncPredictionHistory();
+                    return;
+                }
+                View destination = target == 0 ? mainLayout : (target == 1 ? homeInput : result);
+                scroll.post(() -> scroll.smoothScrollTo(0, destination.getTop()));
+            });
+        }
+        mainLayout.addView(nav, 1);
     }
 
     private void buildHeader() {
@@ -179,6 +212,17 @@ public class MainActivity extends Activity {
         historyParams.bottomMargin = dp(12);
         form.addView(historyButton, historyParams);
         historyButton.setOnClickListener(v -> syncPredictionHistory());
+
+        Button resetHistoryButton = new Button(this);
+        resetHistoryButton.setText("RESET PREDICTION HISTORY");
+        resetHistoryButton.setTextColor(Color.rgb(255, 235, 235));
+        resetHistoryButton.setTextSize(13);
+        resetHistoryButton.setAllCaps(false);
+        resetHistoryButton.setBackground(rounded(Color.rgb(125, 39, 53), 14));
+        LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(-1, dp(48));
+        resetParams.bottomMargin = dp(12);
+        form.addView(resetHistoryButton, resetParams);
+        resetHistoryButton.setOnClickListener(v -> confirmResetPredictionHistory());
 
         Button simulateButton = new Button(this);
         simulateButton.setText("⚽  SIMULATE 10,000 MATCHES");
@@ -872,6 +916,18 @@ public class MainActivity extends Activity {
     
     private SharedPreferences predictionPrefs() {
         return getSharedPreferences("football_genie_predictions", MODE_PRIVATE);
+    }
+
+    private void confirmResetPredictionHistory() {
+        new AlertDialog.Builder(this)
+            .setTitle("Reset prediction history?")
+            .setMessage("This permanently deletes saved predictions and their evaluation results on this phone. It does not change the prediction engine. Continue only if you want a clean testing period.")
+            .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+            .setPositiveButton("Reset history", (dialog, which) -> {
+                predictionPrefs().edit().putString("history", "[]").apply();
+                Toast.makeText(this, "Prediction history cleared. Ready for new testing.", Toast.LENGTH_LONG).show();
+            })
+            .show();
     }
 
     private JSONArray readPredictionHistory() {
