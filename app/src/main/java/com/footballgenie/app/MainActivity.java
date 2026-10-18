@@ -551,6 +551,24 @@ public class MainActivity extends Activity {
                 confidenceReason = "The outcome probabilities are relatively close; avoid treating one pick as a safe result.";
             }
 
+            double totalExpectedGoals = homeXg + awayXg;
+            String tempoProfile;
+            if (totalExpectedGoals < 1.8) {
+                tempoProfile = "LOW-SCORING PROFILE";
+            } else if (totalExpectedGoals < 2.6) {
+                tempoProfile = "MODERATE SCORING PROFILE";
+            } else if (totalExpectedGoals < 3.4) {
+                tempoProfile = "OPEN MATCH PROFILE";
+            } else {
+                tempoProfile = "HIGH-SCORING PROFILE";
+            }
+            double xgDifference = Math.abs(homeXg - awayXg);
+            String balanceProfile = xgDifference < 0.25
+                ? "Very balanced on expected goals."
+                : (xgDifference < 0.70
+                    ? "One team has a modest expected-goals edge."
+                    : "The expected-goals inputs show a clear attacking edge.");
+
             String goalTrend = overP >= 50
                 ? "Over 2.5 goals is more likely than Under 2.5."
                 : "Under 2.5 goals is more likely than Over 2.5.";
@@ -596,11 +614,15 @@ public class MainActivity extends Activity {
                 confidenceReason + "\n" +
                 "This rating reflects simulation probabilities only; it is not a guarantee of accuracy.\n\n" +
 
-                "4. Goals analysis\n" + goalTrend +
+                "4. Match tempo and balance\n" + tempoProfile +
+                " (combined expected goals: " +
+                String.format(Locale.US, "%.2f", totalExpectedGoals) + "). " +
+                balanceProfile + "\n\n" +
+                "5. Goals analysis\n" + goalTrend +
                 "\n" + bttsTrend +
                 "\n\n" +
 
-                "5. Most frequent score\n" +
+                "6. Most frequent score\n" +
                 home + " " + bestHome + " - " +
                 bestAway + " " + away +
                 " was the most frequent exact score in " +
