@@ -373,6 +373,37 @@ public class MainActivity extends Activity {
         return 1.0;
     }
 
+    // Hypothetical match-flow estimate from a score and minute.
+    // Remaining xG is scaled by time left; score-state effects are illustrative assumptions.
+    private String scenarioOutcomeSummary(String home, String away,
+            double homeXg, double awayXg, int minute, int currentHomeGoals,
+            int currentAwayGoals, double homeAttackFactor, double awayAttackFactor) {
+        double timeLeft = Math.max(0.0, Math.min(1.0, (90.0 - minute) / 90.0));
+        double remainingHomeXg = homeXg * timeLeft * homeAttackFactor;
+        double remainingAwayXg = awayXg * timeLeft * awayAttackFactor;
+        double homeWin = 0.0, draw = 0.0, awayWin = 0.0, total = 0.0;
+        for (int h = 0; h <= 8; h++) {
+            for (int a = 0; a <= 8; a++) {
+                double p = poissonProbability(h, remainingHomeXg)
+                    * poissonProbability(a, remainingAwayXg);
+                total += p;
+                int finalHome = currentHomeGoals + h;
+                int finalAway = currentAwayGoals + a;
+                if (finalHome > finalAway) homeWin += p;
+                else if (finalHome == finalAway) draw += p;
+                else awayWin += p;
+            }
+        }
+        if (total > 0.0) {
+            homeWin /= total;
+            draw /= total;
+            awayWin /= total;
+        }
+        return String.format(Locale.US,
+            "%s %.1f%% | Draw %.1f%% | %s %.1f%%",
+            home, homeWin * 100.0, draw * 100.0, away, awayWin * 100.0);
+    }
+
     private void simulate() {
         try {
             String home =
