@@ -1283,16 +1283,16 @@ public class MainActivity extends Activity {
                 // it falls back to unadjusted form when opponent IDs/stats are missing.
                 if (usedCompetitionStrength) {
                     double adjustedHomeScored = opponentAdjustedRecentAverage(
-                        homeRecentMatches, true, competitionStrength
+                        homeRecentMatches, true, competitionStrength, competitionId
                     );
                     double adjustedHomeConceded = opponentAdjustedRecentAverage(
-                        homeRecentMatches, false, competitionStrength
+                        homeRecentMatches, false, competitionStrength, competitionId
                     );
                     double adjustedAwayScored = opponentAdjustedRecentAverage(
-                        awayRecentMatches, true, competitionStrength
+                        awayRecentMatches, true, competitionStrength, competitionId
                     );
                     double adjustedAwayConceded = opponentAdjustedRecentAverage(
-                        awayRecentMatches, false, competitionStrength
+                        awayRecentMatches, false, competitionStrength, competitionId
                     );
                     if (adjustedHomeScored >= 0) homeScored = 0.5 * homeScored + 0.5 * adjustedHomeScored;
                     if (adjustedHomeConceded >= 0) homeConceded = 0.5 * homeConceded + 0.5 * adjustedHomeConceded;
@@ -1473,7 +1473,8 @@ public class MainActivity extends Activity {
     // Normalize recent goals against the current venue-specific strength of opponents.
     // A 50% blend is applied by the caller to limit overreaction to noisy standings.
     private double opponentAdjustedRecentAverage(
-            JSONArray matches, boolean forGoals, JSONObject competitionStrength) {
+            JSONArray matches, boolean forGoals, JSONObject competitionStrength,
+            String targetCompetitionId) {
         if (matches == null || competitionStrength == null) return -1;
         double leagueHome = competitionStrength.optDouble("homeLeagueGoalsPerMatch", 0);
         double leagueAway = competitionStrength.optDouble("awayLeagueGoalsPerMatch", 0);
@@ -1485,6 +1486,11 @@ public class MainActivity extends Activity {
         for (int i = 0; i < matches.length(); i++) {
             JSONObject match = matches.optJSONObject(i);
             if (match == null) continue;
+            String matchCompetitionId = match.optString("competitionId", "");
+            // Only compare opponent strengths from the same competition as the fixture.
+            // Cup and cross-league matches are not calibrated against league standings.
+            if (!targetCompetitionId.isEmpty() && !matchCompetitionId.isEmpty()
+                    && !targetCompetitionId.equals(matchCompetitionId)) continue;
             long opponentId = match.optLong("opponentId", -1);
             if (opponentId <= 0) continue;
             JSONObject opponent = findCompetitionTeamStats(
