@@ -31,6 +31,7 @@ public class MainActivity extends Activity {
     private EditText homeInput, awayInput, homeGoals, awayGoals;
     private TextView result, status;
     private LinearLayout statsSummary;
+    private LinearLayout detailedAnalysisContainer;
     private TextView homeWinValue, drawValue, awayWinValue;
     private TextView overValue, underValue, bttsValue;
     // Home-screen fixture card must reflect the same selected fixture as Predict.
@@ -1009,21 +1010,33 @@ public class MainActivity extends Activity {
         detailsHeading.setPadding(0, dp(18), 0, dp(4));
         outputCard.addView(detailsHeading);
 
-        TextView analysisLabel = label("DETAILED MATCH INTELLIGENCE");
+        TextView analysisLabel = label("PREDICTION BREAKDOWN");
         analysisLabel.setTextColor(GREEN);
         analysisLabel.setTextSize(13);
         analysisLabel.setTypeface(null, Typeface.BOLD);
         analysisLabel.setPadding(0, dp(18), 0, dp(8));
         outputCard.addView(analysisLabel);
 
-        result = label("Run a match simulation to generate the prediction summary, scoreline outlook, goal probabilities and match-flow analysis.");
+        result = label("Run a match simulation to generate the prediction summary and most likely scorelines.");
         result.setTextColor(WHITE);
         result.setTextSize(14);
-        result.setLineSpacing(dp(6), 1.08f);
-        result.setPadding(dp(14), dp(16), dp(14), dp(16));
+        result.setLineSpacing(dp(5), 1.05f);
+        result.setPadding(dp(14), dp(15), dp(14), dp(15));
         result.setBackground(rounded(Color.rgb(15, 26, 43), 14));
         result.setGravity(Gravity.START);
         outputCard.addView(result);
+
+        TextView detailTitle = label("DETAILED MATCH INTELLIGENCE");
+        detailTitle.setTextColor(GREEN);
+        detailTitle.setTextSize(14);
+        detailTitle.setTypeface(null, Typeface.BOLD);
+        detailTitle.setPadding(0, dp(18), 0, dp(10));
+        outputCard.addView(detailTitle);
+
+        detailedAnalysisContainer = new LinearLayout(this);
+        detailedAnalysisContainer.setOrientation(LinearLayout.VERTICAL);
+        renderDetailedAnalysis("");
+        outputCard.addView(detailedAnalysisContainer);
         mainLayout.addView(outputCard);
 
         TextView footer = label("FOOTBALL GENIE  •  STATISTICS, NOT CERTAINTY\nProbabilities describe modelled outcomes. Real matches can differ.");
@@ -1032,6 +1045,61 @@ public class MainActivity extends Activity {
         footer.setGravity(Gravity.CENTER);
         footer.setPadding(0, dp(24), 0, dp(10));
         mainLayout.addView(footer);
+    }
+
+    private void renderDetailedAnalysis(String analysisText) {
+        if (detailedAnalysisContainer == null) return;
+        detailedAnalysisContainer.removeAllViews();
+        String source = analysisText == null ? "" : analysisText.trim();
+        if (source.isEmpty()) {
+            TextView empty = label("Your full match breakdown will appear here after the simulation. Each topic will be shown in its own easy-to-read card.");
+            empty.setTextColor(MUTED);
+            empty.setTextSize(13);
+            empty.setLineSpacing(dp(4), 1.05f);
+            empty.setPadding(dp(14), dp(14), dp(14), dp(14));
+            empty.setBackground(rounded(Color.rgb(15, 26, 43), 14));
+            detailedAnalysisContainer.addView(empty);
+            return;
+        }
+        String[] sections = source.split("\\n\\s*\\n");
+        for (String section : sections) {
+            String cleaned = section.trim();
+            if (cleaned.isEmpty()) continue;
+            String[] lines = cleaned.split("\\n");
+            String heading = lines[0].replace("━━━━━━━━━━━━━━━━━━", "").trim();
+            StringBuilder bodyText = new StringBuilder();
+            for (int i = 1; i < lines.length; i++) {
+                String line = lines[i].trim();
+                if (!line.isEmpty()) {
+                    if (bodyText.length() > 0) bodyText.append("\\n");
+                    bodyText.append(line);
+                }
+            }
+            LinearLayout detailCard = new LinearLayout(this);
+            detailCard.setOrientation(LinearLayout.VERTICAL);
+            detailCard.setPadding(dp(14), dp(12), dp(14), dp(13));
+            detailCard.setBackground(rounded(Color.rgb(20, 31, 51), 13));
+            LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
+            cardParams.bottomMargin = dp(9);
+            detailedAnalysisContainer.addView(detailCard, cardParams);
+
+            TextView headingView = label(heading.isEmpty() ? "MATCH INSIGHT" : heading.toUpperCase(Locale.US));
+            headingView.setTextColor(GREEN);
+            headingView.setTextSize(11);
+            headingView.setTypeface(null, Typeface.BOLD);
+            headingView.setLetterSpacing(0.04f);
+            detailCard.addView(headingView);
+
+            if (bodyText.length() > 0) {
+                TextView body = label(bodyText.toString());
+                body.setTextColor(WHITE);
+                body.setTextSize(13);
+                body.setLineSpacing(dp(4), 1.04f);
+                body.setPadding(0, dp(7), 0, 0);
+                body.setGravity(Gravity.START);
+                detailCard.addView(body);
+            }
+        }
     }
 
     private TextView addMetricCard(LinearLayout row, String heading, String initial, int valueColor) {
@@ -1637,16 +1705,15 @@ public class MainActivity extends Activity {
             bttsValue.setText(String.format(Locale.US, "%.1f%%", bttsP));
 
             result.setText(String.format(Locale.US,
-                "10,000 SIMULATIONS COMPLETED\n\n" +
+                "✓  10,000 SIMULATIONS COMPLETED\n\n" +
                 "MODEL LEAN\n%s\n\n" +
                 "MOST FREQUENT SCORE\n%s %d - %d %s\n\n" +
-                "TOP 3 MOST LIKELY SCORELINES\n%s\n\n" +
-                "DETAILED MATCH INTELLIGENCE\n%s",
+                "TOP 3 MOST LIKELY SCORELINES\n%s",
                 confidence,
                 home, bestHome, bestAway, away,
-                topScores.toString(),
-                analysis
+                topScores.toString()
             ));
+            renderDetailedAnalysis(analysis);
 
             savePredictionIfEligible(home, away, homeXg, awayXg,
                 homeP, drawP, awayP, overP, bttsP, bestHome, bestAway);
