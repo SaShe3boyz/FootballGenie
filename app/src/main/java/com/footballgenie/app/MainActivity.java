@@ -894,7 +894,6 @@ public class MainActivity extends Activity {
         simulateButton.setOnClickListener(v -> {
             hideKeyboard();
             simulate();
-            showScreen(2);
         });
         mainLayout.addView(runCard);
     }
@@ -1635,6 +1634,7 @@ public class MainActivity extends Activity {
 
             savePredictionIfEligible(home, away, homeXg, awayXg,
                 homeP, drawP, awayP, overP, bttsP, bestHome, bestAway);
+            showScreen(2);
 
         } catch (Exception e) {
             Toast.makeText(
