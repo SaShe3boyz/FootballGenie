@@ -1278,6 +1278,37 @@ public class MainActivity extends Activity {
                     && competitionStrength.optDouble("homeLeagueGoalsPerMatch", 0) > 0
                     && competitionStrength.optDouble("awayLeagueGoalsPerMatch", 0) > 0;
 
+                // Partly normalize recent goal rates for the strength of opponents faced.
+                // This is a conservative adjustment using current season venue rates;
+                // it falls back to unadjusted form when opponent IDs/stats are missing.
+                if (usedCompetitionStrength) {
+                    double adjustedHomeScored = opponentAdjustedRecentAverage(
+                        homeRecentMatches, true, competitionStrength
+                    );
+                    double adjustedHomeConceded = opponentAdjustedRecentAverage(
+                        homeRecentMatches, false, competitionStrength
+                    );
+                    double adjustedAwayScored = opponentAdjustedRecentAverage(
+                        awayRecentMatches, true, competitionStrength
+                    );
+                    double adjustedAwayConceded = opponentAdjustedRecentAverage(
+                        awayRecentMatches, false, competitionStrength
+                    );
+                    if (adjustedHomeScored >= 0) homeScored = 0.5 * homeScored + 0.5 * adjustedHomeScored;
+                    if (adjustedHomeConceded >= 0) homeConceded = 0.5 * homeConceded + 0.5 * adjustedHomeConceded;
+                    if (adjustedAwayScored >= 0) awayScored = 0.5 * awayScored + 0.5 * adjustedAwayScored;
+                    if (adjustedAwayConceded >= 0) awayConceded = 0.5 * awayConceded + 0.5 * adjustedAwayConceded;
+
+                    homeAttack = homeScored * (1.0 - homeVenueWeight)
+                        + homeVenueScored * homeVenueWeight;
+                    homeDefence = homeConceded * (1.0 - homeVenueWeight)
+                        + homeVenueConceded * homeVenueWeight;
+                    awayAttack = awayScored * (1.0 - awayVenueWeight)
+                        + awayVenueScored * awayVenueWeight;
+                    awayDefence = awayConceded * (1.0 - awayVenueWeight)
+                        + awayVenueConceded * awayVenueWeight;
+                }
+
                 if (usedCompetitionStrength) {
                     double leagueHomeGoals = competitionStrength.optDouble(
                         "homeLeagueGoalsPerMatch", 1.45
@@ -1437,6 +1468,60 @@ public class MainActivity extends Activity {
             }
         }
         return null;
+    }
+
+    // Normalize recent goals against the current venue-specific strength of opponents.
+    // A 50% blend is applied by the caller to limit overreaction to noisy standings.
+    private double opponentAdjustedRecentAverage(
+            JSONArray matches, boolean forGoals, JSONObject competitionStrength) {
+        if (matches == null || competitionStrength == null) return -1;
+        double leagueHome = competitionStrength.optDouble("homeLeagueGoalsPerMatch", 0);
+        double leagueAway = competitionStrength.optDouble("awayLeagueGoalsPerMatch", 0);
+        if (leagueHome <= 0 || leagueAway <= 0) return -1;
+
+        double weightedTotal = 0.0;
+        double totalWeight = 0.0;
+        int usable = 0;
+        for (int i = 0; i < matches.length(); i++) {
+            JSONObject match = matches.optJSONObject(i);
+            if (match == null) continue;
+            long opponentId = match.optLong("opponentId", -1);
+            if (opponentId <= 0) continue;
+            JSONObject opponent = findCompetitionTeamStats(
+                competitionStrength, String.valueOf(opponentId)
+            );
+            if (opponent == null) continue;
+
+            boolean ourTeamHome = "HOME".equals(match.optString("venue", ""));
+            double opponentAttack = ourTeamHome
+                ? opponent.optDouble("awayScored", -1)
+                : opponent.optDouble("homeScored", -1);
+            double opponentConceded = ourTeamHome
+                ? opponent.optDouble("awayConceded", -1)
+                : opponent.optDouble("homeConceded", -1);
+            double scoringBaseline = ourTeamHome ? leagueHome : leagueAway;
+            double concedingBaseline = ourTeamHome ? leagueAway : leagueHome;
+            int goals = match.optInt(forGoals ? "goalsFor" : "goalsAgainst", -1);
+            if (goals < 0) continue;
+
+            double adjustedGoals;
+            if (forGoals) {
+                if (opponentConceded < 0) continue;
+                double ratio = Math.max(0.55, Math.min(1.70,
+                    opponentConceded / scoringBaseline));
+                adjustedGoals = goals / ratio;
+            } else {
+                if (opponentAttack < 0) continue;
+                double ratio = Math.max(0.55, Math.min(1.70,
+                    opponentAttack / concedingBaseline));
+                adjustedGoals = goals / ratio;
+            }
+            double weight = Math.pow(0.88, usable);
+            weightedTotal += adjustedGoals * weight;
+            totalWeight += weight;
+            usable++;
+        }
+        return totalWeight > 0 ? weightedTotal / totalWeight : -1;
     }
 
     // Newest matches receive the greatest weight (1.0, then 0.88, 0.77...).
