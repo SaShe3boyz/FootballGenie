@@ -1373,6 +1373,40 @@ public class MainActivity extends Activity {
                     && competitionStrength.optDouble("homeLeagueGoalsPerMatch", 0) > 0
                     && competitionStrength.optDouble("awayLeagueGoalsPerMatch", 0) > 0;
 
+                // Shrink small recent-form samples toward competition scoring baselines.
+                // As more completed matches become available, the observed team rates carry
+                // more weight. Venue-specific rates are separately sample-weighted below.
+                if (usedCompetitionStrength) {
+                    double leagueHomeBaseline = competitionStrength.optDouble(
+                        "homeLeagueGoalsPerMatch", 0
+                    );
+                    double leagueAwayBaseline = competitionStrength.optDouble(
+                        "awayLeagueGoalsPerMatch", 0
+                    );
+                    int homeRecentSample = homeStats.optInt("sampleSize", 0);
+                    int awayRecentSample = awayStats.optInt("sampleSize", 0);
+                    double homeRecentReliability = homeRecentSample
+                        / (homeRecentSample + 4.0);
+                    double awayRecentReliability = awayRecentSample
+                        / (awayRecentSample + 4.0);
+                    homeScored = homeScored * homeRecentReliability
+                        + leagueHomeBaseline * (1.0 - homeRecentReliability);
+                    homeConceded = homeConceded * homeRecentReliability
+                        + leagueAwayBaseline * (1.0 - homeRecentReliability);
+                    awayScored = awayScored * awayRecentReliability
+                        + leagueAwayBaseline * (1.0 - awayRecentReliability);
+                    awayConceded = awayConceded * awayRecentReliability
+                        + leagueHomeBaseline * (1.0 - awayRecentReliability);
+                    homeAttack = homeScored * (1.0 - homeVenueWeight)
+                        + homeVenueScored * homeVenueWeight;
+                    homeDefence = homeConceded * (1.0 - homeVenueWeight)
+                        + homeVenueConceded * homeVenueWeight;
+                    awayAttack = awayScored * (1.0 - awayVenueWeight)
+                        + awayVenueScored * awayVenueWeight;
+                    awayDefence = awayConceded * (1.0 - awayVenueWeight)
+                        + awayVenueConceded * awayVenueWeight;
+                }
+
                 // Partly normalize recent goal rates for the strength of opponents faced.
                 // This is a conservative adjustment using current season venue rates;
                 // it falls back to unadjusted form when opponent IDs/stats are missing.
