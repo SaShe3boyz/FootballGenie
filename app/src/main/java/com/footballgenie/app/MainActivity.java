@@ -1408,6 +1408,12 @@ public class MainActivity extends Activity {
                 final int displayedHomeVenueSample = homeVenueSample;
                 final int displayedAwayVenueSample = awayVenueSample;
                 final boolean appliedOpponentAdjustment = usedOpponentAdjustment;
+                final int homeOpponentSample = countRatedOpponents(
+                    homeRecentMatches, competitionStrength, competitionId
+                );
+                final int awayOpponentSample = countRatedOpponents(
+                    awayRecentMatches, competitionStrength, competitionId
+                );
                 final String homeWeightedScoredText = String.format(Locale.US, "%.2f", homeScored);
                 final String homeWeightedConcededText = String.format(Locale.US, "%.2f", homeConceded);
                 final String awayWeightedScoredText = String.format(Locale.US, "%.2f", awayScored);
@@ -1440,7 +1446,9 @@ public class MainActivity extends Activity {
                             ? "Current competition scoring baselines and season home/away strength are also included. "
                             : "Competition standings were unavailable, so season-strength adjustment was skipped. ") +
                         (appliedOpponentAdjustment
-                            ? "Recent form was also adjusted using available opponent strengths from this competition. "
+                            ? "Recent form was adjusted using available opponent strengths; rated opponents: " +
+                                homeOpponentSample + " for " + homeName + " and " +
+                                awayOpponentSample + " for " + awayName + ". "
                             : "No usable same-competition opponent ratings were available for recent-form adjustment. ") +
                         "These remain estimates; check team news and edit expected goals if needed."
                     );
@@ -1512,6 +1520,24 @@ public class MainActivity extends Activity {
             }
         }
         return null;
+    }
+
+    private int countRatedOpponents(
+            JSONArray matches, JSONObject competitionStrength, String targetCompetitionId) {
+        if (matches == null || competitionStrength == null) return 0;
+        int count = 0;
+        for (int i = 0; i < matches.length(); i++) {
+            JSONObject match = matches.optJSONObject(i);
+            if (match == null) continue;
+            String matchCompetitionId = match.optString("competitionId", "");
+            if (!targetCompetitionId.isEmpty() && !matchCompetitionId.isEmpty()
+                    && !targetCompetitionId.equals(matchCompetitionId)) continue;
+            long opponentId = match.optLong("opponentId", -1);
+            if (opponentId <= 0) continue;
+            if (findCompetitionTeamStats(
+                    competitionStrength, String.valueOf(opponentId)) != null) count++;
+        }
+        return count;
     }
 
     // Normalize recent goals against the current venue-specific strength of opponents.
