@@ -1026,6 +1026,7 @@ public class MainActivity extends Activity {
         JSONArray history = readPredictionHistory();
         int finished = 0, outcomeCorrect = 0, goalsCorrect = 0;
         int bttsCorrect = 0, exactCorrect = 0;
+        int actualHomeWins = 0, actualDraws = 0, actualAwayWins = 0;
         double outcomeBrierTotal = 0.0;
         double goalsBrierTotal = 0.0;
         double bttsBrierTotal = 0.0;
@@ -1082,6 +1083,7 @@ public class MainActivity extends Activity {
                     boolean actualDraw = ah == aa;
                     boolean actualAway = ah < aa;
                     String actualOutcome = actualHome ? "HOME" : (actualDraw ? "DRAW" : "AWAY");
+                    if (actualHome) actualHomeWins++; else if (actualDraw) actualDraws++; else actualAwayWins++;
                     if (predictedOutcome.equals(actualOutcome)) outcomeCorrect++;
 
                     double hp = record.optDouble("homeP", 0) / 100.0;
@@ -1126,6 +1128,8 @@ public class MainActivity extends Activity {
             summary.insert("PREDICTION HISTORY\n".length(),
                 "Evaluated matches: " + finished + "\n" +
                 sampleGuidance + "\n\n" +
+                "Majority-result baseline (retrospective): " + Math.max(actualHomeWins, Math.max(actualDraws, actualAwayWins)) + "/" + finished + " (" + String.format(Locale.US, "%.1f", 100.0 * Math.max(actualHomeWins, Math.max(actualDraws, actualAwayWins)) / finished) + "%)\n" +
+                "Actual outcomes: home " + actualHomeWins + ", draw " + actualDraws + ", away " + actualAwayWins + "\n" +
                 "Outcome pick correct: " + outcomeCorrect + "/" + finished +
                 " (" + String.format(Locale.US, "%.1f", 100.0 * outcomeCorrect / finished) + "%)\n" +
                 "Over/Under pick correct: " + goalsCorrect + "/" + finished +
