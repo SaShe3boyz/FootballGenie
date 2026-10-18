@@ -1284,16 +1284,16 @@ public class MainActivity extends Activity {
                 boolean usedOpponentAdjustment = false;
                 if (usedCompetitionStrength) {
                     double adjustedHomeScored = opponentAdjustedRecentAverage(
-                        homeRecentMatches, true, competitionStrength, competitionId
+                        homeRecentMatches, true, competitionStrength, competitionId, null
                     );
                     double adjustedHomeConceded = opponentAdjustedRecentAverage(
-                        homeRecentMatches, false, competitionStrength, competitionId
+                        homeRecentMatches, false, competitionStrength, competitionId, null
                     );
                     double adjustedAwayScored = opponentAdjustedRecentAverage(
-                        awayRecentMatches, true, competitionStrength, competitionId
+                        awayRecentMatches, true, competitionStrength, competitionId, null
                     );
                     double adjustedAwayConceded = opponentAdjustedRecentAverage(
-                        awayRecentMatches, false, competitionStrength, competitionId
+                        awayRecentMatches, false, competitionStrength, competitionId, null
                     );
                     usedOpponentAdjustment = adjustedHomeScored >= 0
                         || adjustedHomeConceded >= 0
@@ -1304,6 +1304,41 @@ public class MainActivity extends Activity {
                     if (adjustedAwayScored >= 0) awayScored = 0.5 * awayScored + 0.5 * adjustedAwayScored;
                     if (adjustedAwayConceded >= 0) awayConceded = 0.5 * awayConceded + 0.5 * adjustedAwayConceded;
 
+                    homeAttack = homeScored * (1.0 - homeVenueWeight)
+                        + homeVenueScored * homeVenueWeight;
+                    homeDefence = homeConceded * (1.0 - homeVenueWeight)
+                        + homeVenueConceded * homeVenueWeight;
+                    awayAttack = awayScored * (1.0 - awayVenueWeight)
+                        + awayVenueScored * awayVenueWeight;
+                    awayDefence = awayConceded * (1.0 - awayVenueWeight)
+                        + awayVenueConceded * awayVenueWeight;
+                }
+
+                if (usedCompetitionStrength) {
+                    double adjustedHomeVenueScored = opponentAdjustedRecentAverage(
+                        homeRecentMatches, true, competitionStrength, competitionId, "HOME"
+                    );
+                    double adjustedHomeVenueConceded = opponentAdjustedRecentAverage(
+                        homeRecentMatches, false, competitionStrength, competitionId, "HOME"
+                    );
+                    double adjustedAwayVenueScored = opponentAdjustedRecentAverage(
+                        awayRecentMatches, true, competitionStrength, competitionId, "AWAY"
+                    );
+                    double adjustedAwayVenueConceded = opponentAdjustedRecentAverage(
+                        awayRecentMatches, false, competitionStrength, competitionId, "AWAY"
+                    );
+                    if (adjustedHomeVenueScored >= 0) {
+                        homeVenueScored = 0.5 * homeVenueScored + 0.5 * adjustedHomeVenueScored;
+                    }
+                    if (adjustedHomeVenueConceded >= 0) {
+                        homeVenueConceded = 0.5 * homeVenueConceded + 0.5 * adjustedHomeVenueConceded;
+                    }
+                    if (adjustedAwayVenueScored >= 0) {
+                        awayVenueScored = 0.5 * awayVenueScored + 0.5 * adjustedAwayVenueScored;
+                    }
+                    if (adjustedAwayVenueConceded >= 0) {
+                        awayVenueConceded = 0.5 * awayVenueConceded + 0.5 * adjustedAwayVenueConceded;
+                    }
                     homeAttack = homeScored * (1.0 - homeVenueWeight)
                         + homeVenueScored * homeVenueWeight;
                     homeDefence = homeConceded * (1.0 - homeVenueWeight)
@@ -1483,7 +1518,7 @@ public class MainActivity extends Activity {
     // A 50% blend is applied by the caller to limit overreaction to noisy standings.
     private double opponentAdjustedRecentAverage(
             JSONArray matches, boolean forGoals, JSONObject competitionStrength,
-            String targetCompetitionId) {
+            String targetCompetitionId, String venueFilter) {
         if (matches == null || competitionStrength == null) return -1;
         double leagueHome = competitionStrength.optDouble("homeLeagueGoalsPerMatch", 0);
         double leagueAway = competitionStrength.optDouble("awayLeagueGoalsPerMatch", 0);
@@ -1495,6 +1530,8 @@ public class MainActivity extends Activity {
         for (int i = 0; i < matches.length(); i++) {
             JSONObject match = matches.optJSONObject(i);
             if (match == null) continue;
+            String matchVenue = match.optString("venue", "");
+            if (venueFilter != null && !venueFilter.equals(matchVenue)) continue;
             String matchCompetitionId = match.optString("competitionId", "");
             // Only compare opponent strengths from the same competition as the fixture.
             // Cup and cross-league matches are not calibrated against league standings.
