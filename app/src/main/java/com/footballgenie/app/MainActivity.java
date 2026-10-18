@@ -869,8 +869,14 @@ public class MainActivity extends Activity {
         }
 
         if (finished > 0) {
+            String sampleGuidance = finished < 30
+                ? "Sample note: VERY SMALL sample. Treat these metrics as preliminary; results can swing sharply."
+                : (finished < 100
+                    ? "Sample note: DEVELOPING sample. Look for the same pattern across more matches."
+                    : "Sample note: LARGER sample. Metrics are more informative, but still do not guarantee future accuracy.");
             summary.insert("PREDICTION HISTORY\n".length(),
                 "Evaluated matches: " + finished + "\n" +
+                sampleGuidance + "\n\n" +
                 "Outcome pick correct: " + outcomeCorrect + "/" + finished +
                 " (" + String.format(Locale.US, "%.1f", 100.0 * outcomeCorrect / finished) + "%)\n" +
                 "Over/Under pick correct: " + goalsCorrect + "/" + finished +
