@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.text.InputType;
 import android.widget.*;
+import android.widget.FrameLayout;
 
 import java.util.Locale;
 import java.util.Random;
@@ -32,6 +33,9 @@ public class MainActivity extends Activity {
     private TextView homeWinValue, drawValue, awayWinValue;
     private TextView overValue, underValue, bttsValue;
     private LinearLayout mainLayout;
+    private FrameLayout screenHost;
+    private final View[] appScreens = new View[8];
+    private TextView simulationSummary;
     private JSONObject selectedFixture;
 
     private final int BG = Color.rgb(9, 16, 31);
@@ -44,58 +48,298 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(BG);
+
+        screenHost = new FrameLayout(this);
+        LinearLayout.LayoutParams hostParams =
+            new LinearLayout.LayoutParams(-1, 0, 1f);
+        root.addView(screenHost, hostParams);
+
+        appScreens[0] = createAppPage(0); // Home
+        appScreens[1] = createAppPage(1); // Match Centre
+        appScreens[2] = createAppPage(2); // Prediction Results
+        appScreens[3] = createAppPage(3); // Match Simulation
+        appScreens[4] = createAppPage(4); // Prediction History
+        appScreens[5] = createAppPage(5); // Live Fixtures
+        appScreens[6] = createAppPage(6); // Validation & Performance
+        appScreens[7] = createAppPage(7); // Settings
+
+        root.addView(buildBottomNavigation(),
+            new LinearLayout.LayoutParams(-1, dp(62)));
+        setContentView(root);
+        showScreen(0);
+        checkApiConnection();
+    }
+
+    private View createAppPage(int screen) {
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
         scroll.setBackgroundColor(BG);
 
-        mainLayout = new LinearLayout(this);
-        mainLayout.setOrientation(LinearLayout.VERTICAL);
-        mainLayout.setPadding(dp(18), dp(20), dp(18), dp(30));
+        LinearLayout page = new LinearLayout(this);
+        page.setOrientation(LinearLayout.VERTICAL);
+        page.setPadding(dp(16), dp(12), dp(16), dp(24));
+        scroll.addView(page);
 
-        scroll.addView(mainLayout);
-
-        buildHeader();
-        buildMatchForm();
-        buildResults();
-        buildHistoryTools();
-        buildQuickNavigation(scroll);
-
-        setContentView(scroll);
-        checkApiConnection();
+        LinearLayout previousLayout = mainLayout;
+        mainLayout = page;
+        switch (screen) {
+            case 0:
+                buildHeader();
+                buildHomeShortcuts();
+                break;
+            case 1:
+                buildMatchForm();
+                break;
+            case 2:
+                buildResults();
+                break;
+            case 3:
+                buildSimulationScreen();
+                break;
+            case 4:
+                buildHistoryTools();
+                break;
+            case 5:
+                buildLiveFixturesScreen();
+                break;
+            case 6:
+                buildValidationScreen();
+                break;
+            case 7:
+                buildSettingsScreen();
+                break;
+        }
+        mainLayout = previousLayout;
+        return scroll;
     }
 
-    private void buildQuickNavigation(ScrollView scroll) {
+    private LinearLayout buildBottomNavigation() {
         LinearLayout nav = new LinearLayout(this);
         nav.setOrientation(LinearLayout.HORIZONTAL);
         nav.setGravity(Gravity.CENTER);
-        nav.setPadding(dp(7), dp(7), dp(7), dp(7));
-        nav.setBackground(rounded(Color.rgb(10, 24, 39), 18));
-        String[] labels = {"⌂ HOME", "⚽ PREDICT", "◉ RESULTS", "◷ HISTORY"};
-        int[] targets = {0, 1, 2, 3};
+        nav.setPadding(dp(4), dp(5), dp(4), dp(5));
+        nav.setBackground(rounded(Color.rgb(5, 13, 26), 0));
+        String[] labels = {"⌂\\nHOME", "⚽\\nPREDICT", "▥\\nRESULTS",
+            "◉\\nSIMULATE", "◷\\nHISTORY"};
+        int[] targets = {0, 1, 2, 3, 4};
         for (int i = 0; i < labels.length; i++) {
             final int target = targets[i];
             Button button = new Button(this);
             button.setText(labels[i]);
-            button.setTextColor(i == 1 ? Color.rgb(8, 25, 22) : WHITE);
+            button.setTextColor(WHITE);
             button.setTextSize(9);
             button.setTypeface(null, Typeface.BOLD);
             button.setAllCaps(false);
-            button.setMinHeight(dp(42));
-            button.setPadding(dp(1), 0, dp(1), 0);
-            button.setBackground(rounded(i == 1 ? GREEN : Color.rgb(22, 42, 61), 12));
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dp(44), 1);
-            p.setMargins(dp(3), 0, dp(3), 0);
-            nav.addView(button, p);
-            button.setOnClickListener(v -> {
-                if (target == 3) {
-                    syncPredictionHistory();
-                    return;
-                }
-                View destination = target == 0 ? mainLayout : (target == 1 ? homeInput : result);
-                scroll.post(() -> scroll.smoothScrollTo(0, destination.getTop()));
-            });
+            button.setMinHeight(dp(48));
+            button.setPadding(0, 0, 0, 0);
+            button.setBackground(rounded(Color.rgb(5, 13, 26), 10));
+            LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(0, dp(52), 1f);
+            params.setMargins(dp(2), 0, dp(2), 0);
+            nav.addView(button, params);
+            button.setOnClickListener(v -> showScreen(target));
         }
-        mainLayout.addView(nav, 0);
+        return nav;
+    }
+
+    private void showScreen(int screen) {
+        if (screen < 0 || screen >= appScreens.length || appScreens[screen] == null) return;
+        screenHost.removeAllViews();
+        screenHost.addView(appScreens[screen],
+            new FrameLayout.LayoutParams(-1, -1));
+        if (screen == 3 && simulationSummary != null && result != null) {
+            simulationSummary.setText(result.getText());
+        }
+    }
+
+    private void buildHomeShortcuts() {
+        addHeading("01", "YOUR MATCH INTELLIGENCE CENTRE");
+        TextView note = label("All eight app sections are available here. Use the bottom navigation for the main screens, or open any tool below.");
+        note.setTextColor(MUTED);
+        note.setTextSize(13);
+        note.setLineSpacing(dp(3), 1.0f);
+        note.setPadding(dp(2), 0, dp(2), dp(14));
+        mainLayout.addView(note);
+
+        addShortcut("⚽  MATCH CENTRE", "Choose a fixture or enter teams and expected goals.", 1);
+        addShortcut("🌐  LIVE FIXTURES", "Browse scheduled matches and select a fixture.", 5);
+        addShortcut("📊  PREDICTION RESULTS", "Review 1X2, goals-market probabilities and model analysis.", 2);
+        addShortcut("⏱  MATCH SIMULATION", "Inspect the latest simulated match flow and score scenarios.", 3);
+        addShortcut("📜  PREDICTION HISTORY", "Review saved predictions and update completed results.", 4);
+        addShortcut("✓  VALIDATION & PERFORMANCE", "Check evaluated predictions, goal error and calibration metrics.", 6);
+        addShortcut("⚙  SETTINGS", "Data connection, preferences, reset and app information.", 7);
+    }
+
+    private void addShortcut(String title, String description, int target) {
+        LinearLayout shortcut = card();
+        shortcut.setOrientation(LinearLayout.VERTICAL);
+        TextView heading = label(title);
+        heading.setTextColor(GREEN);
+        heading.setTextSize(14);
+        heading.setTypeface(null, Typeface.BOLD);
+        shortcut.addView(heading);
+        TextView detail = label(description);
+        detail.setTextColor(MUTED);
+        detail.setTextSize(12);
+        detail.setPadding(0, dp(5), 0, dp(2));
+        shortcut.addView(detail);
+        shortcut.setClickable(true);
+        shortcut.setFocusable(true);
+        shortcut.setOnClickListener(v -> showScreen(target));
+        mainLayout.addView(shortcut);
+    }
+
+    private void buildSimulationScreen() {
+        addHeading("04", "MATCH SIMULATION");
+        TextView note = label("This screen presents the latest match simulation and its modelled match-flow analysis. Run a prediction from Match Centre first.");
+        note.setTextColor(MUTED);
+        note.setTextSize(13);
+        note.setLineSpacing(dp(3), 1.0f);
+        note.setPadding(0, 0, 0, dp(12));
+        mainLayout.addView(note);
+
+        LinearLayout simulationCard = card();
+        simulationCard.setOrientation(LinearLayout.VERTICAL);
+        TextView title = label("LATEST SIMULATED MATCH");
+        title.setTextColor(GREEN);
+        title.setTextSize(13);
+        title.setTypeface(null, Typeface.BOLD);
+        simulationCard.addView(title);
+
+        simulationSummary = label("No simulation yet. Open MATCH CENTRE, enter both teams and expected goals, then run 10,000 simulations.");
+        simulationSummary.setTextColor(WHITE);
+        simulationSummary.setTextSize(13);
+        simulationSummary.setLineSpacing(dp(4), 1.0f);
+        simulationSummary.setPadding(0, dp(10), 0, dp(8));
+        simulationCard.addView(simulationSummary);
+
+        Button predictButton = new Button(this);
+        predictButton.setText("⚽  RUN / UPDATE SIMULATION");
+        predictButton.setTextColor(Color.rgb(8, 25, 22));
+        predictButton.setTextSize(13);
+        predictButton.setAllCaps(false);
+        predictButton.setTypeface(null, Typeface.BOLD);
+        predictButton.setBackground(rounded(GREEN, 13));
+        simulationCard.addView(predictButton, new LinearLayout.LayoutParams(-1, dp(50)));
+        predictButton.setOnClickListener(v -> showScreen(1));
+        mainLayout.addView(simulationCard);
+    }
+
+    private void buildLiveFixturesScreen() {
+        addHeading("05", "LIVE FIXTURES");
+        TextView note = label("Load fixtures from the connected football data service. Select a match to bring it into Match Centre for team statistics and expected-goal estimates.");
+        note.setTextColor(MUTED);
+        note.setTextSize(13);
+        note.setLineSpacing(dp(3), 1.0f);
+        note.setPadding(0, 0, 0, dp(14));
+        mainLayout.addView(note);
+
+        LinearLayout fixturesCard = card();
+        TextView title = label("FIXTURE BROWSER");
+        title.setTextColor(GREEN);
+        title.setTextSize(14);
+        title.setTypeface(null, Typeface.BOLD);
+        fixturesCard.addView(title);
+        TextView detail = label("Fixtures are loaded from the Football Genie API. Availability depends on the data provider and competition coverage.");
+        detail.setTextColor(MUTED);
+        detail.setTextSize(12);
+        detail.setPadding(0, dp(6), 0, dp(12));
+        fixturesCard.addView(detail);
+        Button load = new Button(this);
+        load.setText("🌐  LOAD LIVE FIXTURES");
+        load.setTextColor(Color.rgb(8, 25, 22));
+        load.setTextSize(13);
+        load.setTypeface(null, Typeface.BOLD);
+        load.setAllCaps(false);
+        load.setBackground(rounded(GREEN, 13));
+        fixturesCard.addView(load, new LinearLayout.LayoutParams(-1, dp(50)));
+        load.setOnClickListener(v -> loadFixtures());
+        mainLayout.addView(fixturesCard);
+    }
+
+    private void buildValidationScreen() {
+        addHeading("06", "VALIDATION & PERFORMANCE");
+        TextView note = label("Use finished matches to evaluate the model. Accuracy and calibration metrics should be based on saved predictions with known final scores—not on predictions that are still pending.");
+        note.setTextColor(MUTED);
+        note.setTextSize(13);
+        note.setLineSpacing(dp(3), 1.0f);
+        note.setPadding(0, 0, 0, dp(14));
+        mainLayout.addView(note);
+
+        LinearLayout validationCard = card();
+        TextView title = label("MODEL PERFORMANCE REPORT");
+        title.setTextColor(GREEN);
+        title.setTextSize(14);
+        title.setTypeface(null, Typeface.BOLD);
+        validationCard.addView(title);
+        TextView detail = label("Open prediction history to update actual scores and inspect evaluated predictions, goal prediction error, probability calibration and baseline comparisons.");
+        detail.setTextColor(MUTED);
+        detail.setTextSize(12);
+        detail.setLineSpacing(dp(3), 1.0f);
+        detail.setPadding(0, dp(6), 0, dp(12));
+        validationCard.addView(detail);
+        Button open = new Button(this);
+        open.setText("📈  OPEN VALIDATION REPORT");
+        open.setTextColor(WHITE);
+        open.setTextSize(13);
+        open.setAllCaps(false);
+        open.setBackground(rounded(CARD, 13));
+        validationCard.addView(open, new LinearLayout.LayoutParams(-1, dp(50)));
+        open.setOnClickListener(v -> syncPredictionHistory());
+        mainLayout.addView(validationCard);
+    }
+
+    private void buildSettingsScreen() {
+        addHeading("07", "SETTINGS");
+        TextView note = label("Manage data connection, app information and prediction history.");
+        note.setTextColor(MUTED);
+        note.setTextSize(13);
+        note.setPadding(0, 0, 0, dp(12));
+        mainLayout.addView(note);
+
+        addSettingsItem("👤  ACCOUNT", "Account and profile options", () ->
+            new AlertDialog.Builder(this).setTitle("Account")
+                .setMessage("Football Genie account features are not connected in this build.")
+                .setPositiveButton("OK", null).show());
+
+        addSettingsItem("🔔  NOTIFICATIONS", "Match alerts and updates", () ->
+            new AlertDialog.Builder(this).setTitle("Notifications")
+                .setMessage("Notification preferences are not enabled in this build.")
+                .setPositiveButton("OK", null).show());
+
+        addSettingsItem("⚙  APP PREFERENCES", "Theme, language and units", () ->
+            new AlertDialog.Builder(this).setTitle("App Preferences")
+                .setMessage("Football Genie currently uses its dark navy and neon-green theme. Additional preferences can be added without changing the prediction model.")
+                .setPositiveButton("OK", null).show());
+
+        addSettingsItem("🔄  DATA & SYNC", "Check the Football Genie API connection", () -> checkApiConnection());
+
+        addSettingsItem("🗑  RESET PREDICTION HISTORY", "Clear all saved predictions after confirmation", () -> confirmResetPredictionHistory());
+
+        addSettingsItem("ℹ  ABOUT", "Version and model information", () ->
+            new AlertDialog.Builder(this).setTitle("About Football Genie")
+                .setMessage("Football Genie predicts and simulates football outcomes using available statistics and expected-goal estimates. Probabilities are estimates, not guarantees.")
+                .setPositiveButton("OK", null).show());
+    }
+
+    private void addSettingsItem(String title, String description, Runnable action) {
+        LinearLayout item = card();
+        TextView heading = label(title);
+        heading.setTextColor(GREEN);
+        heading.setTextSize(13);
+        heading.setTypeface(null, Typeface.BOLD);
+        item.addView(heading);
+        TextView detail = label(description);
+        detail.setTextColor(MUTED);
+        detail.setTextSize(12);
+        detail.setPadding(0, dp(5), 0, dp(2));
+        item.addView(detail);
+        item.setClickable(true);
+        item.setOnClickListener(v -> action.run());
+        mainLayout.addView(item);
     }
 
     private void buildHeader() {
