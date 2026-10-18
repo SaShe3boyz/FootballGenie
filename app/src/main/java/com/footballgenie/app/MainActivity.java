@@ -665,6 +665,11 @@ public class MainActivity extends Activity {
             String awayLeadsAt60 = scenarioOutcomeSummary(home, away, homeXg, awayXg,
                 60, 0, 1, 1.20, 0.85);
 
+            String homeTrailsAt60 = scenarioOutcomeSummary(home, away, homeXg, awayXg,
+                60, 0, 1, 1.20, 0.85);
+            String awayTrailsAt60 = scenarioOutcomeSummary(home, away, homeXg, awayXg,
+                60, 1, 0, 0.85, 1.20);
+
             String analysis =
                 "\n\n━━━━━━━━━━━━━━━━━━\n" +
                 "WHY THIS PREDICTION?\n\n" +
@@ -739,6 +744,8 @@ public class MainActivity extends Activity {
                 "If " + away + " leads 1-0: " + awayLeadsAt60 + "\n" +
                 "These are conditional model scenarios, not live match readings.\n\n" +
 
+                "Comeback outlook if trailing 0-1 at 60: " + homeTrailsAt60 + "\n" +
+                "Comeback outlook if trailing 1-0 at 60: " + awayTrailsAt60 + "\n\n" +
                 "IMPORTANT LIMITATIONS\n" +
                 "Expected goals can be estimated from recent completed matches " +
                 "when you select a fixture, or entered manually. This model does " +
