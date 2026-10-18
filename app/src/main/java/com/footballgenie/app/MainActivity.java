@@ -353,6 +353,26 @@ public class MainActivity extends Activity {
         return probability;
     }
 
+    // Dixon-Coles low-score correction: football draws and one-goal results
+    // can differ from a fully independent Poisson model.
+    private double lowScoreCorrection(int homeGoals, int awayGoals,
+            double homeXg, double awayXg) {
+        final double rho = -0.08;
+        if (homeGoals == 0 && awayGoals == 0) {
+            return 1.0 - homeXg * awayXg * rho;
+        }
+        if (homeGoals == 0 && awayGoals == 1) {
+            return 1.0 + homeXg * rho;
+        }
+        if (homeGoals == 1 && awayGoals == 0) {
+            return 1.0 + awayXg * rho;
+        }
+        if (homeGoals == 1 && awayGoals == 1) {
+            return 1.0 - rho;
+        }
+        return 1.0;
+    }
+
     private void simulate() {
         try {
             String home =
@@ -437,7 +457,8 @@ public class MainActivity extends Activity {
             for (int h = 0; h < rankedScoreProbabilities.length; h++) {
                 for (int a = 0; a < rankedScoreProbabilities[h].length; a++) {
                     rankedScoreProbabilities[h][a] =
-                        poissonProbability(h, homeXg) * poissonProbability(a, awayXg);
+                        poissonProbability(h, homeXg) * poissonProbability(a, awayXg)
+                        * lowScoreCorrection(h, a, homeXg, awayXg);
                 }
             }
             StringBuilder topScores = new StringBuilder();
@@ -474,7 +495,8 @@ public class MainActivity extends Activity {
                 double homeGoalProbability = poissonProbability(h, homeXg);
                 for (int a = 0; a < scores[h].length; a++) {
                     double jointProbability = homeGoalProbability
-                        * poissonProbability(a, awayXg);
+                        * poissonProbability(a, awayXg)
+                        * lowScoreCorrection(h, a, homeXg, awayXg);
                     if (h > a) homeProbability += jointProbability;
                     else if (h == a) drawProbability += jointProbability;
                     else awayProbability += jointProbability;
