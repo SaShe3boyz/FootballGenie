@@ -1509,6 +1509,20 @@ public class MainActivity extends Activity {
                 final int awayOpponentSample = countRatedOpponents(
                     awayRecentMatches, competitionStrength, competitionId
                 );
+                final String dataQualitySummary;
+                int smallerRecentSample = Math.min(homeSample, awaySample);
+                if (smallerRecentSample >= 8) {
+                    dataQualitySummary = "Recent-form sample: reasonably developed for both teams.";
+                } else if (smallerRecentSample >= 5) {
+                    dataQualitySummary = "Recent-form sample: moderate; use extra caution.";
+                } else {
+                    dataQualitySummary = "Recent-form sample: limited; expected goals may be unstable.";
+                }
+                final String opponentCoverageSummary =
+                    "Opponent ratings available for " + homeOpponentSample + "/" +
+                    homeSample + " recent " + homeName + " matches and " +
+                    awayOpponentSample + "/" + awaySample + " recent " + awayName +
+                    " matches. Missing ratings fall back to unadjusted form.";
                 final String homeWeightedScoredText = String.format(Locale.US, "%.2f", homeScored);
                 final String homeWeightedConcededText = String.format(Locale.US, "%.2f", homeConceded);
                 final String awayWeightedScoredText = String.format(Locale.US, "%.2f", awayScored);
@@ -1549,10 +1563,9 @@ public class MainActivity extends Activity {
                             ? "Current competition scoring baselines and season home/away strength are also included. "
                             : "Competition standings were unavailable, so season-strength adjustment was skipped. ") +
                         (appliedOpponentAdjustment
-                            ? "Recent form was adjusted using available opponent strengths; rated opponents: " +
-                                homeOpponentSample + " for " + homeName + " and " +
-                                awayOpponentSample + " for " + awayName + ". "
+                            ? "Recent form was adjusted using available opponent strengths. "
                             : "No usable same-competition opponent ratings were available for recent-form adjustment. ") +
+                        dataQualitySummary + "\n" + opponentCoverageSummary + "\n" +
                         "These remain estimates; check team news and edit expected goals if needed."
                     );
                     Toast.makeText(
