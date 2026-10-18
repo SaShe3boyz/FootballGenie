@@ -1849,22 +1849,22 @@ public class MainActivity extends Activity {
                 "Comeback outlook if trailing 1-0 at 60: " + awayTrailsAt60 + "\n\n" +
                 "Second-half scoring outlook (time-scaled xG): " + home + " to score " +
                 String.format(Locale.US, "%.1f", homeSecondHalfGoalChance * 100.0) + "%; " +
-                away + " to score " + String.format(Locale.US, "%.1f", awaySecondHalfGoalChance * 100.0) + "%\\n\\n" +
-                "Hypothetical red card at 60 minutes, score 0-0:\\n" +
-                "Red card for " + home + ": " + homeRedCardScenario + "\\n" +
-                "Red card for " + away + ": " + awayRedCardScenario + "\\n" +
-                "Illustrative effect only; red-card impact is not calibrated from event data.\\n\\n" +
-                "If " + home + " attacks more aggressively from 60 minutes: " + homeAggressiveScenario + "\\n" +
-                "If " + away + " attacks more aggressively from 60 minutes: " + awayAggressiveScenario + "\\n" +
-                "Urgency multipliers are assumptions, not observed tactical behaviour.\\n\\n" +
-                "SCENARIO COMPARISON\\n" +
+                away + " to score " + String.format(Locale.US, "%.1f", awaySecondHalfGoalChance * 100.0) + "%\n\n" +
+                "Hypothetical red card at 60 minutes, score 0-0:\n" +
+                "Red card for " + home + ": " + homeRedCardScenario + "\n" +
+                "Red card for " + away + ": " + awayRedCardScenario + "\n" +
+                "Illustrative effect only; red-card impact is not calibrated from event data.\n\n" +
+                "If " + home + " attacks more aggressively from 60 minutes: " + homeAggressiveScenario + "\n" +
+                "If " + away + " attacks more aggressively from 60 minutes: " + awayAggressiveScenario + "\n" +
+                "Urgency multipliers are assumptions, not observed tactical behaviour.\n\n" +
+                "SCENARIO COMPARISON\n" +
                 "Compare level, leading, trailing, red-card and aggressive-approach scenarios above. " +
-                "A changed probability reflects changed assumptions and score state, not certainty.\\n\\n" +
-                "MATCH-FLOW SUMMARY\\n" +
+                "A changed probability reflects changed assumptions and score state, not certainty.\n\n" +
+                "MATCH-FLOW SUMMARY\n" +
                 "This panel explores conditional outcomes at the 60-minute mark, second-half scoring " +
                 "and illustrative red-card or urgency scenarios. It does not track a live match or " +
                 "predict exact tactical reactions. Use confirmed live score, minute and event data " +
-                "before interpreting a real in-play situation.\\n\\n" +
+                "before interpreting a real in-play situation.\n\n" +
                 "IMPORTANT LIMITATIONS\n" +
                 "Expected goals can be estimated from recent completed matches " +
                 "when you select a fixture, or entered manually. This model does " +
