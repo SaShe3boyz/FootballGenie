@@ -1513,6 +1513,10 @@ public class MainActivity extends Activity {
                 final String homeWeightedConcededText = String.format(Locale.US, "%.2f", homeConceded);
                 final String awayWeightedScoredText = String.format(Locale.US, "%.2f", awayScored);
                 final String awayWeightedConcededText = String.format(Locale.US, "%.2f", awayConceded);
+                final String homeScoringTrend = recentTrendText(homeRecentMatches, true);
+                final String homeConcedingTrend = recentTrendText(homeRecentMatches, false);
+                final String awayScoringTrend = recentTrendText(awayRecentMatches, true);
+                final String awayConcedingTrend = recentTrendText(awayRecentMatches, false);
 
                 runOnUiThread(() -> {
                     homeGoals.setText(homeValue);
@@ -1524,13 +1528,17 @@ public class MainActivity extends Activity {
                         " scored, " + homeGoalsStats.optString("averageConceded", "0") + " conceded\n" +
                         "Recency-weighted form: " + homeWeightedScoredText +
                         " scored, " + homeWeightedConcededText + " conceded per match\n" +
-                        "Estimated match xG: " + homeValue + "\n\n" +
+                        "Estimated match xG: " + homeValue + "\n" +
+                        "Recent trend: scoring " + homeScoringTrend +
+                        "; conceding " + homeConcedingTrend + "\n\n" +
                         awayName + ": " + awayForm + "  |  Analysed: " + awaySample + " matches\n" +
                         "Overall goals per match: " + awayGoalsStats.optString("averageScored", "0") +
                         " scored, " + awayGoalsStats.optString("averageConceded", "0") + " conceded\n" +
                         "Recency-weighted form: " + awayWeightedScoredText +
                         " scored, " + awayWeightedConcededText + " conceded per match\n" +
-                        "Estimated match xG: " + awayValue + "\n\n" +
+                        "Estimated match xG: " + awayValue + "\n" +
+                        "Recent trend: scoring " + awayScoringTrend +
+                        "; conceding " + awayConcedingTrend + "\n\n" +
                         "Venue-specific matches: " + homeName + " at home: " +
                         displayedHomeVenueSample + "; " + awayName + " away: " +
                         displayedAwayVenueSample + ". Venue rates are blended with overall recent rates, " +
@@ -1615,6 +1623,35 @@ public class MainActivity extends Activity {
             }
         }
         return null;
+    }
+
+    // Compare the five newest completed matches with the preceding five.
+    // This is a descriptive signal, not proof that a trend will continue.
+    private String recentTrendText(JSONArray matches, boolean forGoals) {
+        if (matches == null || matches.length() < 6) return "limited sample";
+        double recentTotal = 0.0;
+        double previousTotal = 0.0;
+        int recentCount = 0;
+        int previousCount = 0;
+        for (int i = 0; i < matches.length(); i++) {
+            JSONObject match = matches.optJSONObject(i);
+            if (match == null) continue;
+            int goals = match.optInt(forGoals ? "goalsFor" : "goalsAgainst", -1);
+            if (goals < 0) continue;
+            if (recentCount < 5) {
+                recentTotal += goals;
+                recentCount++;
+            } else if (previousCount < 5) {
+                previousTotal += goals;
+                previousCount++;
+            }
+            if (recentCount >= 5 && previousCount >= 5) break;
+        }
+        if (recentCount < 3 || previousCount < 3) return "limited sample";
+        double difference = recentTotal / recentCount - previousTotal / previousCount;
+        if (difference >= 0.35) return "rising";
+        if (difference <= -0.35) return "falling";
+        return "stable";
     }
 
     private int countRatedOpponents(
