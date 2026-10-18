@@ -375,8 +375,11 @@ public class MainActivity extends Activity {
             int over25 = 0;
             int btts = 0;
 
-            // Keep a wider score grid so high-scoring simulations are not discarded from scoreline rankings.
-            int[][] scores = new int[13][13];
+            // Size the scoreline grid from the entered xG values plus a generous tail margin.
+            // Outcome and goals-market counts include every simulation; this grid ranks exact scores.
+            int scoreGridSize = Math.max(13,
+                (int) Math.ceil(Math.max(homeXg, awayXg) + 10.0));
+            int[][] scores = new int[scoreGridSize][scoreGridSize];
 
             Random random = new Random();
 
