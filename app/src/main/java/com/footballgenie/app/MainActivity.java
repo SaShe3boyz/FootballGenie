@@ -603,8 +603,20 @@ public class MainActivity extends Activity {
 
     private void selectFixture(JSONObject selected) {
         try {
-            String homeName = selected.getJSONObject("homeTeam").optString("name", "");
-            String awayName = selected.getJSONObject("awayTeam").optString("name", "");
+            JSONObject homeTeamObject = selected.optJSONObject("homeTeam");
+            JSONObject awayTeamObject = selected.optJSONObject("awayTeam");
+            String homeName = homeTeamObject == null ? "" : homeTeamObject.optString("name", "");
+            String awayName = awayTeamObject == null ? "" : awayTeamObject.optString("name", "");
+            if (homeName.trim().isEmpty() && homeTeamObject != null) {
+                homeName = homeTeamObject.optString("shortName", homeTeamObject.optString("tla", ""));
+            }
+            if (awayName.trim().isEmpty() && awayTeamObject != null) {
+                awayName = awayTeamObject.optString("shortName", awayTeamObject.optString("tla", ""));
+            }
+            if (homeName.trim().isEmpty() || awayName.trim().isEmpty()) {
+                Toast.makeText(this, "Team names are missing from this fixture. Refresh and try another.", Toast.LENGTH_LONG).show();
+                return;
+            }
             selectedFixture = selected;
             homeInput.setText(homeName);
             awayInput.setText(awayName);
@@ -622,8 +634,8 @@ public class MainActivity extends Activity {
                 renderRecentFormMessage("LOADING RECENT FORM", "Loading completed matches and team statistics...");
             }
             loadTeamStatsForFixture(selected);
-            Toast.makeText(this, "Fixture selected: " + homeName + " vs " + awayName, Toast.LENGTH_SHORT).show();
             showScreen(1);
+            Toast.makeText(this, "Teams loaded: " + homeName + " vs " + awayName, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             Toast.makeText(this, "Could not select this fixture.", Toast.LENGTH_SHORT).show();
         }
@@ -832,7 +844,10 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams fixturesParams = new LinearLayout.LayoutParams(-1, dp(50));
         fixturesParams.topMargin = dp(4);
         teamsCard.addView(fixturesButton, fixturesParams);
-        fixturesButton.setOnClickListener(v -> showScreen(5));
+        fixturesButton.setOnClickListener(v -> {
+            showScreen(5);
+            loadFixtures();
+        });
         mainLayout.addView(teamsCard);
 
         LinearLayout xgCard = card();
