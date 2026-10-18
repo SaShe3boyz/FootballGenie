@@ -345,30 +345,6 @@ public class MainActivity extends Activity {
 
     
 
-    private void addHeading(String number, String heading) {
-        TextView text = label(number + "   " + heading);
-        text.setTextColor(GREEN);
-        text.setTextSize(14);
-        text.setTypeface(null, Typeface.BOLD);
-        text.setPadding(dp(2), dp(24), 0, dp(12));
-        mainLayout.addView(text);
-    }
-
-    private LinearLayout card() {
-        LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(dp(16), dp(16), dp(16), dp(16));
-        box.setBackground(rounded(CARD, 18));
-
-        LinearLayout.LayoutParams params =
-            new LinearLayout.LayoutParams(-1, -2);
-
-        params.bottomMargin = dp(8);
-        box.setLayoutParams(params);
-
-        return box;
-    }
-
     private EditText addInput(
             LinearLayout parent,
             String hint,
