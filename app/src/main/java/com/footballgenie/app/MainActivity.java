@@ -345,6 +345,14 @@ public class MainActivity extends Activity {
         return count - 1;
     }
 
+    private double poissonProbability(int goals, double lambda) {
+        double probability = Math.exp(-lambda);
+        for (int i = 1; i <= goals; i++) {
+            probability *= lambda / i;
+        }
+        return probability;
+    }
+
     private void simulate() {
         try {
             String home =
@@ -422,32 +430,37 @@ public class MainActivity extends Activity {
                 }
             }
 
-            // Rank the three most frequent exact scores from the simulation.
-            int[][] rankedScores = new int[scores.length][scores[0].length];
-            for (int h = 0; h < scores.length; h++) {
-                System.arraycopy(scores[h], 0, rankedScores[h], 0, scores[h].length);
+            // Rank exact scorelines by their theoretical independent-Poisson probability.
+            // This avoids ranking noise caused by random variation in the 10,000 simulations.
+            double[][] rankedScoreProbabilities =
+                new double[scores.length][scores[0].length];
+            for (int h = 0; h < rankedScoreProbabilities.length; h++) {
+                for (int a = 0; a < rankedScoreProbabilities[h].length; a++) {
+                    rankedScoreProbabilities[h][a] =
+                        poissonProbability(h, homeXg) * poissonProbability(a, awayXg);
+                }
             }
             StringBuilder topScores = new StringBuilder();
             for (int rank = 0; rank < 3; rank++) {
                 int rankHome = -1;
                 int rankAway = -1;
-                int rankCount = 0;
-                for (int h = 0; h < rankedScores.length; h++) {
-                    for (int a = 0; a < rankedScores[h].length; a++) {
-                        if (rankedScores[h][a] > rankCount) {
-                            rankCount = rankedScores[h][a];
+                double rankProbability = 0.0;
+                for (int h = 0; h < rankedScoreProbabilities.length; h++) {
+                    for (int a = 0; a < rankedScoreProbabilities[h].length; a++) {
+                        if (rankedScoreProbabilities[h][a] > rankProbability) {
+                            rankProbability = rankedScoreProbabilities[h][a];
                             rankHome = h;
                             rankAway = a;
                         }
                     }
                 }
-                if (rankCount == 0) break;
+                if (rankHome < 0) break;
                 if (topScores.length() > 0) topScores.append("\n");
                 topScores.append(rank + 1).append(". ")
                     .append(rankHome).append("-").append(rankAway)
                     .append("  (").append(String.format(Locale.US, "%.1f",
-                        rankCount / 100.0)).append("%)");
-                rankedScores[rankHome][rankAway] = 0;
+                        rankProbability * 100.0)).append("%)");
+                rankedScoreProbabilities[rankHome][rankAway] = 0.0;
             }
 
             double homeP = homeWins / 100.0;
