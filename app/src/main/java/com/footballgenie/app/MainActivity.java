@@ -1257,15 +1257,21 @@ public class MainActivity extends Activity {
         if (matches == null || matches.length() == 0) return -1;
         double weightedTotal = 0.0;
         double totalWeight = 0.0;
+        int usableMatches = 0;
         for (int i = 0; i < matches.length(); i++) {
             JSONObject match = matches.optJSONObject(i);
             if (match == null) continue;
             if (venueFilter != null && !venueFilter.equals(match.optString("venue", ""))) continue;
             int goals = match.optInt(forGoals ? "goalsFor" : "goalsAgainst", -1);
             if (goals < 0) continue;
-            double weight = Math.pow(0.88, i);
+
+            // Weight only usable observations. For venue-filtered rates, the newest
+            // matching home/away match must receive full weight even if other venues
+            // occurred between matching games.
+            double weight = Math.pow(0.88, usableMatches);
             weightedTotal += goals * weight;
             totalWeight += weight;
+            usableMatches++;
         }
         return totalWeight > 0 ? weightedTotal / totalWeight : -1;
     }
