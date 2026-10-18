@@ -1162,6 +1162,9 @@ public class MainActivity extends Activity {
                 "80-100%: " + calibrationText(confidenceBinCount[4], confidenceBinCorrect[4]) + "\\n" +
                 "Small bins are noisy; compare predicted confidence with observed hit rate.\\n\\n" +
                 "Probability data check: " + invalidProbabilityRecords + " records have missing, out-of-range or non-normalized 1X2 probabilities.\n\n" +
+                "HOW TO READ THESE METRICS\\n" +
+                "Hit rate measures pick frequency; Brier score measures probability quality, and lower is better. " +
+                "The majority baseline is retrospective, not a live strategy. Results depend on saved sample size and competition mix.\\n\\n" +
                 "PROBABILITY QUALITY (Brier score; lower is better)\n" +
                 "Home/Draw/Away: " + String.format(Locale.US, "%.3f", outcomeBrierTotal / finished) + "\n" +
                 "Over 2.5: " + String.format(Locale.US, "%.3f", goalsBrierTotal / finished) + "\n" +
