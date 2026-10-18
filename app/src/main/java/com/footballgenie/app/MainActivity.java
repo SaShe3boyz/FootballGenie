@@ -65,20 +65,22 @@ public class MainActivity extends Activity {
         LinearLayout nav = new LinearLayout(this);
         nav.setOrientation(LinearLayout.HORIZONTAL);
         nav.setGravity(Gravity.CENTER);
-        nav.setPadding(dp(6), dp(8), dp(6), dp(8));
-        nav.setBackground(rounded(Color.rgb(12, 28, 45), 16));
-        String[] labels = {"⌂ Home", "⚽ Predict", "◉ Results", "◷ History"};
+        nav.setPadding(dp(7), dp(7), dp(7), dp(7));
+        nav.setBackground(rounded(Color.rgb(10, 24, 39), 18));
+        String[] labels = {"⌂ HOME", "⚽ PREDICT", "◉ RESULTS", "◷ HISTORY"};
+        int[] targets = {0, 1, 2, 3};
         for (int i = 0; i < labels.length; i++) {
-            final int target = i;
+            final int target = targets[i];
             Button button = new Button(this);
             button.setText(labels[i]);
-            button.setTextColor(i == 0 ? GREEN : WHITE);
-            button.setTextSize(10);
+            button.setTextColor(i == 1 ? Color.rgb(8, 25, 22) : WHITE);
+            button.setTextSize(9);
+            button.setTypeface(null, Typeface.BOLD);
             button.setAllCaps(false);
             button.setMinHeight(dp(42));
-            button.setPadding(dp(2), 0, dp(2), 0);
-            button.setBackground(rounded(Color.rgb(20, 42, 62), 12));
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dp(46), 1);
+            button.setPadding(dp(1), 0, dp(1), 0);
+            button.setBackground(rounded(i == 1 ? GREEN : Color.rgb(22, 42, 61), 12));
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dp(44), 1);
             p.setMargins(dp(3), 0, dp(3), 0);
             nav.addView(button, p);
             button.setOnClickListener(v -> {
@@ -90,55 +92,69 @@ public class MainActivity extends Activity {
                 scroll.post(() -> scroll.smoothScrollTo(0, destination.getTop()));
             });
         }
-        mainLayout.addView(nav, 1);
+        mainLayout.addView(nav, 0);
     }
 
     private void buildHeader() {
-        TextView badge = new TextView(this);
-        badge.setText("⚽  YOUR PERSONAL FOOTBALL ANALYST");
-        badge.setTextColor(GREEN);
-        badge.setTextSize(11);
-        badge.setTypeface(null, Typeface.BOLD);
-        badge.setGravity(Gravity.CENTER);
-        badge.setPadding(0, dp(8), 0, dp(10));
-        mainLayout.addView(badge);
+        TextView eyebrow = label("THE SMARTER WAY TO READ THE GAME");
+        eyebrow.setTextColor(GREEN);
+        eyebrow.setTextSize(10);
+        eyebrow.setTypeface(null, Typeface.BOLD);
+        eyebrow.setGravity(Gravity.CENTER);
+        eyebrow.setLetterSpacing(0.08f);
+        eyebrow.setPadding(0, dp(20), 0, dp(8));
+        mainLayout.addView(eyebrow);
 
-        TextView title = new TextView(this);
-        title.setText("FOOTBALL GENIE");
+        TextView title = label("FOOTBALL GENIE");
         title.setTextColor(WHITE);
-        title.setTextSize(30);
+        title.setTextSize(29);
         title.setTypeface(null, Typeface.BOLD);
         title.setGravity(Gravity.CENTER);
+        title.setLetterSpacing(0.025f);
         mainLayout.addView(title);
 
-        TextView subtitle = new TextView(this);
-        subtitle.setText("PREDICT  •  SIMULATE  •  UNDERSTAND");
+        TextView subtitle = label("PREDICT  •  SIMULATE  •  UNDERSTAND");
         subtitle.setTextColor(MUTED);
-        subtitle.setTextSize(11);
+        subtitle.setTextSize(10);
         subtitle.setGravity(Gravity.CENTER);
-        subtitle.setPadding(0, dp(8), 0, dp(20));
+        subtitle.setPadding(0, dp(6), 0, dp(18));
         mainLayout.addView(subtitle);
 
-        LinearLayout banner = card();
-        banner.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout hero = card();
+        hero.setOrientation(LinearLayout.VERTICAL);
+        hero.setPadding(dp(18), dp(18), dp(18), dp(18));
+        hero.setBackground(rounded(Color.rgb(17, 49, 52), 20));
 
-        TextView heading = label("MATCH INTELLIGENCE");
-        heading.setTextColor(GREEN);
-        heading.setTextSize(12);
-        heading.setTypeface(null, Typeface.BOLD);
+        TextView live = label("✦  MATCH INTELLIGENCE");
+        live.setTextColor(GREEN);
+        live.setTextSize(11);
+        live.setTypeface(null, Typeface.BOLD);
+        hero.addView(live);
 
-        banner.addView(heading);
+        TextView heroTitle = label("Every match has a story.");
+        heroTitle.setTextColor(WHITE);
+        heroTitle.setTextSize(22);
+        heroTitle.setTypeface(null, Typeface.BOLD);
+        heroTitle.setPadding(0, dp(10), 0, dp(5));
+        hero.addView(heroTitle);
 
-        TextView description = label(
-            "Explore match probabilities using expected goals " +
-            "and 10,000 simulated match outcomes."
-        );
-        description.setTextColor(WHITE);
-        description.setTextSize(14);
-        description.setPadding(0, dp(8), 0, 0);
-        banner.addView(description);
+        TextView description = label("Explore probabilities, likely scorelines and match-flow scenarios powered by your football model.");
+        description.setTextColor(Color.rgb(213, 228, 232));
+        description.setTextSize(13);
+        description.setLineSpacing(dp(3), 1.0f);
+        hero.addView(description);
 
-        mainLayout.addView(banner);
+        TextView chip = label("10,000 OUTCOME SIMULATIONS");
+        chip.setTextColor(Color.rgb(8, 25, 22));
+        chip.setTextSize(10);
+        chip.setTypeface(null, Typeface.BOLD);
+        chip.setGravity(Gravity.CENTER);
+        chip.setPadding(dp(12), dp(9), dp(12), dp(9));
+        chip.setBackground(rounded(GREEN, 12));
+        LinearLayout.LayoutParams chipParams = new LinearLayout.LayoutParams(-2, -2);
+        chipParams.topMargin = dp(14);
+        hero.addView(chip, chipParams);
+        mainLayout.addView(hero);
     }
 
     private void buildMatchForm() {
@@ -292,6 +308,42 @@ public class MainActivity extends Activity {
         footer.setPadding(0, dp(24), 0, dp(10));
         mainLayout.addView(footer);
     }
+
+    private void addHeading(String number, String heading) {
+        LinearLayout line = new LinearLayout(this);
+        line.setOrientation(LinearLayout.HORIZONTAL);
+        line.setGravity(Gravity.CENTER_VERTICAL);
+        line.setPadding(dp(2), dp(24), 0, dp(12));
+
+        TextView numberView = label(number);
+        numberView.setTextColor(Color.rgb(8, 25, 22));
+        numberView.setTextSize(11);
+        numberView.setTypeface(null, Typeface.BOLD);
+        numberView.setGravity(Gravity.CENTER);
+        numberView.setBackground(rounded(GREEN, 9));
+        line.addView(numberView, new LinearLayout.LayoutParams(dp(34), dp(30)));
+
+        TextView titleView = label(heading);
+        titleView.setTextColor(WHITE);
+        titleView.setTextSize(15);
+        titleView.setTypeface(null, Typeface.BOLD);
+        titleView.setPadding(dp(10), 0, 0, 0);
+        line.addView(titleView);
+        mainLayout.addView(line);
+    }
+
+    private LinearLayout card() {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(dp(16), dp(16), dp(16), dp(16));
+        layout.setBackground(rounded(CARD, 18));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+        params.bottomMargin = dp(8);
+        layout.setLayoutParams(params);
+        return layout;
+    }
+
+    
 
     private void addHeading(String number, String heading) {
         TextView text = label(number + "   " + heading);
