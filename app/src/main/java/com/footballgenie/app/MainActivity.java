@@ -32,6 +32,7 @@ public class MainActivity extends Activity {
     private TextView result, status;
     private LinearLayout statsSummary;
     private LinearLayout detailedAnalysisContainer;
+    private Button viewFullAnalysisButton;
     private TextView homeWinValue, drawValue, awayWinValue;
     private TextView overValue, underValue, bttsValue;
     // Home-screen fixture card must reflect the same selected fixture as Predict.
@@ -1003,6 +1004,23 @@ public class MainActivity extends Activity {
         bttsValue = addMetricCard(goalsRow, "BTTS YES", "--", GREEN);
         outputCard.addView(goalsRow);
 
+        TextView visualHeading = label("PROBABILITY SNAPSHOT");
+        visualHeading.setTextColor(MUTED);
+        visualHeading.setTextSize(10);
+        visualHeading.setTypeface(null, Typeface.BOLD);
+        visualHeading.setPadding(0, dp(18), 0, dp(8));
+        outputCard.addView(visualHeading);
+        LinearLayout probabilityChart = new LinearLayout(this);
+        probabilityChart.setOrientation(LinearLayout.VERTICAL);
+        probabilityChart.setPadding(dp(12), dp(12), dp(12), dp(4));
+        probabilityChart.setBackground(rounded(Color.rgb(15, 26, 43), 14));
+        addProbabilityBar(probabilityChart, "HOME WIN", homeWinValue, GREEN);
+        addProbabilityBar(probabilityChart, "DRAW", drawValue, Color.rgb(244, 190, 80));
+        addProbabilityBar(probabilityChart, "AWAY WIN", awayWinValue, Color.rgb(90, 165, 255));
+        addProbabilityBar(probabilityChart, "OVER 2.5 GOALS", overValue, Color.rgb(80, 210, 170));
+        addProbabilityBar(probabilityChart, "BOTH TEAMS TO SCORE", bttsValue, Color.rgb(180, 135, 255));
+        outputCard.addView(probabilityChart);
+
         TextView detailsHeading = label("MATCH INTELLIGENCE & MODEL ANALYSIS");
         detailsHeading.setTextColor(GREEN);
         detailsHeading.setTextSize(11);
@@ -1031,12 +1049,32 @@ public class MainActivity extends Activity {
         detailTitle.setTextSize(14);
         detailTitle.setTypeface(null, Typeface.BOLD);
         detailTitle.setPadding(0, dp(18), 0, dp(10));
-        outputCard.addView(detailTitle);
+        detailTitle.setVisibility(View.GONE);
 
         detailedAnalysisContainer = new LinearLayout(this);
         detailedAnalysisContainer.setOrientation(LinearLayout.VERTICAL);
         renderDetailedAnalysis("");
+        detailedAnalysisContainer.setVisibility(View.GONE);
+
+        viewFullAnalysisButton = new Button(this);
+        viewFullAnalysisButton.setText("▤  VIEW FULL ANALYSIS");
+        viewFullAnalysisButton.setTextColor(Color.rgb(7, 22, 31));
+        viewFullAnalysisButton.setTextSize(13);
+        viewFullAnalysisButton.setTypeface(null, Typeface.BOLD);
+        viewFullAnalysisButton.setAllCaps(false);
+        viewFullAnalysisButton.setBackground(rounded(GREEN, 14));
+        LinearLayout.LayoutParams fullAnalysisParams = new LinearLayout.LayoutParams(-1, dp(50));
+        fullAnalysisParams.topMargin = dp(14);
+        outputCard.addView(viewFullAnalysisButton, fullAnalysisParams);
+        outputCard.addView(detailTitle);
         outputCard.addView(detailedAnalysisContainer);
+        viewFullAnalysisButton.setOnClickListener(v -> {
+            boolean opening = detailedAnalysisContainer.getVisibility() != View.VISIBLE;
+            detailedAnalysisContainer.setVisibility(opening ? View.VISIBLE : View.GONE);
+            detailTitle.setVisibility(opening ? View.VISIBLE : View.GONE);
+            viewFullAnalysisButton.setText(opening ? "▲  HIDE FULL ANALYSIS" : "▤  VIEW FULL ANALYSIS");
+            if (opening) detailedAnalysisContainer.post(() -> detailedAnalysisContainer.requestFocus());
+        });
         mainLayout.addView(outputCard);
 
         TextView footer = label("FOOTBALL GENIE  •  STATISTICS, NOT CERTAINTY\nProbabilities describe modelled outcomes. Real matches can differ.");
@@ -1045,6 +1083,62 @@ public class MainActivity extends Activity {
         footer.setGravity(Gravity.CENTER);
         footer.setPadding(0, dp(24), 0, dp(10));
         mainLayout.addView(footer);
+    }
+
+    private void addProbabilityBar(LinearLayout parent, String title, TextView valueSource, int barColor) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(-1, -2);
+        rp.bottomMargin = dp(9);
+        parent.addView(row, rp);
+        LinearLayout labelRow = new LinearLayout(this);
+        labelRow.setOrientation(LinearLayout.HORIZONTAL);
+        TextView titleView = label(title);
+        titleView.setTextColor(WHITE);
+        titleView.setTextSize(10);
+        titleView.setTypeface(null, Typeface.BOLD);
+        labelRow.addView(titleView, new LinearLayout.LayoutParams(0, -2, 1f));
+        TextView percentView = label("--");
+        percentView.setTextColor(barColor);
+        percentView.setTextSize(11);
+        percentView.setTypeface(null, Typeface.BOLD);
+        labelRow.addView(percentView);
+        row.addView(labelRow);
+        android.widget.FrameLayout track = new android.widget.FrameLayout(this);
+        track.setBackground(rounded(Color.rgb(42, 55, 73), 6));
+        LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(-1, dp(8));
+        tp.topMargin = dp(5);
+        row.addView(track, tp);
+        View fill = new View(this);
+        fill.setBackground(rounded(barColor, 6));
+        track.addView(fill, new android.widget.FrameLayout.LayoutParams(0, -1, Gravity.START));
+        row.setTag(new Object[]{valueSource, percentView, track, fill});
+    }
+
+    private void refreshProbabilityBars() {
+        for (View screen : appScreens) if (screen != null) refreshBarsInTree(screen);
+    }
+
+    private void refreshBarsInTree(View view) {
+        if (!(view instanceof LinearLayout)) return;
+        LinearLayout layout = (LinearLayout) view;
+        for (int i = 0; i < layout.getChildCount(); i++) {
+            View child = layout.getChildAt(i);
+            Object tag = child.getTag();
+            if (tag instanceof Object[]) {
+                Object[] parts = (Object[]) tag;
+                try {
+                    String raw = ((TextView) parts[0]).getText().toString().replace("%", "").trim();
+                    float pct = Math.max(0f, Math.min(100f, Float.parseFloat(raw)));
+                    ((TextView) parts[1]).setText(String.format(Locale.US, "%.1f%%", pct));
+                    android.widget.FrameLayout track = (android.widget.FrameLayout) parts[2];
+                    View fill = (View) parts[3];
+                    track.post(() -> fill.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                        (int) (track.getWidth() * pct / 100f), -1, Gravity.START)));
+                } catch (Exception ignored) {}
+            }
+            refreshBarsInTree(child);
+        }
     }
 
     private void renderDetailedAnalysis(String analysisText) {
@@ -1703,6 +1797,7 @@ public class MainActivity extends Activity {
             overValue.setText(String.format(Locale.US, "%.1f%%", overP));
             underValue.setText(String.format(Locale.US, "%.1f%%", underP));
             bttsValue.setText(String.format(Locale.US, "%.1f%%", bttsP));
+            refreshProbabilityBars();
 
             result.setText(String.format(Locale.US,
                 "✓  10,000 SIMULATIONS COMPLETED\n\n" +
