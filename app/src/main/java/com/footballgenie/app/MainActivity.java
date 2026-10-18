@@ -288,6 +288,8 @@ public class MainActivity extends Activity {
         status.setTextColor(GREEN);
         status.setTextSize(12);
         status.setTypeface(null, Typeface.BOLD);
+        status.setPadding(dp(10), dp(10), dp(10), dp(10));
+        status.setBackground(rounded(Color.rgb(17, 49, 52), 10));
         outputCard.addView(status);
 
         TextView outcomeHeading = label("1X2 WIN PROBABILITIES");
