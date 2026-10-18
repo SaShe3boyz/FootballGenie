@@ -438,7 +438,7 @@ public class MainActivity extends Activity {
                     }
                 }
                 if (rankCount == 0) break;
-                if (topScores.length() > 0) topScores.append("\\n");
+                if (topScores.length() > 0) topScores.append("\n");
                 topScores.append(rank + 1).append(". ")
                     .append(rankHome).append("-").append(rankAway)
                     .append("  (").append(String.format(Locale.US, "%.1f",
@@ -561,9 +561,9 @@ public class MainActivity extends Activity {
                 "Over 2.5 goals       %.1f%%\n" +
                 "Under 2.5 goals     %.1f%%\n" +
                 "Both teams score    %.1f%%\n\n" +
-                "MOST FREQUENT SCORE\\n" +
-                "%s %d - %d %s\\n\\n" +
-                "TOP 3 SCORELINES (simulation frequency)\\n%s\\n\\n%s\\n\\n%s",
+                "MOST FREQUENT SCORE\n" +
+                "%s %d - %d %s\n\n" +
+                "TOP 3 SCORELINES (simulation frequency)\n%s\n\n%s\n\n%s",
                 home, homeP,
                 drawP,
                 away, awayP,
