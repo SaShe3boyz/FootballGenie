@@ -1023,7 +1023,7 @@ public class MainActivity extends Activity {
         int bttsCorrect = 0, exactCorrect = 0;
         double outcomeBrierTotal = 0.0;
         double goalsBrierTotal = 0.0;
-        double bttsBrierTotal = 0.0;
+        double bttsBrierTotal = 0.0;\n        double homeGoalAbsError = 0.0, awayGoalAbsError = 0.0;\n        double totalGoalAbsError = 0.0;
         StringBuilder summary = new StringBuilder();
         summary.append("PREDICTION HISTORY\n");
         summary.append("New final results added: ").append(newlyUpdated).append("\n\n");
@@ -1061,7 +1061,7 @@ public class MainActivity extends Activity {
                 int ah = record.optInt("actualHome", -1);
                 int aa = record.optInt("actualAway", -1);
                 if (ah >= 0 && aa >= 0) {
-                    finished++;
+                    finished++;\n                    homeGoalAbsError += Math.abs(record.optInt("predictedHome", 0) - ah);\n                    awayGoalAbsError += Math.abs(record.optInt("predictedAway", 0) - aa);\n                    totalGoalAbsError += Math.abs(record.optInt("predictedHome", 0) + record.optInt("predictedAway", 0) - ah - aa);
                     String predictedOutcome = record.optDouble("homeP", 0) >=
                         Math.max(record.optDouble("drawP", 0), record.optDouble("awayP", 0))
                         ? "HOME" : (record.optDouble("drawP", 0) >= record.optDouble("awayP", 0)
