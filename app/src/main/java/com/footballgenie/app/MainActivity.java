@@ -184,8 +184,8 @@ public class MainActivity extends Activity {
         makeCompactInput(awayGoals);
 
         TextView note = label(
-            "Select a fixture to estimate expected goals from recent completed matches. " +
-            "You can also edit the values manually."
+            "Choose a scheduled match to load recent form and estimate expected goals. " +
+            "Or enter the teams and expected goals yourself."
         );
         note.setTextColor(MUTED);
         note.setTextSize(12);
@@ -205,7 +205,7 @@ public class MainActivity extends Activity {
         form.addView(statsSummary, statsParams);
 
                 Button fixturesButton = new Button(this);
-        fixturesButton.setText("🌐  LOAD LIVE FIXTURES");
+        fixturesButton.setText("⚽  CHOOSE A LIVE FIXTURE");
         fixturesButton.setTextColor(WHITE);
         fixturesButton.setTextSize(14);
         fixturesButton.setTypeface(null, Typeface.BOLD);
