@@ -1513,7 +1513,7 @@ public class MainActivity extends Activity {
             String analysis =
                 "\n\n━━━━━━━━━━━━━━━━━━\n" +
                 "WHY THIS PREDICTION?\n\n" +
-                "1. Expected goals\n" +
+                "Expected goals\n" +
                 home + " entered: " +
                 String.format(Locale.US, "%.2f", homeXg) +
                 "\n" + away + " entered: " +
@@ -1537,26 +1537,26 @@ public class MainActivity extends Activity {
             }
 
             analysis +=
-                "2. Most likely match outcome\n" +
+                "Most likely match outcome\n" +
                 outcome + " is the most likely of the three " +
                 "outcomes in this simulation (" +
                 String.format(Locale.US, "%.1f", highest) +
                 "%). This is not a guarantee.\n\n" +
 
-                "3. Confidence assessment\n" + confidence + "\n" +
+                "Confidence assessment\n" + confidence + "\n" +
                 confidenceReason + "\n" +
                 "This rating reflects simulation probabilities only; it is not a guarantee of accuracy.\n\n" +
-                "4. Upset watch\n" + upsetAssessment + "\n\n" +
+                "Upset watch\n" + upsetAssessment + "\n\n" +
 
-                "5. Match tempo and balance\n" + tempoProfile +
+                "Match tempo and balance\n" + tempoProfile +
                 " (combined expected goals: " +
                 String.format(Locale.US, "%.2f", totalExpectedGoals) + "). " +
                 balanceProfile + "\n\n" +
-                "6. Goals analysis\n" + goalTrend +
+                "Goals analysis\n" + goalTrend +
                 "\n" + bttsTrend +
                 "\n\n" +
 
-                "7. First-half and first-goal outlook\n" +
+                "First-half and first-goal outlook\n" +
                 "At least one first-half goal: " +
                 String.format(Locale.US, "%.1f", firstHalfGoalProbability * 100.0) + "%\n" +
                 "Approximate half-time: " + home + " leading " +
@@ -1572,13 +1572,13 @@ public class MainActivity extends Activity {
                 String.format(Locale.US, "%.1f", awayFirstScoreProbability * 100.0) + "%\n" +
                 "No goals in the match: " +
                 String.format(Locale.US, "%.1f", noGoalProbability * 100.0) + "%\n\n" +
-                "8. Most frequent score\n" +
+                "Most frequent score\n" +
                 home + " " + bestHome + " - " +
                 bestAway + " " + away +
                 " was the most frequent exact score in " +
                 "these simulation runs.\n\n" +
 
-                "9. Hypothetical match flow at 60 minutes\n" +
+                "Hypothetical match flow at 60 minutes\n" +
                 "If level at 0-0: " + levelAt60 + "\n" +
                 "If " + home + " leads 1-0: " + homeLeadsAt60 + "\n" +
                 "If " + away + " leads 1-0: " + awayLeadsAt60 + "\n" +
