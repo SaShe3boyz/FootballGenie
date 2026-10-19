@@ -255,8 +255,9 @@ public class MainActivity extends Activity {
         homeTeam.setGravity(Gravity.CENTER);
         FrameLayout homeBadgeHolder = new FrameLayout(this);
         homeBadgeHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
-        homeBadgeFallback = label("⚽");
-        homeBadgeFallback.setTextSize(30);
+        homeBadgeFallback = label("⬟");
+        homeBadgeFallback.setTextColor(GREEN);
+        homeBadgeFallback.setTextSize(39);
         homeBadgeFallback.setGravity(Gravity.CENTER);
         homeBadgeHolder.addView(homeBadgeFallback, new FrameLayout.LayoutParams(-1, -1));
         homeCrestImage = new ImageView(this);
@@ -286,8 +287,9 @@ public class MainActivity extends Activity {
         awayTeam.setGravity(Gravity.CENTER);
         FrameLayout awayBadgeHolder = new FrameLayout(this);
         awayBadgeHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
-        awayBadgeFallback = label("⚽");
-        awayBadgeFallback.setTextSize(30);
+        awayBadgeFallback = label("⬟");
+        awayBadgeFallback.setTextColor(GREEN);
+        awayBadgeFallback.setTextSize(39);
         awayBadgeFallback.setGravity(Gravity.CENTER);
         awayBadgeHolder.addView(awayBadgeFallback, new FrameLayout.LayoutParams(-1, -1));
         awayCrestImage = new ImageView(this);
@@ -1125,64 +1127,67 @@ public class MainActivity extends Activity {
         teamsTitle.setPadding(0, 0, 0, dp(12));
         teamsCard.addView(teamsTitle);
 
-        LinearLayout setupCrests = new LinearLayout(this);
-        setupCrests.setOrientation(LinearLayout.HORIZONTAL);
-        setupCrests.setGravity(Gravity.CENTER);
+        LinearLayout setupTeamsRow = new LinearLayout(this);
+        setupTeamsRow.setOrientation(LinearLayout.HORIZONTAL);
+        setupTeamsRow.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        setupTeamsRow.setPadding(0, dp(4), 0, dp(8));
+
+        LinearLayout setupHomeColumn = new LinearLayout(this);
+        setupHomeColumn.setOrientation(LinearLayout.VERTICAL);
+        setupHomeColumn.setGravity(Gravity.CENTER_HORIZONTAL);
+        setupHomeColumn.setPadding(dp(3), 0, dp(3), 0);
         FrameLayout setupHomeHolder = new FrameLayout(this);
-        setupHomeHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(64), dp(64)));
-        setupHomeFallback = label("⚽");
-        setupHomeFallback.setTextSize(30);
+        setupHomeHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
+        setupHomeFallback = label("⬟");
+        setupHomeFallback.setTextColor(GREEN);
+        setupHomeFallback.setTextSize(39);
         setupHomeFallback.setGravity(Gravity.CENTER);
         setupHomeHolder.addView(setupHomeFallback, new FrameLayout.LayoutParams(-1, -1));
         setupHomeCrest = new ImageView(this);
         setupHomeCrest.setScaleType(ImageView.ScaleType.FIT_CENTER);
         setupHomeCrest.setVisibility(View.GONE);
         setupHomeHolder.addView(setupHomeCrest, new FrameLayout.LayoutParams(-1, -1));
-        setupCrests.addView(setupHomeHolder);
+        setupHomeColumn.addView(setupHomeHolder);
+
+        homeInput = addInput(setupHomeColumn, "Home team", false);
+        homeInput.setSingleLine(true);
+        homeInput.setTextSize(13);
+        homeInput.setGravity(Gravity.CENTER);
+        homeInput.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(50)));
+        setupTeamsRow.addView(setupHomeColumn, new LinearLayout.LayoutParams(0, -2, 1f));
+
         TextView setupVs = label("VS");
         setupVs.setTextColor(GREEN);
-        setupVs.setTextSize(14);
+        setupVs.setTextSize(20);
         setupVs.setTypeface(null, Typeface.BOLD);
-        LinearLayout.LayoutParams setupVsParams = new LinearLayout.LayoutParams(0, -2, 1f);
-        setupCrests.addView(setupVs, setupVsParams);
+        setupVs.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams setupVsParams = new LinearLayout.LayoutParams(dp(42), dp(58));
+        setupTeamsRow.addView(setupVs, setupVsParams);
+
+        LinearLayout setupAwayColumn = new LinearLayout(this);
+        setupAwayColumn.setOrientation(LinearLayout.VERTICAL);
+        setupAwayColumn.setGravity(Gravity.CENTER_HORIZONTAL);
+        setupAwayColumn.setPadding(dp(3), 0, dp(3), 0);
         FrameLayout setupAwayHolder = new FrameLayout(this);
-        setupAwayHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(64), dp(64)));
-        setupAwayFallback = label("⚽");
-        setupAwayFallback.setTextSize(30);
+        setupAwayHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
+        setupAwayFallback = label("⬟");
+        setupAwayFallback.setTextColor(GREEN);
+        setupAwayFallback.setTextSize(39);
         setupAwayFallback.setGravity(Gravity.CENTER);
         setupAwayHolder.addView(setupAwayFallback, new FrameLayout.LayoutParams(-1, -1));
         setupAwayCrest = new ImageView(this);
         setupAwayCrest.setScaleType(ImageView.ScaleType.FIT_CENTER);
         setupAwayCrest.setVisibility(View.GONE);
         setupAwayHolder.addView(setupAwayCrest, new FrameLayout.LayoutParams(-1, -1));
-        setupCrests.addView(setupAwayHolder);
-        teamsCard.addView(setupCrests);
-        TextView homeLabel = label("HOME TEAM");
-        homeLabel.setTextColor(MUTED);
-        homeLabel.setTextSize(10);
-        homeLabel.setTypeface(null, Typeface.BOLD);
-        teamsCard.addView(homeLabel);
-        homeInput = addInput(teamsCard, "Enter home team", false);
-        homeInput.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(52)));
+        setupAwayColumn.addView(setupAwayHolder);
 
-        TextView vs = label("VS");
-        vs.setTextColor(GREEN);
-        vs.setTextSize(11);
-        vs.setTypeface(null, Typeface.BOLD);
-        vs.setGravity(Gravity.CENTER);
-        vs.setBackground(rounded(Color.rgb(17, 49, 52), 9));
-        LinearLayout.LayoutParams vsParams = new LinearLayout.LayoutParams(dp(48), dp(28));
-        vsParams.gravity = Gravity.CENTER_HORIZONTAL;
-        vsParams.setMargins(0, 0, 0, dp(10));
-        teamsCard.addView(vs, vsParams);
-
-        TextView awayLabel = label("AWAY TEAM");
-        awayLabel.setTextColor(MUTED);
-        awayLabel.setTextSize(10);
-        awayLabel.setTypeface(null, Typeface.BOLD);
-        teamsCard.addView(awayLabel);
-        awayInput = addInput(teamsCard, "Enter away team", false);
-        awayInput.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(52)));
+        awayInput = addInput(setupAwayColumn, "Away team", false);
+        awayInput.setSingleLine(true);
+        awayInput.setTextSize(13);
+        awayInput.setGravity(Gravity.CENTER);
+        awayInput.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(50)));
+        setupTeamsRow.addView(setupAwayColumn, new LinearLayout.LayoutParams(0, -2, 1f));
+        teamsCard.addView(setupTeamsRow);
 
         Button fixturesButton = new Button(this);
         fixturesButton.setText("🌐  BROWSE LIVE FIXTURES");
@@ -2342,18 +2347,15 @@ public class MainActivity extends Activity {
                 LinearLayout.LayoutParams spinnerParams = new LinearLayout.LayoutParams(dp(48), dp(48));
                 spinnerParams.gravity = Gravity.CENTER_HORIZONTAL;
                 panel.addView(spinner, spinnerParams);
-                loadingMessageView = label("Please wait…");
-                loadingMessageView.setTextColor(WHITE);
-                loadingMessageView.setTextSize(14);
-                loadingMessageView.setGravity(Gravity.CENTER);
-                loadingMessageView.setTypeface(null, Typeface.BOLD);
-                loadingMessageView.setPadding(0, dp(12), 0, 0);
-                panel.addView(loadingMessageView);
-                loadingOverlay.addView(panel, new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER));
+                loadingOverlay.addView(spinner, new FrameLayout.LayoutParams(dp(52), dp(52), Gravity.CENTER));
+                spinner.setIndeterminate(true);
+                spinner.setContentDescription("Loading");
+                loadingOverlay.setClickable(true);
+                loadingOverlay.setFocusable(true);
+                loadingMessageView = null;
                 loadingOverlay.setClickable(true);
                 loadingOverlay.setFocusable(true);
             }
-            if (loadingMessageView != null) loadingMessageView.setText(message);
             if (loadingOverlay.getParent() != null) {
                 ((android.view.ViewGroup) loadingOverlay.getParent()).removeView(loadingOverlay);
             }
