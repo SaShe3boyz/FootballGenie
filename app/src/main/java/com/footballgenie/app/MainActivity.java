@@ -58,6 +58,11 @@ public class MainActivity extends Activity {
     private TextView fixtureListStatus;
     private final ArrayList<JSONObject> loadedFixtures = new ArrayList<>();
     private String activeFixtureFilter = "ALL";
+    private View connectionStatusBar;
+    private FrameLayout loadingOverlay;
+    private TextView loadingMessageView;
+    private boolean loadingVisible = false;
+    private boolean serverConnected = false;
 
     private final int BG = Color.rgb(9, 16, 31);
     private final int CARD = Color.rgb(20, 31, 51);
@@ -198,6 +203,12 @@ public class MainActivity extends Activity {
                 ((TextView) item.getChildAt(1)).setTextColor(selected ? Color.rgb(105, 255, 174) : WHITE);
             }
         }
+        if (loadingVisible && loadingOverlay != null) {
+            if (loadingOverlay.getParent() != null) {
+                ((android.view.ViewGroup) loadingOverlay.getParent()).removeView(loadingOverlay);
+            }
+            screenHost.addView(loadingOverlay, new FrameLayout.LayoutParams(-1, -1));
+        }
         if (screen == 3 && simulationSummary != null && result != null) {
             simulationSummary.setText(result.getText());
         }
@@ -322,6 +333,11 @@ public class MainActivity extends Activity {
         mainLayout.addView(fixtureCard);
 
         addHeading("✦", "QUICK ACCESS");
+        connectionStatusBar = new View(this);
+        connectionStatusBar.setBackgroundColor(Color.rgb(95, 105, 120));
+        LinearLayout.LayoutParams connectionBarParams = new LinearLayout.LayoutParams(-1, dp(4));
+        connectionBarParams.setMargins(dp(3), 0, dp(3), dp(9));
+        mainLayout.addView(connectionStatusBar, connectionBarParams);
         LinearLayout rowOne = new LinearLayout(this);
         rowOne.setOrientation(LinearLayout.HORIZONTAL);
         mainLayout.addView(rowOne);
@@ -387,7 +403,7 @@ public class MainActivity extends Activity {
     }
 
     private void buildSimulationScreen() {
-        addHeading("04", "MATCH SIMULATION");
+        addHeading("", "MATCH SIMULATION");
         TextView note = label("This screen presents the latest match simulation and its modelled match-flow analysis. Run a prediction from Match Centre first.");
         note.setTextColor(MUTED);
         note.setTextSize(13);
@@ -1077,7 +1093,7 @@ public class MainActivity extends Activity {
     }
 
     private void buildMatchForm() {
-        addHeading("01", "MATCH SETUP");
+        addHeading("", "MATCH SETUP");
 
         LinearLayout introCard = card();
         introCard.setPadding(dp(16), dp(16), dp(16), dp(16));
@@ -1102,9 +1118,9 @@ public class MainActivity extends Activity {
         mainLayout.addView(introCard);
 
         LinearLayout teamsCard = card();
-        TextView teamsTitle = label("01  •  SELECT THE TEAMS");
+        TextView teamsTitle = label("SELECT TEAMS");
         teamsTitle.setTextColor(GREEN);
-        teamsTitle.setTextSize(12);
+        teamsTitle.setTextSize(14);
         teamsTitle.setTypeface(null, Typeface.BOLD);
         teamsTitle.setPadding(0, 0, 0, dp(12));
         teamsCard.addView(teamsTitle);
@@ -1185,9 +1201,9 @@ public class MainActivity extends Activity {
         mainLayout.addView(teamsCard);
 
         LinearLayout xgCard = card();
-        TextView xgTitle = label("02  •  EXPECTED GOALS (xG)");
+        TextView xgTitle = label("EXPECTED GOALS (xG)");
         xgTitle.setTextColor(GREEN);
-        xgTitle.setTextSize(12);
+        xgTitle.setTextSize(14);
         xgTitle.setTypeface(null, Typeface.BOLD);
         xgTitle.setPadding(0, 0, 0, dp(5));
         xgCard.addView(xgTitle);
@@ -1208,9 +1224,9 @@ public class MainActivity extends Activity {
         mainLayout.addView(xgCard);
 
         LinearLayout formCard = card();
-        TextView formTitle = label("03  •  RECENT TEAM FORM");
+        TextView formTitle = label("RECENT TEAM FORM");
         formTitle.setTextColor(GREEN);
-        formTitle.setTextSize(12);
+        formTitle.setTextSize(14);
         formTitle.setTypeface(null, Typeface.BOLD);
         formTitle.setPadding(0, 0, 0, dp(8));
         formCard.addView(formTitle);
@@ -1249,7 +1265,7 @@ public class MainActivity extends Activity {
     }
 
     private void buildHistoryTools() {
-        addHeading("03", "PREDICTION HISTORY & TESTING");
+        addHeading("", "PREDICTION HISTORY & TESTING");
         LinearLayout historyCard = card();
         historyCard.setOrientation(LinearLayout.VERTICAL);
         TextView historyNote = label("Review saved predictions, update finished match results, or remove records you no longer need.");
@@ -1295,7 +1311,7 @@ public class MainActivity extends Activity {
     }
 
     private void buildResults() {
-        addHeading("02", "MATCH PREDICTION");
+        addHeading("", "MATCH PREDICTION");
 
         LinearLayout outputCard = card();
         outputCard.setOrientation(LinearLayout.VERTICAL);
@@ -1662,21 +1678,13 @@ public class MainActivity extends Activity {
         LinearLayout line = new LinearLayout(this);
         line.setOrientation(LinearLayout.HORIZONTAL);
         line.setGravity(Gravity.CENTER_VERTICAL);
-        line.setPadding(dp(2), dp(24), 0, dp(12));
-
-        TextView numberView = label(number);
-        numberView.setTextColor(Color.rgb(8, 25, 22));
-        numberView.setTextSize(11);
-        numberView.setTypeface(null, Typeface.BOLD);
-        numberView.setGravity(Gravity.CENTER);
-        numberView.setBackground(rounded(GREEN, 9));
-        line.addView(numberView, new LinearLayout.LayoutParams(dp(34), dp(30)));
-
+        line.setPadding(dp(2), dp(22), 0, dp(13));
         TextView titleView = label(heading);
         titleView.setTextColor(WHITE);
-        titleView.setTextSize(15);
-        titleView.setTypeface(null, Typeface.BOLD);
-        titleView.setPadding(dp(10), 0, 0, 0);
+        titleView.setTextSize(19);
+        titleView.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        titleView.setLetterSpacing(0.025f);
+        titleView.setPadding(0, 0, 0, dp(2));
         line.addView(titleView);
         mainLayout.addView(line);
     }
@@ -2283,6 +2291,7 @@ public class MainActivity extends Activity {
         }
     }
         private void checkApiConnection() {
+        showLoading("Checking server connection…");
         new Thread(() -> {
             HttpURLConnection connection = null;
 
@@ -2298,37 +2307,82 @@ public class MainActivity extends Activity {
 
                 int responseCode = connection.getResponseCode();
 
+                final boolean connected = responseCode >= 200 && responseCode < 300;
                 runOnUiThread(() -> {
-                    if (responseCode == 200) {
-                        Toast.makeText(
-                            MainActivity.this,
-                            "Football Genie server connected!",
-                            Toast.LENGTH_LONG
-                        ).show();
-                    } else {
-                        Toast.makeText(
-                            MainActivity.this,
-                            "Server response: " + responseCode,
-                            Toast.LENGTH_LONG
-                        ).show();
-                    }
+                    updateConnectionStatus(connected);
+                    hideLoading();
                 });
 
             } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(
-                    MainActivity.this,
-                    "Could not connect to server. Check internet.",
-                    Toast.LENGTH_LONG
-                ).show());
-
+                runOnUiThread(() -> {
+                    updateConnectionStatus(false);
+                    hideLoading();
+                });
             } finally {
-                if (connection != null) {
-                    connection.disconnect();
-                }
+                if (connection != null) connection.disconnect();
             }
         }).start();
-                }
+    }
     
+
+    private void showLoading(String message) {
+        runOnUiThread(() -> {
+            loadingVisible = true;
+            if (loadingOverlay == null) {
+                loadingOverlay = new FrameLayout(MainActivity.this);
+                loadingOverlay.setBackgroundColor(Color.argb(205, 4, 10, 22));
+                LinearLayout panel = new LinearLayout(MainActivity.this);
+                panel.setOrientation(LinearLayout.VERTICAL);
+                panel.setGravity(Gravity.CENTER);
+                panel.setPadding(dp(24), dp(22), dp(24), dp(22));
+                panel.setBackground(rounded(Color.rgb(20, 35, 56), 18));
+                panel.setElevation(dp(12));
+                ProgressBar spinner = new ProgressBar(MainActivity.this);
+                spinner.setIndeterminate(true);
+                LinearLayout.LayoutParams spinnerParams = new LinearLayout.LayoutParams(dp(48), dp(48));
+                spinnerParams.gravity = Gravity.CENTER_HORIZONTAL;
+                panel.addView(spinner, spinnerParams);
+                loadingMessageView = label("Please wait…");
+                loadingMessageView.setTextColor(WHITE);
+                loadingMessageView.setTextSize(14);
+                loadingMessageView.setGravity(Gravity.CENTER);
+                loadingMessageView.setTypeface(null, Typeface.BOLD);
+                loadingMessageView.setPadding(0, dp(12), 0, 0);
+                panel.addView(loadingMessageView);
+                loadingOverlay.addView(panel, new FrameLayout.LayoutParams(-2, -2, Gravity.CENTER));
+                loadingOverlay.setClickable(true);
+                loadingOverlay.setFocusable(true);
+            }
+            if (loadingMessageView != null) loadingMessageView.setText(message);
+            if (loadingOverlay.getParent() != null) {
+                ((android.view.ViewGroup) loadingOverlay.getParent()).removeView(loadingOverlay);
+            }
+            if (screenHost != null) screenHost.addView(loadingOverlay, new FrameLayout.LayoutParams(-1, -1));
+        });
+    }
+
+    private void hideLoading() {
+        runOnUiThread(() -> {
+            loadingVisible = false;
+            if (loadingOverlay != null && loadingOverlay.getParent() != null) {
+                ((android.view.ViewGroup) loadingOverlay.getParent()).removeView(loadingOverlay);
+            }
+        });
+    }
+
+    private void updateConnectionStatus(boolean connected) {
+        serverConnected = connected;
+        if (connectionStatusBar == null) return;
+        connectionStatusBar.setBackgroundColor(
+            connected ? Color.rgb(45, 245, 125) : Color.rgb(255, 55, 70));
+        connectionStatusBar.animate().cancel();
+        connectionStatusBar.setAlpha(1f);
+        connectionStatusBar.setAlpha(0.18f);
+        connectionStatusBar.animate().alpha(1f).setDuration(650).setStartDelay(100).start();
+        connectionStatusBar.setContentDescription(
+            connected ? "Server connected" : "Server not connected");
+    }
+
     private SharedPreferences predictionPrefs() {
         return getSharedPreferences("football_genie_predictions", MODE_PRIVATE);
     }
@@ -2478,8 +2532,7 @@ public class MainActivity extends Activity {
     }
 
     private void syncPredictionHistory() {
-        Toast.makeText(this, "Checking saved predictions for final results...",
-            Toast.LENGTH_SHORT).show();
+        showLoading("Checking saved predictions…");
         new Thread(() -> {
             HttpURLConnection connection = null;
             try {
@@ -2538,11 +2591,17 @@ public class MainActivity extends Activity {
 
                 predictionPrefs().edit().putString("history", history.toString()).apply();
                 final int updated = updatedCount;
-                runOnUiThread(() -> showPredictionHistory(updated));
+                runOnUiThread(() -> {
+                    hideLoading();
+                    showPredictionHistory(updated);
+                });
             } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(MainActivity.this,
-                    "Could not update results. Please try again when connected.",
-                    Toast.LENGTH_LONG).show());
+                runOnUiThread(() -> {
+                    hideLoading();
+                    Toast.makeText(MainActivity.this,
+                        "Could not update results. Please try again when connected.",
+                        Toast.LENGTH_LONG).show();
+                });
             } finally {
                 if (connection != null) connection.disconnect();
             }
@@ -2718,12 +2777,7 @@ public class MainActivity extends Activity {
     }
 
     private void loadFixtures() {
-        Toast.makeText(
-            MainActivity.this,
-            "Loading fixtures...",
-            Toast.LENGTH_SHORT
-        ).show();
-
+        showLoading("Loading fixtures…");
         new Thread(() -> {
             HttpURLConnection connection = null;
 
@@ -2857,6 +2911,8 @@ public class MainActivity extends Activity {
                 }
 
                 runOnUiThread(() -> {
+                    hideLoading();
+                    updateConnectionStatus(true);
                     loadedFixtures.clear();
                     loadedFixtures.addAll(fixtures);
                     if (fixtureListStatus != null) {
@@ -2879,12 +2935,15 @@ public class MainActivity extends Activity {
                 });
 
             } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(
-                    MainActivity.this,
-                    "Could not load fixtures. Please try again.",
-                    Toast.LENGTH_LONG
-                ).show());
-
+                runOnUiThread(() -> {
+                    hideLoading();
+                    updateConnectionStatus(false);
+                    Toast.makeText(
+                        MainActivity.this,
+                        "Could not load fixtures. Please try again.",
+                        Toast.LENGTH_LONG
+                    ).show();
+                });
             } finally {
                 if (connection != null) {
                     connection.disconnect();
@@ -2895,6 +2954,7 @@ public class MainActivity extends Activity {
 
     // Estimate expected goals from each team's recent completed matches.
     private void loadTeamStatsForFixture(JSONObject fixture) {
+        showLoading("Loading recent team form…");
         new Thread(() -> {
             try {
                 String homeId = String.valueOf(fixture.getJSONObject("homeTeam").getLong("id"));
@@ -2908,6 +2968,7 @@ public class MainActivity extends Activity {
                         || homeStats.optInt("sampleSize", 0) == 0
                         || awayStats.optInt("sampleSize", 0) == 0) {
                     runOnUiThread(() -> {
+                        hideLoading();
                         renderRecentFormMessage("STATISTICS UNAVAILABLE",
                             "Recent results could not be loaded for one or both teams. Enter expected goals manually.");
                         Toast.makeText(
@@ -3220,6 +3281,7 @@ public class MainActivity extends Activity {
                 }
 
                 runOnUiThread(() -> {
+                    hideLoading();
                     homeGoals.setText(homeValue);
                     awayGoals.setText(awayValue);
                     renderRecentFormData(
@@ -3252,6 +3314,7 @@ public class MainActivity extends Activity {
                 });
             } catch (Exception e) {
                 runOnUiThread(() -> {
+                    hideLoading();
                     renderRecentFormMessage("COULD NOT LOAD TEAM FORM",
                         "Check your connection and try again, or enter expected goals manually.");
                     Toast.makeText(
