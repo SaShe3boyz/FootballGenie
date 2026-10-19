@@ -719,13 +719,14 @@ public class MainActivity extends Activity {
     }
 
     // Load club crests off the UI thread; keep the football icon visible if a crest is unavailable.
+    // Load club crests off the UI thread; optional fallback text is used on home/setup cards.
     private void loadTeamCrest(String crestUrl, ImageView target, TextView fallback) {
-        if (target == null || fallback == null) return;
+        if (target == null) return;
         target.setImageDrawable(null);
         target.setVisibility(View.GONE);
-        fallback.setVisibility(View.VISIBLE);
+        if (fallback != null) fallback.setVisibility(View.VISIBLE);
         if (crestUrl == null || crestUrl.trim().isEmpty()
-                || !(crestUrl.startsWith("https://"))) return;
+                || !crestUrl.trim().startsWith("https://")) return;
 
         final String requestedUrl = crestUrl.trim();
         target.setTag(requestedUrl);
@@ -741,7 +742,9 @@ public class MainActivity extends Activity {
                 connection.setInstanceFollowRedirects(true);
                 connection.connect();
                 if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                    bitmap = BitmapFactory.decodeStream(connection.getInputStream());
+                    try (java.io.InputStream stream = connection.getInputStream()) {
+                        bitmap = BitmapFactory.decodeStream(stream);
+                    }
                 }
             } catch (Exception ignored) {
                 // The fallback football icon remains visible if loading fails.
@@ -754,10 +757,10 @@ public class MainActivity extends Activity {
                 if (loadedBitmap != null) {
                     target.setImageBitmap(loadedBitmap);
                     target.setVisibility(View.VISIBLE);
-                    fallback.setVisibility(View.GONE);
+                    if (fallback != null) fallback.setVisibility(View.GONE);
                 } else {
                     target.setVisibility(View.GONE);
-                    fallback.setVisibility(View.VISIBLE);
+                    if (fallback != null) fallback.setVisibility(View.VISIBLE);
                 }
             });
         }).start();
