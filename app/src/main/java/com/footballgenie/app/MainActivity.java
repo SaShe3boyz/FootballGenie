@@ -255,7 +255,7 @@ public class MainActivity extends Activity {
         homeTeam.setGravity(Gravity.CENTER);
         FrameLayout homeBadgeHolder = new FrameLayout(this);
         homeBadgeHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
-        homeBadgeFallback = label("⬟");
+        homeBadgeFallback = label("🛡️");
         homeBadgeFallback.setTextColor(GREEN);
         homeBadgeFallback.setTextSize(39);
         homeBadgeFallback.setGravity(Gravity.CENTER);
@@ -287,7 +287,7 @@ public class MainActivity extends Activity {
         awayTeam.setGravity(Gravity.CENTER);
         FrameLayout awayBadgeHolder = new FrameLayout(this);
         awayBadgeHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
-        awayBadgeFallback = label("⬟");
+        awayBadgeFallback = label("🛡️");
         awayBadgeFallback.setTextColor(GREEN);
         awayBadgeFallback.setTextSize(39);
         awayBadgeFallback.setGravity(Gravity.CENTER);
@@ -1138,7 +1138,7 @@ public class MainActivity extends Activity {
         setupHomeColumn.setPadding(dp(3), 0, dp(3), 0);
         FrameLayout setupHomeHolder = new FrameLayout(this);
         setupHomeHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
-        setupHomeFallback = label("⬟");
+        setupHomeFallback = label("🛡️");
         setupHomeFallback.setTextColor(GREEN);
         setupHomeFallback.setTextSize(39);
         setupHomeFallback.setGravity(Gravity.CENTER);
@@ -1170,7 +1170,7 @@ public class MainActivity extends Activity {
         setupAwayColumn.setPadding(dp(3), 0, dp(3), 0);
         FrameLayout setupAwayHolder = new FrameLayout(this);
         setupAwayHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
-        setupAwayFallback = label("⬟");
+        setupAwayFallback = label("🛡️");
         setupAwayFallback.setTextColor(GREEN);
         setupAwayFallback.setTextSize(39);
         setupAwayFallback.setGravity(Gravity.CENTER);
@@ -2336,25 +2336,14 @@ public class MainActivity extends Activity {
             if (loadingOverlay == null) {
                 loadingOverlay = new FrameLayout(MainActivity.this);
                 loadingOverlay.setBackgroundColor(Color.argb(205, 4, 10, 22));
-                LinearLayout panel = new LinearLayout(MainActivity.this);
-                panel.setOrientation(LinearLayout.VERTICAL);
-                panel.setGravity(Gravity.CENTER);
-                panel.setPadding(dp(24), dp(22), dp(24), dp(22));
-                panel.setBackground(rounded(Color.rgb(20, 35, 56), 18));
-                panel.setElevation(dp(12));
                 ProgressBar spinner = new ProgressBar(MainActivity.this);
                 spinner.setIndeterminate(true);
-                LinearLayout.LayoutParams spinnerParams = new LinearLayout.LayoutParams(dp(48), dp(48));
-                spinnerParams.gravity = Gravity.CENTER_HORIZONTAL;
-                panel.addView(spinner, spinnerParams);
-                loadingOverlay.addView(spinner, new FrameLayout.LayoutParams(dp(52), dp(52), Gravity.CENTER));
-                spinner.setIndeterminate(true);
                 spinner.setContentDescription("Loading");
+                loadingOverlay.addView(spinner,
+                    new FrameLayout.LayoutParams(dp(52), dp(52), Gravity.CENTER));
                 loadingOverlay.setClickable(true);
                 loadingOverlay.setFocusable(true);
                 loadingMessageView = null;
-                loadingOverlay.setClickable(true);
-                loadingOverlay.setFocusable(true);
             }
             if (loadingOverlay.getParent() != null) {
                 ((android.view.ViewGroup) loadingOverlay.getParent()).removeView(loadingOverlay);
