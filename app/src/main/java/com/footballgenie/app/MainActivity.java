@@ -729,49 +729,56 @@ public class MainActivity extends Activity {
     }
 
     private void buildHeader() {
-        LinearLayout brandBar = new LinearLayout(this);
-        brandBar.setOrientation(LinearLayout.HORIZONTAL);
-        brandBar.setGravity(Gravity.CENTER_VERTICAL);
-        brandBar.setPadding(dp(2), dp(8), dp(2), dp(12));
+        // Settings remains at the top-right while the logo and complete branding sit centred.
+        FrameLayout header = new FrameLayout(this);
+        LinearLayout brandStack = new LinearLayout(this);
+        brandStack.setOrientation(LinearLayout.VERTICAL);
+        brandStack.setGravity(Gravity.CENTER_HORIZONTAL);
+        brandStack.setPadding(dp(2), dp(18), dp(2), dp(12));
 
         FootballGenieLogoMark mark = new FootballGenieLogoMark(this);
-        brandBar.addView(mark, new LinearLayout.LayoutParams(dp(58), dp(58)));
-
-        LinearLayout brandWords = new LinearLayout(this);
-        brandWords.setOrientation(LinearLayout.VERTICAL);
-        brandWords.setPadding(dp(9), 0, 0, 0);
+        LinearLayout.LayoutParams markParams = new LinearLayout.LayoutParams(dp(104), dp(104));
+        markParams.gravity = Gravity.CENTER_HORIZONTAL;
+        brandStack.addView(mark, markParams);
 
         LinearLayout nameRow = new LinearLayout(this);
         nameRow.setOrientation(LinearLayout.HORIZONTAL);
-        nameRow.setGravity(Gravity.CENTER_VERTICAL);
+        nameRow.setGravity(Gravity.CENTER);
         TextView football = label("Football");
         football.setTextColor(WHITE);
-        football.setTextSize(23);
+        football.setTextSize(31);
         football.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
         nameRow.addView(football);
         TextView genie = label("Genie");
-        genie.setTextColor(Color.rgb(35, 235, 105));
-        genie.setTextSize(23);
+        genie.setTextColor(Color.rgb(25, 235, 105));
+        genie.setTextSize(31);
         genie.setTypeface(Typeface.create("sans-serif", Typeface.BOLD_ITALIC));
         nameRow.addView(genie);
-        brandWords.addView(nameRow);
+        brandStack.addView(nameRow);
 
-        TextView tagline = label("P R E D I C T  •  S I M U L A T E  •  W I N");
+        TextView tagline = label("PREDICT  •  SIMULATE  •  WIN");
         tagline.setTextColor(Color.rgb(205, 245, 225));
-        tagline.setTextSize(8);
-        tagline.setLetterSpacing(0.10f);
-        tagline.setPadding(0, dp(3), 0, 0);
-        brandWords.addView(tagline);
-        brandBar.addView(brandWords, new LinearLayout.LayoutParams(0, -2, 1f));
+        tagline.setTextSize(11);
+        tagline.setLetterSpacing(0.16f);
+        tagline.setGravity(Gravity.CENTER);
+        tagline.setPadding(0, dp(5), 0, 0);
+        brandStack.addView(tagline);
+        FrameLayout.LayoutParams brandParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        header.addView(brandStack, brandParams);
 
         TextView settings = label("⚙");
         settings.setTextColor(WHITE);
-        settings.setTextSize(23);
+        settings.setTextSize(21);
         settings.setGravity(Gravity.CENTER);
         settings.setBackground(rounded(CARD, 14));
-        brandBar.addView(settings, new LinearLayout.LayoutParams(dp(42), dp(42)));
+        FrameLayout.LayoutParams settingsParams = new FrameLayout.LayoutParams(dp(40), dp(40),
+                Gravity.TOP | Gravity.RIGHT);
+        settingsParams.setMargins(0, dp(6), dp(2), 0);
+        header.addView(settings, settingsParams);
         settings.setOnClickListener(v -> showScreen(7));
-        mainLayout.addView(brandBar);
+        mainLayout.addView(header);
 
         TextView slogan = label("SMARTER PREDICTIONS.  DEEPER INSIGHTS.");
         slogan.setTextColor(Color.rgb(35, 235, 105));
