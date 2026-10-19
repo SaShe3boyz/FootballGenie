@@ -3,6 +3,9 @@ package com.footballgenie.app;
 import android.app.Activity;
 import android.os.Bundle;
 import android.graphics.Color;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
@@ -729,51 +732,142 @@ public class MainActivity extends Activity {
         LinearLayout brandBar = new LinearLayout(this);
         brandBar.setOrientation(LinearLayout.HORIZONTAL);
         brandBar.setGravity(Gravity.CENTER_VERTICAL);
-        brandBar.setPadding(dp(4), dp(8), dp(4), dp(14));
+        brandBar.setPadding(dp(2), dp(8), dp(2), dp(12));
 
-        TextView mark = label("⚽");
-        mark.setTextColor(GREEN);
-        mark.setTextSize(29);
-        mark.setGravity(Gravity.CENTER);
-        mark.setBackground(rounded(Color.rgb(8, 43, 48), 30));
-        brandBar.addView(mark, new LinearLayout.LayoutParams(dp(52), dp(52)));
+        FootballGenieLogoMark mark = new FootballGenieLogoMark(this);
+        brandBar.addView(mark, new LinearLayout.LayoutParams(dp(58), dp(58)));
 
         LinearLayout brandWords = new LinearLayout(this);
         brandWords.setOrientation(LinearLayout.VERTICAL);
-        brandWords.setPadding(dp(10), 0, 0, 0);
-        TextView name = label("Football");
-        name.setTextColor(WHITE);
-        name.setTextSize(24);
-        name.setTypeface(null, Typeface.BOLD);
-        brandWords.addView(name);
-        TextView genie = label("GENIE");
-        genie.setTextColor(GREEN);
-        genie.setTextSize(24);
-        genie.setTypeface(null, Typeface.BOLD);
-        brandWords.addView(genie);
+        brandWords.setPadding(dp(9), 0, 0, 0);
+
+        LinearLayout nameRow = new LinearLayout(this);
+        nameRow.setOrientation(LinearLayout.HORIZONTAL);
+        nameRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView football = label("Football");
+        football.setTextColor(WHITE);
+        football.setTextSize(23);
+        football.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
+        nameRow.addView(football);
+        TextView genie = label("Genie");
+        genie.setTextColor(Color.rgb(35, 235, 105));
+        genie.setTextSize(23);
+        genie.setTypeface(Typeface.create("sans-serif", Typeface.BOLD_ITALIC));
+        nameRow.addView(genie);
+        brandWords.addView(nameRow);
+
         TextView tagline = label("P R E D I C T  •  S I M U L A T E  •  W I N");
-        tagline.setTextColor(MUTED);
+        tagline.setTextColor(Color.rgb(205, 245, 225));
         tagline.setTextSize(8);
+        tagline.setLetterSpacing(0.10f);
         tagline.setPadding(0, dp(3), 0, 0);
         brandWords.addView(tagline);
         brandBar.addView(brandWords, new LinearLayout.LayoutParams(0, -2, 1f));
 
         TextView settings = label("⚙");
         settings.setTextColor(WHITE);
-        settings.setTextSize(25);
+        settings.setTextSize(23);
         settings.setGravity(Gravity.CENTER);
         settings.setBackground(rounded(CARD, 14));
-        brandBar.addView(settings, new LinearLayout.LayoutParams(dp(44), dp(44)));
+        brandBar.addView(settings, new LinearLayout.LayoutParams(dp(42), dp(42)));
         settings.setOnClickListener(v -> showScreen(7));
         mainLayout.addView(brandBar);
 
         TextView slogan = label("SMARTER PREDICTIONS.  DEEPER INSIGHTS.");
-        slogan.setTextColor(GREEN);
+        slogan.setTextColor(Color.rgb(35, 235, 105));
         slogan.setTextSize(10);
         slogan.setTypeface(null, Typeface.BOLD);
         slogan.setGravity(Gravity.CENTER);
-        slogan.setPadding(0, 0, 0, dp(15));
+        slogan.setPadding(0, dp(1), 0, dp(15));
         mainLayout.addView(slogan);
+    }
+
+    private class FootballGenieLogoMark extends View {
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+        FootballGenieLogoMark(Context context) {
+            super(context);
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            if (getWidth() <= 0 || getHeight() <= 0) return;
+            canvas.save();
+            canvas.scale(getWidth() / 100f, getHeight() / 100f);
+
+            // Neon-green genie/flame swoosh that wraps around the football.
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.rgb(25, 235, 105));
+            Path upperFlame = new Path();
+            upperFlame.moveTo(52, 4);
+            upperFlame.cubicTo(83, 17, 87, 35, 69, 46);
+            upperFlame.cubicTo(75, 29, 65, 21, 52, 18);
+            upperFlame.cubicTo(58, 13, 58, 8, 52, 4);
+            upperFlame.close();
+            canvas.drawPath(upperFlame, paint);
+
+            Path lowerSwoosh = new Path();
+            lowerSwoosh.moveTo(47, 96);
+            lowerSwoosh.cubicTo(15, 83, 12, 64, 31, 53);
+            lowerSwoosh.cubicTo(26, 69, 36, 79, 49, 82);
+            lowerSwoosh.cubicTo(43, 87, 42, 92, 47, 96);
+            lowerSwoosh.close();
+            canvas.drawPath(lowerSwoosh, paint);
+
+            // White football with dark seams and a central pentagon.
+            paint.setColor(Color.rgb(245, 250, 255));
+            canvas.drawCircle(50, 50, 25, paint);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(2.4f);
+            paint.setColor(Color.rgb(7, 20, 34));
+            canvas.drawCircle(50, 50, 25, paint);
+            paint.setStyle(Paint.Style.FILL);
+            Path centre = new Path();
+            centre.moveTo(50, 39);
+            centre.lineTo(60, 46);
+            centre.lineTo(56, 58);
+            centre.lineTo(44, 58);
+            centre.lineTo(40, 46);
+            centre.close();
+            canvas.drawPath(centre, paint);
+
+            Path topPanel = new Path();
+            topPanel.moveTo(45, 26);
+            topPanel.lineTo(55, 26);
+            topPanel.lineTo(59, 34);
+            topPanel.lineTo(50, 39);
+            topPanel.lineTo(41, 34);
+            topPanel.close();
+            canvas.drawPath(topPanel, paint);
+            Path leftPanel = new Path();
+            leftPanel.moveTo(27, 43);
+            leftPanel.lineTo(39, 46);
+            leftPanel.lineTo(40, 57);
+            leftPanel.lineTo(32, 64);
+            leftPanel.lineTo(25, 55);
+            leftPanel.close();
+            canvas.drawPath(leftPanel, paint);
+            Path rightPanel = new Path();
+            rightPanel.moveTo(61, 46);
+            rightPanel.lineTo(73, 43);
+            rightPanel.lineTo(75, 55);
+            rightPanel.lineTo(68, 64);
+            rightPanel.lineTo(60, 57);
+            rightPanel.close();
+            canvas.drawPath(rightPanel, paint);
+            Path bottomPanel = new Path();
+            bottomPanel.moveTo(40, 61);
+            bottomPanel.lineTo(50, 58);
+            bottomPanel.lineTo(60, 61);
+            bottomPanel.lineTo(57, 72);
+            bottomPanel.lineTo(44, 72);
+            bottomPanel.close();
+            canvas.drawPath(bottomPanel, paint);
+
+            canvas.restore();
+        }
     }
 
     private void buildMatchForm() {
