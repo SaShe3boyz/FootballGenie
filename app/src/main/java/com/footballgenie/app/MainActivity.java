@@ -3,6 +3,8 @@ package com.footballgenie.app;
 import android.app.Activity;
 import android.os.Bundle;
 import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -40,6 +42,8 @@ public class MainActivity extends Activity {
     private TextView overValue, underValue, bttsValue;
     // Home-screen fixture card must reflect the same selected fixture as Predict.
     private TextView homeDisplayName, awayDisplayName, homeDisplayLeague;
+    private ImageView homeCrestImage, awayCrestImage;
+    private TextView homeBadgeFallback, awayBadgeFallback;
     private LinearLayout mainLayout;
     private FrameLayout screenHost;
     private final View[] appScreens = new View[8];
@@ -236,10 +240,17 @@ public class MainActivity extends Activity {
         LinearLayout homeTeam = new LinearLayout(this);
         homeTeam.setOrientation(LinearLayout.VERTICAL);
         homeTeam.setGravity(Gravity.CENTER);
-        TextView homeBadge = label("⚽");
-        homeBadge.setTextSize(28);
-        homeBadge.setGravity(Gravity.CENTER);
-        homeTeam.addView(homeBadge);
+        FrameLayout homeBadgeHolder = new FrameLayout(this);
+        homeBadgeHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
+        homeBadgeFallback = label("⚽");
+        homeBadgeFallback.setTextSize(30);
+        homeBadgeFallback.setGravity(Gravity.CENTER);
+        homeBadgeHolder.addView(homeBadgeFallback, new FrameLayout.LayoutParams(-1, -1));
+        homeCrestImage = new ImageView(this);
+        homeCrestImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        homeCrestImage.setVisibility(View.GONE);
+        homeBadgeHolder.addView(homeCrestImage, new FrameLayout.LayoutParams(-1, -1));
+        homeTeam.addView(homeBadgeHolder);
         homeDisplayName = label("Home Team");
         homeDisplayName.setTextColor(WHITE);
         homeDisplayName.setTextSize(12);
@@ -260,10 +271,17 @@ public class MainActivity extends Activity {
         LinearLayout awayTeam = new LinearLayout(this);
         awayTeam.setOrientation(LinearLayout.VERTICAL);
         awayTeam.setGravity(Gravity.CENTER);
-        TextView awayBadge = label("⚽");
-        awayBadge.setTextSize(28);
-        awayBadge.setGravity(Gravity.CENTER);
-        awayTeam.addView(awayBadge);
+        FrameLayout awayBadgeHolder = new FrameLayout(this);
+        awayBadgeHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
+        awayBadgeFallback = label("⚽");
+        awayBadgeFallback.setTextSize(30);
+        awayBadgeFallback.setGravity(Gravity.CENTER);
+        awayBadgeHolder.addView(awayBadgeFallback, new FrameLayout.LayoutParams(-1, -1));
+        awayCrestImage = new ImageView(this);
+        awayCrestImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        awayCrestImage.setVisibility(View.GONE);
+        awayBadgeHolder.addView(awayCrestImage, new FrameLayout.LayoutParams(-1, -1));
+        awayTeam.addView(awayBadgeHolder);
         awayDisplayName = label("Away Team");
         awayDisplayName.setTextColor(WHITE);
         awayDisplayName.setTextSize(12);
@@ -653,6 +671,8 @@ public class MainActivity extends Activity {
             selectedFixture = selected;
             homeInput.setText(homeName);
             awayInput.setText(awayName);
+            loadTeamCrest(homeTeamObject == null ? "" : homeTeamObject.optString("crest", ""), homeCrestImage, homeBadgeFallback);
+            loadTeamCrest(awayTeamObject == null ? "" : awayTeamObject.optString("crest", ""), awayCrestImage, awayBadgeFallback);
 
             if (homeDisplayName != null) homeDisplayName.setText(homeName.isEmpty() ? "Home Team" : homeName);
             if (awayDisplayName != null) awayDisplayName.setText(awayName.isEmpty() ? "Away Team" : awayName);
@@ -672,6 +692,51 @@ public class MainActivity extends Activity {
         } catch (Exception e) {
             Toast.makeText(this, "Could not select this fixture.", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    // Load club crests off the UI thread; keep the football icon visible if a crest is unavailable.
+    private void loadTeamCrest(String crestUrl, ImageView target, TextView fallback) {
+        if (target == null || fallback == null) return;
+        target.setImageDrawable(null);
+        target.setVisibility(View.GONE);
+        fallback.setVisibility(View.VISIBLE);
+        if (crestUrl == null || crestUrl.trim().isEmpty()
+                || !(crestUrl.startsWith("https://"))) return;
+
+        final String requestedUrl = crestUrl.trim();
+        target.setTag(requestedUrl);
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            Bitmap bitmap = null;
+            try {
+                URL url = new URL(requestedUrl);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(8000);
+                connection.setReadTimeout(8000);
+                connection.setInstanceFollowRedirects(true);
+                connection.connect();
+                if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    bitmap = BitmapFactory.decodeStream(connection.getInputStream());
+                }
+            } catch (Exception ignored) {
+                // The fallback football icon remains visible if loading fails.
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+            final Bitmap loadedBitmap = bitmap;
+            runOnUiThread(() -> {
+                if (target.getTag() == null || !requestedUrl.equals(target.getTag())) return;
+                if (loadedBitmap != null) {
+                    target.setImageBitmap(loadedBitmap);
+                    target.setVisibility(View.VISIBLE);
+                    fallback.setVisibility(View.GONE);
+                } else {
+                    target.setVisibility(View.GONE);
+                    fallback.setVisibility(View.VISIBLE);
+                }
+            });
+        }).start();
     }
 
     private void buildValidationScreen() {
