@@ -796,6 +796,19 @@ public class MainActivity extends Activity {
                 Gravity.TOP | Gravity.CENTER_HORIZONTAL);
         header.addView(brandStack, brandParams);
 
+        // Three-line menu button at the top-left for quick access to every major section.
+        TextView menuButton = label("☰");
+        menuButton.setTextColor(Color.rgb(105, 255, 174));
+        menuButton.setTextSize(25);
+        menuButton.setGravity(Gravity.CENTER);
+        menuButton.setBackground(rounded(CARD, 14));
+        menuButton.setContentDescription("Open navigation menu");
+        FrameLayout.LayoutParams menuParams = new FrameLayout.LayoutParams(dp(44), dp(44),
+                Gravity.TOP | Gravity.LEFT);
+        menuParams.setMargins(dp(2), dp(6), 0, 0);
+        header.addView(menuButton, menuParams);
+        menuButton.setOnClickListener(v -> showNavigationMenu(menuButton));
+
         TextView settings = label("⚙");
         settings.setTextColor(WHITE);
         settings.setTextSize(21);
@@ -815,6 +828,72 @@ public class MainActivity extends Activity {
         slogan.setGravity(Gravity.CENTER);
         slogan.setPadding(0, dp(1), 0, dp(15));
         mainLayout.addView(slogan);
+    }
+
+    private void showNavigationMenu(View anchor) {
+        final PopupWindow drawer = new PopupWindow(this);
+        LinearLayout panel = new LinearLayout(this);
+        panel.setOrientation(LinearLayout.VERTICAL);
+        panel.setPadding(dp(10), dp(12), dp(10), dp(12));
+        panel.setBackground(glossyCardBackground());
+        panel.setElevation(dp(18));
+
+        TextView title = label("FOOTBALL GENIE");
+        title.setTextColor(Color.rgb(105, 255, 174));
+        title.setTextSize(15);
+        title.setTypeface(null, Typeface.BOLD);
+        title.setPadding(dp(12), dp(8), dp(12), dp(12));
+        panel.addView(title);
+
+        String[] menuTitles = {
+            "⌂   Home",
+            "⚽   Match Centre / Predict",
+            "🧠   Match Intelligence",
+            "🎮   Match Simulation",
+            "◷   Prediction History",
+            "🌐   Live Fixtures",
+            "📊   Testing & Validation",
+            "⚙   Settings",
+            "ℹ   About Football Genie"
+        };
+        int[] destinations = {0, 1, 2, 3, 4, 5, 6, 7, 7};
+
+        for (int i = 0; i < menuTitles.length; i++) {
+            final int destination = destinations[i];
+            final boolean about = (i == menuTitles.length - 1);
+            TextView row = label(menuTitles[i]);
+            row.setTextColor(destination == activeScreen ? Color.rgb(105, 255, 174) : WHITE);
+            row.setTextSize(14);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(dp(14), dp(12), dp(12), dp(12));
+            row.setBackground(rounded(destination == activeScreen
+                ? Color.rgb(18, 69, 66) : Color.rgb(8, 22, 39), 12));
+            LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(-1, dp(48));
+            rowParams.setMargins(0, dp(3), 0, dp(3));
+            panel.addView(row, rowParams);
+            row.setClickable(true);
+            row.setOnClickListener(v -> {
+                drawer.dismiss();
+                if (about) {
+                    showScreen(7);
+                    new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("About Football Genie")
+                        .setMessage("Football Genie — Predict • Simulate • Win\\n\\nAI-assisted football match predictions, match simulations, intelligence and prediction validation.")
+                        .setPositiveButton("OK", null)
+                        .show();
+                } else {
+                    showScreen(destination);
+                }
+            });
+        }
+
+        drawer.setContentView(panel);
+        drawer.setWidth(dp(285));
+        drawer.setHeight(-2);
+        drawer.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+        drawer.setOutsideTouchable(true);
+        drawer.setFocusable(true);
+        drawer.showAtLocation(anchor, Gravity.TOP | Gravity.LEFT, dp(10), dp(58));
     }
 
     private class FootballGenieLogoMark extends View {
