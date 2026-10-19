@@ -44,6 +44,8 @@ public class MainActivity extends Activity {
     private FrameLayout screenHost;
     private final View[] appScreens = new View[8];
     private TextView simulationSummary;
+    private final LinearLayout[] navItems = new LinearLayout[5];
+    private int activeScreen = 0;
     private JSONObject selectedFixture;
     private LinearLayout fixtureListLayout;
     private LinearLayout fixtureFiltersLayout;
@@ -147,6 +149,7 @@ public class MainActivity extends Activity {
             item.setGravity(Gravity.CENTER);
             item.setPadding(dp(2), dp(5), dp(2), dp(4));
             item.setBackground(rounded(Color.rgb(5, 13, 26), 10));
+            navItems[i] = item;
             item.setClickable(true);
             item.setFocusable(true);
 
@@ -175,9 +178,20 @@ public class MainActivity extends Activity {
 
     private void showScreen(int screen) {
         if (screen < 0 || screen >= appScreens.length || appScreens[screen] == null) return;
+        activeScreen = screen;
         screenHost.removeAllViews();
         screenHost.addView(appScreens[screen],
             new FrameLayout.LayoutParams(-1, -1));
+        for (int i = 0; i < navItems.length; i++) {
+            LinearLayout item = navItems[i];
+            if (item == null) continue;
+            boolean selected = (i == screen) || (i == 5 && screen == 5);
+            item.setBackground(rounded(selected ? Color.rgb(18, 69, 66) : Color.rgb(5, 13, 26), 10));
+            if (item.getChildCount() > 1) {
+                ((TextView) item.getChildAt(0)).setTextColor(selected ? Color.rgb(105, 255, 174) : GREEN);
+                ((TextView) item.getChildAt(1)).setTextColor(selected ? Color.rgb(105, 255, 174) : WHITE);
+            }
+        }
         if (screen == 3 && simulationSummary != null && result != null) {
             simulationSummary.setText(result.getText());
         }
@@ -269,14 +283,22 @@ public class MainActivity extends Activity {
         fixtureCard.addView(fixtureHelp);
 
         Button predictButton = new Button(this);
-        predictButton.setText("▶  SIMULATE 10,000 MATCHES");
+        predictButton.setText("▶  CONTINUE TO MATCH PREDICTION");
         predictButton.setTextColor(Color.rgb(4, 25, 20));
         predictButton.setTextSize(13);
         predictButton.setTypeface(null, Typeface.BOLD);
         predictButton.setAllCaps(false);
         predictButton.setBackground(rounded(GREEN, 12));
         fixtureCard.addView(predictButton, new LinearLayout.LayoutParams(-1, dp(50)));
-        predictButton.setOnClickListener(v -> showScreen(1));
+        predictButton.setOnClickListener(v -> {
+            showScreen(1);
+            if (homeInput != null && homeDisplayName != null && awayInput != null && awayDisplayName != null) {
+                String home = homeDisplayName.getText().toString();
+                String away = awayDisplayName.getText().toString();
+                if (!home.equals("Home Team") && homeInput.getText().toString().trim().isEmpty()) homeInput.setText(home);
+                if (!away.equals("Away Team") && awayInput.getText().toString().trim().isEmpty()) awayInput.setText(away);
+            }
+        });
         mainLayout.addView(fixtureCard);
 
         addHeading("✦", "QUICK ACCESS");
@@ -297,20 +319,26 @@ public class MainActivity extends Activity {
             String detail, int target) {
         LinearLayout tile = card();
         tile.setOrientation(LinearLayout.VERTICAL);
-        tile.setPadding(dp(12), dp(13), dp(10), dp(13));
+        tile.setPadding(dp(13), dp(14), dp(11), dp(14));
+        tile.setBackground(glossyCardBackground());
+        tile.setElevation(dp(3));
         TextView iconView = label(icon);
         iconView.setTextColor(GREEN);
         iconView.setTextSize(22);
-        tile.addView(iconView);
+        iconView.setGravity(Gravity.CENTER);
+        iconView.setBackground(rounded(Color.rgb(18, 65, 61), 12));
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(42), dp(42));
+        iconParams.bottomMargin = dp(4);
+        tile.addView(iconView, iconParams);
         TextView titleView = label(title);
         titleView.setTextColor(WHITE);
-        titleView.setTextSize(12);
+        titleView.setTextSize(13);
         titleView.setTypeface(null, Typeface.BOLD);
         titleView.setPadding(0, dp(5), 0, dp(3));
         tile.addView(titleView);
         TextView detailView = label(detail);
         detailView.setTextColor(MUTED);
-        detailView.setTextSize(10);
+        detailView.setTextSize(11);
         tile.addView(detailView);
         tile.setClickable(true);
         tile.setOnClickListener(v -> showScreen(target));
