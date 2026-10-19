@@ -1473,24 +1473,34 @@ public class MainActivity extends Activity {
     }
 
     private void refreshBarsInTree(View view) {
-        if (!(view instanceof LinearLayout)) return;
-        LinearLayout layout = (LinearLayout) view;
-        for (int i = 0; i < layout.getChildCount(); i++) {
-            View child = layout.getChildAt(i);
-            Object tag = child.getTag();
-            if (tag instanceof Object[]) {
-                Object[] parts = (Object[]) tag;
-                try {
-                    String raw = ((TextView) parts[0]).getText().toString().replace("%", "").trim();
-                    float pct = Math.max(0f, Math.min(100f, Float.parseFloat(raw)));
-                    ((TextView) parts[1]).setText(String.format(Locale.US, "%.1f%%", pct));
-                    android.widget.FrameLayout track = (android.widget.FrameLayout) parts[2];
-                    View fill = (View) parts[3];
-                    track.post(() -> fill.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
-                        (int) (track.getWidth() * pct / 100f), -1, Gravity.START)));
-                } catch (Exception ignored) {}
+        // Start at appScreens[i], which is a ScrollView. Traverse every ViewGroup,
+        // not just LinearLayouts, otherwise the first ScrollView stops the search
+        // and the Probability Snapshot bars never receive their percentages.
+        if (view == null) return;
+        Object tag = view.getTag();
+        if (tag instanceof Object[]) {
+            Object[] parts = (Object[]) tag;
+            try {
+                String raw = ((TextView) parts[0]).getText().toString().replace("%", "").trim();
+                float pct = Math.max(0f, Math.min(100f, Float.parseFloat(raw)));
+                ((TextView) parts[1]).setText(String.format(Locale.US, "%.1f%%", pct));
+                android.widget.FrameLayout track = (android.widget.FrameLayout) parts[2];
+                View fill = (View) parts[3];
+                Runnable resizeFill = () -> {
+                    int trackWidth = track.getWidth();
+                    if (trackWidth > 0) {
+                        fill.setLayoutParams(new android.widget.FrameLayout.LayoutParams(
+                            (int) (trackWidth * pct / 100f), -1, Gravity.START));
+                    }
+                };
+                track.post(resizeFill);
+            } catch (Exception ignored) {}
+        }
+        if (view instanceof android.view.ViewGroup) {
+            android.view.ViewGroup group = (android.view.ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                refreshBarsInTree(group.getChildAt(i));
             }
-            refreshBarsInTree(child);
         }
     }
 
