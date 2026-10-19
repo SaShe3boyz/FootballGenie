@@ -63,7 +63,7 @@ public class MainActivity extends Activity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(BG);
+        root.setBackground(glossyBackground());
 
         screenHost = new FrameLayout(this);
         LinearLayout.LayoutParams hostParams =
@@ -89,7 +89,7 @@ public class MainActivity extends Activity {
     private View createAppPage(int screen) {
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
-        scroll.setBackgroundColor(BG);
+        scroll.setBackground(glossyBackground());
 
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
@@ -1454,7 +1454,8 @@ public class MainActivity extends Activity {
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(dp(16), dp(16), dp(16), dp(16));
-        layout.setBackground(rounded(CARD, 18));
+        layout.setBackground(glossyCardBackground());
+        layout.setElevation(dp(3));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
         params.bottomMargin = dp(8);
         layout.setLayoutParams(params);
@@ -1511,6 +1512,31 @@ public class MainActivity extends Activity {
         TextView view = new TextView(this);
         view.setText(text);
         return view;
+    }
+
+    private GradientDrawable glossyBackground() {
+        GradientDrawable background = new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[] {
+                Color.rgb(7, 34, 57),
+                Color.rgb(10, 20, 39),
+                Color.rgb(5, 13, 27)
+            });
+        background.setCornerRadius(0);
+        return background;
+    }
+
+    private GradientDrawable glossyCardBackground() {
+        GradientDrawable background = new GradientDrawable(
+            GradientDrawable.Orientation.TOP_BOTTOM,
+            new int[] {
+                Color.rgb(39, 61, 86),
+                Color.rgb(24, 42, 65),
+                Color.rgb(15, 28, 48)
+            });
+        background.setCornerRadius(dp(18));
+        background.setStroke(dp(1), Color.rgb(65, 103, 127));
+        return background;
     }
 
     private GradientDrawable rounded(int color, int radius) {
