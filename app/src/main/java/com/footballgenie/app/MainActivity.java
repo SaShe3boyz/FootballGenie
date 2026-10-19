@@ -1014,6 +1014,40 @@ public class MainActivity extends Activity {
             setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         }
 
+        private void drawFlame(Canvas canvas, int alpha, float scale, float offsetX, float offsetY) {
+            canvas.save();
+            canvas.translate(offsetX, offsetY);
+            canvas.scale(scale, scale);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.argb(alpha, 25, 245, 112));
+            paint.setShadowLayer(8f, 0f, 0f, Color.argb(alpha, 25, 245, 112));
+
+            Path flame = new Path();
+            flame.moveTo(48, 5);
+            flame.cubicTo(69, 12, 86, 25, 80, 43);
+            flame.cubicTo(77, 53, 67, 60, 58, 61);
+            flame.cubicTo(72, 46, 66, 34, 55, 28);
+            flame.cubicTo(56, 41, 48, 47, 39, 51);
+            flame.cubicTo(25, 58, 24, 71, 38, 81);
+            flame.cubicTo(22, 78, 12, 66, 16, 53);
+            flame.cubicTo(19, 42, 30, 35, 37, 27);
+            flame.cubicTo(45, 19, 48, 12, 48, 5);
+            flame.close();
+            canvas.drawPath(flame, paint);
+
+            Path tail = new Path();
+            tail.moveTo(35, 82);
+            tail.cubicTo(53, 89, 72, 79, 78, 65);
+            tail.cubicTo(77, 82, 63, 94, 47, 96);
+            tail.cubicTo(35, 96, 25, 91, 20, 84);
+            tail.cubicTo(25, 85, 30, 84, 35, 82);
+            tail.close();
+            paint.setShadowLayer(5f, 0f, 0f, Color.argb(alpha, 25, 245, 112));
+            canvas.drawPath(tail, paint);
+            paint.clearShadowLayer();
+            canvas.restore();
+        }
+
         @Override
         protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
@@ -1021,33 +1055,23 @@ public class MainActivity extends Activity {
             canvas.save();
             canvas.scale(getWidth() / 100f, getHeight() / 100f);
 
-            // Neon-green genie/flame swoosh that wraps around the football.
+            // Layered neon flame: a bright edge and a softer glow create depth.
+            drawFlame(canvas, 55, 1.0f, 0f, 0f);
+            drawFlame(canvas, 255, 0.91f, 4.5f, 4f);
+
+            // Glossy football with a subtle highlight and dark, crisp panel seams.
             paint.setStyle(Paint.Style.FILL);
-            paint.setColor(Color.rgb(25, 235, 105));
-            Path upperFlame = new Path();
-            upperFlame.moveTo(52, 4);
-            upperFlame.cubicTo(83, 17, 87, 35, 69, 46);
-            upperFlame.cubicTo(75, 29, 65, 21, 52, 18);
-            upperFlame.cubicTo(58, 13, 58, 8, 52, 4);
-            upperFlame.close();
-            canvas.drawPath(upperFlame, paint);
+            paint.setColor(Color.rgb(242, 248, 255));
+            paint.setShadowLayer(5f, 0f, 2f, Color.argb(170, 0, 0, 0));
+            canvas.drawCircle(50, 50, 25.5f, paint);
+            paint.clearShadowLayer();
 
-            Path lowerSwoosh = new Path();
-            lowerSwoosh.moveTo(47, 96);
-            lowerSwoosh.cubicTo(15, 83, 12, 64, 31, 53);
-            lowerSwoosh.cubicTo(26, 69, 36, 79, 49, 82);
-            lowerSwoosh.cubicTo(43, 87, 42, 92, 47, 96);
-            lowerSwoosh.close();
-            canvas.drawPath(lowerSwoosh, paint);
-
-            // White football with dark seams and a central pentagon.
-            paint.setColor(Color.rgb(245, 250, 255));
-            canvas.drawCircle(50, 50, 25, paint);
             paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(2.4f);
-            paint.setColor(Color.rgb(7, 20, 34));
-            canvas.drawCircle(50, 50, 25, paint);
+            paint.setStrokeWidth(2f);
+            paint.setColor(Color.rgb(8, 22, 37));
+            canvas.drawCircle(50, 50, 25.5f, paint);
             paint.setStyle(Paint.Style.FILL);
+
             Path centre = new Path();
             centre.moveTo(50, 39);
             centre.lineTo(60, 46);
@@ -1057,39 +1081,37 @@ public class MainActivity extends Activity {
             centre.close();
             canvas.drawPath(centre, paint);
 
-            Path topPanel = new Path();
-            topPanel.moveTo(45, 26);
-            topPanel.lineTo(55, 26);
-            topPanel.lineTo(59, 34);
-            topPanel.lineTo(50, 39);
-            topPanel.lineTo(41, 34);
-            topPanel.close();
-            canvas.drawPath(topPanel, paint);
-            Path leftPanel = new Path();
-            leftPanel.moveTo(27, 43);
-            leftPanel.lineTo(39, 46);
-            leftPanel.lineTo(40, 57);
-            leftPanel.lineTo(32, 64);
-            leftPanel.lineTo(25, 55);
-            leftPanel.close();
-            canvas.drawPath(leftPanel, paint);
-            Path rightPanel = new Path();
-            rightPanel.moveTo(61, 46);
-            rightPanel.lineTo(73, 43);
-            rightPanel.lineTo(75, 55);
-            rightPanel.lineTo(68, 64);
-            rightPanel.lineTo(60, 57);
-            rightPanel.close();
-            canvas.drawPath(rightPanel, paint);
-            Path bottomPanel = new Path();
-            bottomPanel.moveTo(40, 61);
-            bottomPanel.lineTo(50, 58);
-            bottomPanel.lineTo(60, 61);
-            bottomPanel.lineTo(57, 72);
-            bottomPanel.lineTo(44, 72);
-            bottomPanel.close();
-            canvas.drawPath(bottomPanel, paint);
+            Path[] panels = new Path[5];
+            panels[0] = new Path();
+            panels[0].moveTo(45, 26); panels[0].lineTo(55, 26);
+            panels[0].lineTo(59, 34); panels[0].lineTo(50, 39);
+            panels[0].lineTo(41, 34); panels[0].close();
 
+            panels[1] = new Path();
+            panels[1].moveTo(27, 43); panels[1].lineTo(39, 46);
+            panels[1].lineTo(40, 57); panels[1].lineTo(32, 64);
+            panels[1].lineTo(25, 55); panels[1].close();
+
+            panels[2] = new Path();
+            panels[2].moveTo(61, 46); panels[2].lineTo(73, 43);
+            panels[2].lineTo(75, 55); panels[2].lineTo(68, 64);
+            panels[2].lineTo(60, 57); panels[2].close();
+
+            panels[3] = new Path();
+            panels[3].moveTo(40, 61); panels[3].lineTo(50, 58);
+            panels[3].lineTo(60, 61); panels[3].lineTo(57, 72);
+            panels[3].lineTo(44, 72); panels[3].close();
+
+            panels[4] = new Path();
+            panels[4].moveTo(35, 35); panels[4].lineTo(41, 34);
+            panels[4].lineTo(40, 39); panels[4].lineTo(34, 41);
+            panels[4].close();
+
+            for (Path panel : panels) canvas.drawPath(panel, paint);
+
+            // Small glossy reflection gives the ball a polished, app-icon finish.
+            paint.setColor(Color.argb(115, 255, 255, 255));
+            canvas.drawOval(35, 27, 48, 32, paint);
             canvas.restore();
         }
     }
