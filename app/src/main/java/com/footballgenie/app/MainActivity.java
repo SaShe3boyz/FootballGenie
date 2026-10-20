@@ -3121,8 +3121,7 @@ public class MainActivity extends Activity {
         summary.append("PREDICTION HISTORY\n");
         summary.append("VALIDATION REPORT • v1\\n");
         summary.append("New final results added: ").append(newlyUpdated).append("\n");
-        summary.append("Saved records: ").append(history.length()).append(" | evaluated: ").append(finished)
-            .append(" | awaiting results: ").append(pendingCount).append("\n\n");
+
 
         for (int i = history.length() - 1; i >= 0; i--) {
             JSONObject record = history.optJSONObject(i);
@@ -3216,6 +3215,10 @@ public class MainActivity extends Activity {
             }
             summary.append("────────────────────\n");
         }
+
+        summary.insert("PREDICTION HISTORY\n".length(),
+            "Saved records: " + history.length() + " | evaluated: " + finished
+                + " | awaiting results: " + pendingCount + "\n\n");
 
         if (finished > 0) {
             String sampleGuidance = finished < 30
