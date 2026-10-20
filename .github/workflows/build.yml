@@ -8,6 +8,7 @@ on:
       - improve-fixture-statuses
       - prediction-history
       - prediction-history-details
+      - football-genie-ai-recovery
 
 jobs:
   build:
