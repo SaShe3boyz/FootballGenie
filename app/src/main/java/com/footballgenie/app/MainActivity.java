@@ -194,6 +194,7 @@ public class MainActivity extends Activity {
     private void showScreen(int screen) {
         if (screen < 0 || screen >= appScreens.length || appScreens[screen] == null) return;
         activeScreen = screen;
+        applyPressFeedback(appScreens[screen]);
         screenHost.removeAllViews();
         screenHost.addView(appScreens[screen],
             new FrameLayout.LayoutParams(-1, -1));
@@ -917,6 +918,35 @@ public class MainActivity extends Activity {
     }
 
  
+    // Tactile press feedback shared by buttons, menu rows, navigation items and clickable cards.
+    private void applyPressFeedback(View view) {
+        if (view == null) return;
+        if (view.isClickable() || view instanceof Button || view instanceof ImageButton) {
+            view.setOnTouchListener((v, event) -> {
+                switch (event.getActionMasked()) {
+                    case android.view.MotionEvent.ACTION_DOWN:
+                        v.animate().cancel();
+                        v.animate().scaleX(0.97f).scaleY(0.97f).alpha(0.82f)
+                            .setDuration(75).start();
+                        break;
+                    case android.view.MotionEvent.ACTION_UP:
+                    case android.view.MotionEvent.ACTION_CANCEL:
+                        v.animate().cancel();
+                        v.animate().scaleX(1f).scaleY(1f).alpha(1f)
+                            .setDuration(120).start();
+                        break;
+                }
+                return false; // Keep the normal click/long-press behaviour.
+            });
+        }
+        if (view instanceof android.view.ViewGroup) {
+            android.view.ViewGroup group = (android.view.ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                applyPressFeedback(group.getChildAt(i));
+            }
+        }
+    }
+
     private static final String BRAND_ARTWORK_URL =
             "https://raw.githubusercontent.com/SaShe3boyz/FootballGenie/main/file_000000003e3c8211a84b53f643e60c27.png";
     private static Bitmap cachedBrandArtwork;
@@ -928,7 +958,6 @@ public class MainActivity extends Activity {
             if (target != null) {
                 if (cachedBrandArtwork != null && !cachedBrandArtwork.isRecycled()) {
                     target.setImageBitmap(cachedBrandArtwork);
-                    target.setScaleType(ImageView.ScaleType.CENTER_CROP);
                     return;
                 }
                 if (!brandArtworkTargets.contains(target)) brandArtworkTargets.add(target);
@@ -982,7 +1011,6 @@ public class MainActivity extends Activity {
                         for (ImageView image : brandArtworkTargets) {
                             if (image != null) {
                                 image.setImageBitmap(ready);
-                                image.setScaleType(ImageView.ScaleType.CENTER_CROP);
                                 image.setAlpha(0f);
                                 image.animate().alpha(1f).setDuration(250).start();
                             }
@@ -1014,21 +1042,55 @@ public class MainActivity extends Activity {
     }
 
     private void showBrandSplash() {
-        // Use the same cached image as Home, and keep it visible until the artwork is ready.
-        ImageView splashImage = new ImageView(this);
-        splashImage.setBackgroundColor(Color.rgb(5, 12, 24));
-        splashImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        splashImage.setContentDescription("Football Genie opening stadium artwork");
+        // A clean logo-only splash: no stadium photo, no cropping, and no network wait.
+        FrameLayout splashContent = new FrameLayout(this);
+        splashContent.setBackground(rounded(Color.rgb(5, 12, 24), 0));
+        LinearLayout brandStack = new LinearLayout(this);
+        brandStack.setOrientation(LinearLayout.VERTICAL);
+        brandStack.setGravity(Gravity.CENTER);
+        brandStack.setPadding(dp(24), dp(24), dp(24), dp(24));
+
+        TextView footballMark = label("⚽");
+        footballMark.setGravity(Gravity.CENTER);
+        footballMark.setTextSize(66);
+        footballMark.setPadding(0, 0, 0, dp(12));
+        brandStack.addView(footballMark, new LinearLayout.LayoutParams(-1, -2));
+
+        TextView brandName = label("FOOTBALL GENIE");
+        brandName.setGravity(Gravity.CENTER);
+        brandName.setTextColor(Color.rgb(105, 255, 174));
+        brandName.setTextSize(29);
+        brandName.setTypeface(null, Typeface.BOLD);
+        brandName.setLetterSpacing(0.06f);
+        brandStack.addView(brandName, new LinearLayout.LayoutParams(-1, -2));
+
+        TextView brandLine = label("AI FOOTBALL INTELLIGENCE");
+        brandLine.setGravity(Gravity.CENTER);
+        brandLine.setTextColor(WHITE);
+        brandLine.setTextSize(13);
+        brandLine.setTypeface(null, Typeface.BOLD);
+        brandLine.setLetterSpacing(0.12f);
+        brandLine.setPadding(0, dp(12), 0, dp(5));
+        brandStack.addView(brandLine, new LinearLayout.LayoutParams(-1, -2));
+
+        TextView brandFeatures = label("PREDICT  •  SIMULATE  •  ANALYSE");
+        brandFeatures.setGravity(Gravity.CENTER);
+        brandFeatures.setTextColor(MUTED);
+        brandFeatures.setTextSize(12);
+        brandStack.addView(brandFeatures, new LinearLayout.LayoutParams(-1, -2));
+
+        FrameLayout.LayoutParams brandParams = new FrameLayout.LayoutParams(-1, -2,
+                Gravity.CENTER);
+        splashContent.addView(brandStack, brandParams);
+
         android.app.Dialog splash = new android.app.Dialog(this,
                 android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-        splash.setContentView(splashImage);
+        splash.setContentView(splashContent);
         splash.setCancelable(false);
         splash.show();
-        loadBrandArtwork(splashImage);
-        splashImage.setTag("football_genie_splash");
-        splashImage.postDelayed(() -> {
+        splashContent.postDelayed(() -> {
             if (!isFinishing() && splash.isShowing()) splash.dismiss();
-        }, 6000);
+        }, 1800);
     }
 
     private void buildHeader() {
@@ -1130,6 +1192,7 @@ public class MainActivity extends Activity {
             });
         }
 
+        applyPressFeedback(panel);
         drawer.setContentView(panel);
         drawer.setWidth(dp(285));
         drawer.setHeight(-2);
@@ -3078,6 +3141,7 @@ public class MainActivity extends Activity {
             matchParams.bottomMargin = dp(10);
             historyResultsContainer.addView(matchCard, matchParams);
         }
+        applyPressFeedback(historyResultsContainer);
         showScreen(4);
         historyResultsContainer.post(() -> {
             if (historyResultsContainer != null) {
