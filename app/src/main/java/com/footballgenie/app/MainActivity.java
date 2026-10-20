@@ -64,6 +64,18 @@ public class MainActivity extends Activity {
     private TextView loadingMessageView;
     private boolean loadingVisible = false;
     private boolean serverConnected = false;
+    private final android.os.Handler liveRefreshHandler =
+        new android.os.Handler(android.os.Looper.getMainLooper());
+    // Refresh fixture scores/status every three minutes only while the Live Fixtures
+    // screen is visible; stop polling when the user leaves that screen.
+    private final Runnable liveRefreshRunnable = new Runnable() {
+        @Override public void run() {
+            if (activeScreen == 5) {
+                loadFixtures(false);
+                liveRefreshHandler.postDelayed(this, 180000L);
+            }
+        }
+    };
 
     private final int BG = Color.rgb(9, 16, 31);
     private final int CARD = Color.rgb(20, 31, 51);
@@ -194,11 +206,17 @@ public class MainActivity extends Activity {
 
     private void showScreen(int screen) {
         if (screen < 0 || screen >= appScreens.length || appScreens[screen] == null) return;
+        int previousScreen = activeScreen;
         activeScreen = screen;
         applyPressFeedback(appScreens[screen]);
         screenHost.removeAllViews();
         screenHost.addView(appScreens[screen],
             new FrameLayout.LayoutParams(-1, -1));
+        liveRefreshHandler.removeCallbacks(liveRefreshRunnable);
+        if (screen == 5) {
+            if (previousScreen != 5) loadFixtures();
+            liveRefreshHandler.postDelayed(liveRefreshRunnable, 180000L);
+        }
         for (int i = 0; i < navItems.length; i++) {
             LinearLayout item = navItems[i];
             if (item == null) continue;
@@ -3655,7 +3673,11 @@ public class MainActivity extends Activity {
     }
 
     private void loadFixtures() {
-        showLoading("Loading fixtures…");
+        loadFixtures(true);
+    }
+
+    private void loadFixtures(boolean showProgress) {
+        if (showProgress) showLoading("Loading fixtures…");
         new Thread(() -> {
             HttpURLConnection connection = null;
 
@@ -3789,7 +3811,7 @@ public class MainActivity extends Activity {
                 }
 
                 runOnUiThread(() -> {
-                    hideLoading();
+                    if (showProgress) hideLoading();
                     updateConnectionStatus(true);
                     loadedFixtures.clear();
                     loadedFixtures.addAll(fixtures);
@@ -3797,24 +3819,20 @@ public class MainActivity extends Activity {
                         fixtureListStatus.setText(fixtures.size() + " fixtures loaded");
                     }
                     renderFixtureCards(loadedFixtures);
-                    if (fixtures.isEmpty()) {
-                        Toast.makeText(
-                            MainActivity.this,
+                    if (showProgress && fixtures.isEmpty()) {
+                        Toast.makeText(MainActivity.this,
                             "No matches found in the available date range.",
-                            Toast.LENGTH_LONG
-                        ).show();
-                    } else {
-                        Toast.makeText(
-                            MainActivity.this,
+                            Toast.LENGTH_LONG).show();
+                    } else if (showProgress) {
+                        Toast.makeText(MainActivity.this,
                             fixtures.size() + " fixtures loaded in Live Fixtures.",
-                            Toast.LENGTH_SHORT
-                        ).show();
+                            Toast.LENGTH_SHORT).show();
                     }
                 });
 
             } catch (Exception e) {
                 runOnUiThread(() -> {
-                    hideLoading();
+                    if (showProgress) hideLoading();
                     updateConnectionStatus(false);
                     Toast.makeText(
                         MainActivity.this,
