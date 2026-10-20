@@ -3138,6 +3138,17 @@ public class MainActivity extends Activity {
             probabilities.setLineSpacing(dp(3), 1f);
             matchCard.addView(probabilities);
 
+            TextView tapHint = label("↗  TAP TO RELOAD 10,000-SIMULATION ANALYSIS");
+            tapHint.setTextColor(GREEN);
+            tapHint.setTextSize(12);
+            tapHint.setTypeface(null, Typeface.BOLD);
+            tapHint.setPadding(0, dp(10), 0, 0);
+            matchCard.addView(tapHint);
+
+            matchCard.setClickable(true);
+            matchCard.setFocusable(true);
+            matchCard.setOnClickListener(v -> openSavedPredictionAnalysis(record));
+
             LinearLayout.LayoutParams matchParams = new LinearLayout.LayoutParams(-1, -2);
             matchParams.bottomMargin = dp(10);
             historyResultsContainer.addView(matchCard, matchParams);
@@ -3149,6 +3160,60 @@ public class MainActivity extends Activity {
                 historyResultsContainer.requestFocus();
             }
         });
+    }
+
+    // Re-run the 10,000-match model for the exact saved fixture without
+    // overwriting its original prediction or adding a duplicate history record.
+    private void openSavedPredictionAnalysis(JSONObject record) {
+        if (record == null) return;
+        String home = record.optString("home", "").trim();
+        String away = record.optString("away", "").trim();
+        if (home.isEmpty() || away.isEmpty()) {
+            Toast.makeText(this, "This saved match is missing team names.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        double homeXg = record.optDouble("homeXg", -1);
+        double awayXg = record.optDouble("awayXg", -1);
+        if (homeXg < 0 || awayXg < 0 || homeXg > 8 || awayXg > 8) {
+            Toast.makeText(this, "This saved match has no valid expected-goals inputs to replay.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        homeInput.setText(home);
+        awayInput.setText(away);
+        homeGoals.setText(String.format(Locale.US, "%.2f", homeXg));
+        awayGoals.setText(String.format(Locale.US, "%.2f", awayXg));
+
+        JSONObject previousFixture = selectedFixture;
+        selectedFixture = null; // prevent replaying from changing the saved prediction
+        try {
+            simulate(); // Runs the full 10,000-trial simulation and opens Match Prediction.
+            if (result != null) {
+                StringBuilder replayNote = new StringBuilder();
+                replayNote.append("\n\n━━━━━━━━━━━━━━━━━━━━")
+                    .append("\nSAVED HISTORY • MODEL REPLAY")
+                    .append("\nOriginal saved prediction: ")
+                    .append(String.format(Locale.US, "%.1f%% / %.1f%% / %.1f%%",
+                        record.optDouble("homeP", 0),
+                        record.optDouble("drawP", 0),
+                        record.optDouble("awayP", 0)))
+                    .append("\nReplay inputs (xG): ")
+                    .append(String.format(Locale.US, "%.2f - %.2f", homeXg, awayXg));
+                if ("FINISHED".equals(record.optString("predictionStatus", ""))) {
+                    replayNote.append("\nActual final score: ")
+                        .append(record.optInt("actualHome", -1))
+                        .append(" - ")
+                        .append(record.optInt("actualAway", -1));
+                } else {
+                    replayNote.append("\nActual final score: Awaiting result");
+                }
+                replayNote.append("\nNote: the replay is a fresh 10,000-trial run; percentages can vary slightly.");
+                result.append(replayNote.toString());
+            }
+        } finally {
+            selectedFixture = previousFixture;
+        }
     }
 
     private void loadFixtures() {
