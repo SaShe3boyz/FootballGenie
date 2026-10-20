@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Football Genie emblem: bright green magic accents around a football. -->
+    <path android:fillColor="#00000000" android:strokeColor="#39E75F" android:strokeWidth="4"
+        android:pathData="M54,8 A46,46 0,1 0,54.1,8 Z" />
+    <path android:fillColor="#39E75F"
+        android:pathData="M19,29 L25,33 L19,37 L13,33 Z M86,19 L91,26 L86,33 L81,26 Z M88,73 L94,78 L88,83 L82,78 Z" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M54,29 L67,38 L62,53 L46,53 L41,38 Z" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M41,38 L29,36 L23,47 L31,59 L46,53 Z M67,38 L79,36 L85,47 L77,59 L62,53 Z" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M31,59 L36,75 L48,82 L46,67 L46,53 Z M77,59 L72,75 L60,82 L62,67 L62,53 Z" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M48,82 L54,86 L60,82 L62,67 L54,62 L46,67 Z" />
+    <path android:fillColor="#39E75F"
+        android:pathData="M54,18 L57,27 L66,30 L57,33 L54,42 L51,33 L42,30 L51,27 Z" />
+</vector>
