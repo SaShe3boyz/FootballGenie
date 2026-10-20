@@ -2825,6 +2825,30 @@ public class MainActivity extends Activity {
                                     if (actualHome >= 0 && actualAway >= 0) {
                                         record.put("actualHome", actualHome);
                                         record.put("actualAway", actualAway);
+                                        JSONObject halfTime = score != null ? score.optJSONObject("halfTime") : null;
+                                        if (halfTime != null && !halfTime.isNull("home") && !halfTime.isNull("away")) {
+                                            int htHome = halfTime.optInt("home", -1);
+                                            int htAway = halfTime.optInt("away", -1);
+                                            if (htHome >= 0 && htAway >= 0) {
+                                                record.put("actualHalfHome", htHome);
+                                                record.put("actualHalfAway", htAway);
+                                            }
+                                        }
+                                        JSONArray goals = match.optJSONArray("goals");
+                                        if (goals != null) {
+                                            if (goals.length() == 0 && actualHome == 0 && actualAway == 0) {
+                                                record.put("actualFirstScorer", "NONE");
+                                            } else if (goals.length() > 0) {
+                                                JSONObject firstGoal = goals.optJSONObject(0);
+                                                JSONObject scoringTeam = firstGoal != null ? firstGoal.optJSONObject("team") : null;
+                                                String scorerName = scoringTeam != null ? scoringTeam.optString("name", "") : "";
+                                                if (scorerName.equalsIgnoreCase(record.optString("home", ""))) {
+                                                    record.put("actualFirstScorer", "HOME");
+                                                } else if (scorerName.equalsIgnoreCase(record.optString("away", ""))) {
+                                                    record.put("actualFirstScorer", "AWAY");
+                                                }
+                                            }
+                                        }
                                         record.put("predictionStatus", "FINISHED");
                                         updatedCount++;
                                     }
@@ -3138,6 +3162,20 @@ public class MainActivity extends Activity {
             probabilities.setLineSpacing(dp(3), 1f);
             matchCard.addView(probabilities);
 
+            if (isFinished) {
+                LinearLayout validationCard = card();
+                validationCard.setOrientation(LinearLayout.VERTICAL);
+                TextView validationTitle = label("STAT-BY-STAT VALIDATION");
+                validationTitle.setTextColor(WHITE);
+                validationTitle.setTextSize(14);
+                validationTitle.setTypeface(null, Typeface.BOLD);
+                validationCard.addView(validationTitle);
+                addSavedMatchValidation(validationCard, record);
+                LinearLayout.LayoutParams validationParams = new LinearLayout.LayoutParams(-1, -2);
+                validationParams.topMargin = dp(8);
+                matchCard.addView(validationCard, validationParams);
+            }
+
             TextView tapHint = label("↗  TAP TO RELOAD 10,000-SIMULATION ANALYSIS");
             tapHint.setTextColor(GREEN);
             tapHint.setTextSize(12);
@@ -3160,6 +3198,125 @@ public class MainActivity extends Activity {
                 historyResultsContainer.requestFocus();
             }
         });
+    }
+
+    private void addSavedMatchValidation(LinearLayout parent, JSONObject record) {
+        int ah = record.optInt("actualHome", -1);
+        int aa = record.optInt("actualAway", -1);
+        if (ah < 0 || aa < 0) {
+            addValidationCheck(parent, "Full-time score", "Prediction saved", "Actual score unavailable", null);
+            return;
+        }
+        double homeXg = record.optDouble("homeXg", 0.0);
+        double awayXg = record.optDouble("awayXg", 0.0);
+        double homeP = record.optDouble("homeP", 0.0);
+        double drawP = record.optDouble("drawP", 0.0);
+        double awayP = record.optDouble("awayP", 0.0);
+        double overP = record.optDouble("overP", 0.0);
+        double bttsP = record.optDouble("bttsP", 0.0);
+        int ph = record.optInt("predictedHome", -1);
+        int pa = record.optInt("predictedAway", -1);
+        String predictedOutcome = homeP >= Math.max(drawP, awayP) ? "HOME WIN"
+            : (drawP >= awayP ? "DRAW" : "AWAY WIN");
+        String actualOutcome = ah > aa ? "HOME WIN" : (ah == aa ? "DRAW" : "AWAY WIN");
+        addValidationCheck(parent, "1X2 outcome", predictedOutcome, actualOutcome, predictedOutcome.equals(actualOutcome));
+        addValidationCheck(parent, "Exact score", ph + " - " + pa, ah + " - " + aa, ph == ah && pa == aa);
+        boolean predictedOver = overP >= 50.0;
+        boolean actualOver = ah + aa > 2;
+        addValidationCheck(parent, "Goals market", predictedOver ? "OVER 2.5" : "UNDER 2.5",
+            actualOver ? "OVER 2.5" : "UNDER 2.5", predictedOver == actualOver);
+        boolean predictedBtts = bttsP >= 50.0;
+        boolean actualBtts = ah > 0 && aa > 0;
+        addValidationCheck(parent, "Both teams to score", predictedBtts ? "YES" : "NO",
+            actualBtts ? "YES" : "NO", predictedBtts == actualBtts);
+
+        double totalXg = Math.max(0.0, homeXg + awayXg);
+        if (record.has("actualHalfHome") && record.has("actualHalfAway")) {
+            int hth = record.optInt("actualHalfHome", -1);
+            int hta = record.optInt("actualHalfAway", -1);
+            if (hth >= 0 && hta >= 0) {
+                double bestHome = 0.0, bestDraw = 0.0, bestAway = 0.0, total = 0.0;
+                for (int h = 0; h <= 8; h++) {
+                    for (int a = 0; a <= 8; a++) {
+                        double probability = poissonProbability(h, homeXg * 0.45) * poissonProbability(a, awayXg * 0.45);
+                        total += probability;
+                        if (h > a) bestHome += probability;
+                        else if (h == a) bestDraw += probability;
+                        else bestAway += probability;
+                    }
+                }
+                String predictedHalf = bestHome >= Math.max(bestDraw, bestAway) ? "HOME LEADING"
+                    : (bestDraw >= bestAway ? "LEVEL" : "AWAY LEADING");
+                String actualHalf = hth > hta ? "HOME LEADING" : (hth == hta ? "LEVEL" : "AWAY LEADING");
+                addValidationCheck(parent, "Half-time outcome", predictedHalf,
+                    actualHalf + " (" + hth + "-" + hta + ")", predictedHalf.equals(actualHalf));
+                double firstHalfGoalP = 1.0 - Math.exp(-0.45 * totalXg);
+                boolean predictedFirstHalfGoal = firstHalfGoalP >= 0.5;
+                boolean actualFirstHalfGoal = hth + hta > 0;
+                addValidationCheck(parent, "First-half goal", predictedFirstHalfGoal ? "YES" : "NO",
+                    actualFirstHalfGoal ? "YES" : "NO", predictedFirstHalfGoal == actualFirstHalfGoal);
+                double secondHalfGoalP = 1.0 - Math.exp(-0.55 * totalXg);
+                boolean predictedSecondHalfGoal = secondHalfGoalP >= 0.5;
+                boolean actualSecondHalfGoal = ah + aa > hth + hta;
+                addValidationCheck(parent, "Second-half goal", predictedSecondHalfGoal ? "YES" : "NO",
+                    actualSecondHalfGoal ? "YES" : "NO", predictedSecondHalfGoal == actualSecondHalfGoal);
+            }
+        } else {
+            addValidationCheck(parent, "Half-time outcome", "Model forecast", "Half-time score not supplied", null);
+            addValidationCheck(parent, "First-half goal", (1.0 - Math.exp(-0.45 * totalXg)) >= 0.5 ? "YES" : "NO",
+                "Half-time score not supplied", null);
+            addValidationCheck(parent, "Second-half goal", (1.0 - Math.exp(-0.55 * totalXg)) >= 0.5 ? "YES" : "NO",
+                "Half-time score not supplied", null);
+        }
+        boolean predictedNoGoals = Math.exp(-totalXg) >= 0.5;
+        boolean actualNoGoals = ah == 0 && aa == 0;
+        addValidationCheck(parent, "No goals in match", predictedNoGoals ? "YES" : "NO",
+            actualNoGoals ? "YES" : "NO", predictedNoGoals == actualNoGoals);
+
+        String actualFirstScorer = record.optString("actualFirstScorer", "");
+        if (!actualFirstScorer.isEmpty()) {
+            double anyGoalP = 1.0 - Math.exp(-totalXg);
+            double homeFirstP = totalXg > 0 ? (homeXg / totalXg) * anyGoalP : 0.0;
+            double awayFirstP = totalXg > 0 ? (awayXg / totalXg) * anyGoalP : 0.0;
+            String predictedFirstScorer = Math.exp(-totalXg) >= Math.max(homeFirstP, awayFirstP) ? "NO GOAL"
+                : (homeFirstP >= awayFirstP ? "HOME SCORES FIRST" : "AWAY SCORES FIRST");
+            String actualFirst = actualFirstScorer.equals("NONE") ? "NO GOAL"
+                : (actualFirstScorer.equals("HOME") ? "HOME SCORES FIRST" : "AWAY SCORES FIRST");
+            addValidationCheck(parent, "First scoring event", predictedFirstScorer, actualFirst,
+                predictedFirstScorer.equals(actualFirst));
+        } else {
+            addValidationCheck(parent, "First scoring event", "Model forecast",
+                "Goal-event detail unavailable", null);
+        }
+
+        double homeError = Math.abs(homeXg - ah);
+        double awayError = Math.abs(awayXg - aa);
+        addValidationCheck(parent, "Home expected-goal estimate",
+            String.format(Locale.US, "%.2f expected", homeXg),
+            ah + " actual goal(s); error " + String.format(Locale.US, "%.2f", homeError),
+            homeError <= 1.0);
+        addValidationCheck(parent, "Away expected-goal estimate",
+            String.format(Locale.US, "%.2f expected", awayXg),
+            aa + " actual goal(s); error " + String.format(Locale.US, "%.2f", awayError),
+            awayError <= 1.0);
+        TextView legend = label("GREEN = forecast matched • RED = forecast missed • AMBER = actual data unavailable. Goal-estimate light uses ≤1.00 goal absolute error as a practical tolerance.");
+        legend.setTextColor(MUTED);
+        legend.setTextSize(11);
+        legend.setPadding(0, dp(6), 0, 0);
+        parent.addView(legend);
+    }
+
+    private void addValidationCheck(LinearLayout parent, String stat, String predicted,
+            String actual, Boolean correct) {
+        int statusColor = correct == null ? Color.rgb(255, 190, 70)
+            : (correct ? Color.rgb(35, 210, 125) : Color.rgb(255, 85, 85));
+        String status = correct == null ? "●" : (correct ? "●" : "●");
+        TextView row = label(status + "  " + stat + "\n    Predicted: " + predicted + "\n    Actual: " + actual);
+        row.setTextColor(statusColor);
+        row.setTextSize(12);
+        row.setLineSpacing(dp(2), 1f);
+        row.setPadding(0, dp(7), 0, dp(5));
+        parent.addView(row);
     }
 
     // Re-run the 10,000-match model for the exact saved fixture without
