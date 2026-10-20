@@ -2988,7 +2988,7 @@ public class MainActivity extends Activity {
         if (finished > 0) {
             TextView accuracy = label("Outcome accuracy: " + outcomeCorrect + "/" + finished
                 + " (" + String.format(Locale.US, "%.1f", 100.0 * outcomeCorrect / finished) + "%)"
-                + "\\nExact scores: " + exactCorrect + "/" + finished
+                + "\nExact scores: " + exactCorrect + "/" + finished
                 + "     •     Over 2.5: " + goalsCorrect + "/" + finished
                 + "     •     BTTS: " + bttsCorrect + "/" + finished);
             accuracy.setTextColor(WHITE);
@@ -3029,7 +3029,7 @@ public class MainActivity extends Activity {
             LinearLayout matchCard = card();
             matchCard.setOrientation(LinearLayout.VERTICAL);
 
-            TextView teams = label(home + "\\nvs\\n" + away);
+            TextView teams = label(home + "\nvs\n" + away);
             teams.setTextColor(WHITE);
             teams.setTextSize(17);
             teams.setTypeface(null, Typeface.BOLD);
@@ -3052,7 +3052,7 @@ public class MainActivity extends Activity {
 
             TextView scoreLine = label("PREDICTED SCORE     "
                 + record.optInt("predictedHome", 0) + " - " + record.optInt("predictedAway", 0)
-                + (isFinished ? "\\nACTUAL SCORE              " + record.optInt("actualHome", -1)
+                + (isFinished ? "\nACTUAL SCORE              " + record.optInt("actualHome", -1)
                     + " - " + record.optInt("actualAway", -1) : ""));
             scoreLine.setTextColor(WHITE);
             scoreLine.setTextSize(15);
@@ -3064,10 +3064,10 @@ public class MainActivity extends Activity {
             TextView probabilities = label("1X2 probabilities  •  "
                 + String.format(Locale.US, "%.0f%% / %.0f%% / %.0f%%",
                     record.optDouble("homeP", 0), record.optDouble("drawP", 0), record.optDouble("awayP", 0))
-                + "\\nExpected goals  •  "
+                + "\nExpected goals  •  "
                 + String.format(Locale.US, "%.2f - %.2f",
                     record.optDouble("homeXg", 0), record.optDouble("awayXg", 0))
-                + "\\nOver 2.5  •  " + String.format(Locale.US, "%.0f%%", record.optDouble("overP", 0))
+                + "\nOver 2.5  •  " + String.format(Locale.US, "%.0f%%", record.optDouble("overP", 0))
                 + "     BTTS  •  " + String.format(Locale.US, "%.0f%%", record.optDouble("bttsP", 0)));
             probabilities.setTextColor(MUTED);
             probabilities.setTextSize(13);
