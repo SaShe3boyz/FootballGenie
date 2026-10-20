@@ -1807,7 +1807,38 @@ public class MainActivity extends Activity {
         double hxg = readXg(homeGoals), axg = readXg(awayGoals);
         StringBuilder a = new StringBuilder("FOOTBALL GENIE • MATCH ANALYST\n");
         a.append(home).append(" vs ").append(away).append("\n\n");
-        if (q.contains("over") || q.contains("under") || q.contains("2.5") || q.contains("goal")) {
+        if (q.contains("first half") || q.contains("half-time") || q.contains("halftime")) {
+            double total = hxg + axg;
+            double firstHalfGoal = (1.0 - Math.exp(-0.45 * total)) * 100.0;
+            double halfHome = 0.0, halfDraw = 0.0, halfAway = 0.0, halfTotal = 0.0;
+            for (int h = 0; h <= 8; h++) {
+                for (int v = 0; v <= 8; v++) {
+                    double p = poissonProbability(h, hxg * 0.45) * poissonProbability(v, axg * 0.45);
+                    halfTotal += p;
+                    if (h > v) halfHome += p;
+                    else if (h == v) halfDraw += p;
+                    else halfAway += p;
+                }
+            }
+            if (halfTotal > 0) { halfHome /= halfTotal; halfDraw /= halfTotal; halfAway /= halfTotal; }
+            a.append("FIRST-HALF ANALYSIS\\n");
+            a.append("Estimated chance of at least one first-half goal: ").append(String.format(Locale.US, "%.1f%%", firstHalfGoal)).append(".\\n");
+            a.append("Most likely half-time outcome by the current model: home lead ").append(String.format(Locale.US, "%.1f%%", halfHome * 100))
+                .append(", level ").append(String.format(Locale.US, "%.1f%%", halfDraw * 100))
+                .append(", away lead ").append(String.format(Locale.US, "%.1f%%", halfAway * 100)).append(".\\n");
+            a.append("This uses a simple 45% share of match expected goals for the first half; it is a pre-match estimate, not live match tracking.");
+        } else if (q.contains("second half")) {
+            double chance = (1.0 - Math.exp(-0.55 * (hxg + axg))) * 100.0;
+            a.append("SECOND-HALF ANALYSIS\\n");
+            a.append("Estimated chance of at least one second-half goal: ").append(String.format(Locale.US, "%.1f%%", chance)).append(".\\n");
+            a.append("The model allocates 55% of the match expected-goal total to the second half. It does not account for the actual half-time score, substitutions, red cards or live momentum.");
+        } else if (q.contains("clean sheet") || q.contains("scoreless") || q.contains("no goal")) {
+            a.append("CLEAN-SHEET / NO-GOAL ANALYSIS\\n");
+            a.append(home).append(" scoring zero: ").append(String.format(Locale.US, "%.1f%%", Math.exp(-hxg) * 100))
+                .append("; ").append(away).append(" scoring zero: ").append(String.format(Locale.US, "%.1f%%", Math.exp(-axg) * 100))
+                .append("; 0-0 estimate: ").append(String.format(Locale.US, "%.1f%%", Math.exp(-(hxg + axg)) * 100)).append(".\\n");
+            a.append("These are Poisson estimates based on the entered expected goals; the match may differ.");
+        } else if (q.contains("over") || q.contains("under") || q.contains("2.5") || q.contains("goal")) {
             a.append("GOALS ANALYSIS\nExpected goals: ").append(String.format(Locale.US, "%.2f", hxg)).append(" home, ").append(String.format(Locale.US, "%.2f", axg)).append(" away (combined ").append(String.format(Locale.US, "%.2f", hxg + axg)).append(").\n");
             a.append("Over 2.5 means at least 3 total goals; Under 2.5 means 0–2. The displayed market probability comes from the app's simulated scorelines. Expected goals are averages, not guaranteed scores.");
         } else if (q.contains("btts") || q.contains("both team") || q.contains("both score")) {
