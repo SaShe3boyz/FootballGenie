@@ -1742,6 +1742,31 @@ public class MainActivity extends Activity {
                 JSONObject payload = new JSONObject();
                 payload.put("question", prompt);
                 payload.put("match", match);
+                // Include a compact sample of completed saved predictions so the analyst can
+                // review historical misses and calibration patterns using the user's own data.
+                JSONArray savedHistory = readPredictionHistory();
+                JSONArray completedEvidence = new JSONArray();
+                for (int i = savedHistory.length() - 1; i >= 0 && completedEvidence.length() < 15; i--) {
+                    JSONObject record = savedHistory.optJSONObject(i);
+                    if (record == null || !"FINISHED".equals(record.optString("predictionStatus", "PENDING"))
+                            || !record.has("actualHome") || !record.has("actualAway")) continue;
+                    JSONObject evidence = new JSONObject();
+                    evidence.put("home", record.optString("home", ""));
+                    evidence.put("away", record.optString("away", ""));
+                    evidence.put("predictedHome", record.optInt("predictedHome", -1));
+                    evidence.put("predictedAway", record.optInt("predictedAway", -1));
+                    evidence.put("actualHome", record.optInt("actualHome", -1));
+                    evidence.put("actualAway", record.optInt("actualAway", -1));
+                    evidence.put("homeXg", record.optDouble("homeXg", 0));
+                    evidence.put("awayXg", record.optDouble("awayXg", 0));
+                    evidence.put("homeP", record.optDouble("homeP", 0));
+                    evidence.put("drawP", record.optDouble("drawP", 0));
+                    evidence.put("awayP", record.optDouble("awayP", 0));
+                    evidence.put("overP", record.optDouble("overP", 0));
+                    evidence.put("bttsP", record.optDouble("bttsP", 0));
+                    completedEvidence.put(evidence);
+                }
+                payload.put("completedHistory", completedEvidence);
                 byte[] bytes = payload.toString().getBytes("UTF-8");
                 java.io.OutputStream output = connection.getOutputStream();
                 output.write(bytes);
