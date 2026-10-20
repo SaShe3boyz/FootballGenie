@@ -73,6 +73,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Start loading the artwork immediately while the first screen is being created.
+        loadBrandArtwork(null);
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -918,27 +920,39 @@ public class MainActivity extends Activity {
             "https://raw.githubusercontent.com/SaShe3boyz/FootballGenie/main/file_000000003e3c8211a84b53f643e60c27.png";
     private static Bitmap cachedBrandArtwork;
     private static boolean brandArtworkLoading;
+    private static final java.util.ArrayList<ImageView> brandArtworkTargets = new java.util.ArrayList<>();
 
     private void loadBrandArtwork(ImageView target) {
         synchronized (MainActivity.class) {
+            if (target != null) {
+                if (cachedBrandArtwork != null && !cachedBrandArtwork.isRecycled()) {
+                    target.setImageBitmap(cachedBrandArtwork);
+                    target.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    return;
+                }
+                if (!brandArtworkTargets.contains(target)) brandArtworkTargets.add(target);
+            }
             if (cachedBrandArtwork != null && !cachedBrandArtwork.isRecycled()) {
-                target.setImageBitmap(cachedBrandArtwork);
-                target.setAlpha(0f);
-                target.animate().alpha(1f).setDuration(450).start();
+                if (target != null) target.setImageBitmap(cachedBrandArtwork);
                 return;
             }
+            if (brandArtworkLoading) return;
+            brandArtworkLoading = true;
         }
+
         Thread worker = new Thread(() -> {
             Bitmap bitmap = null;
             java.io.File cache = new java.io.File(getCacheDir(), "football_genie_stadium.png");
             try {
                 if (cache.isFile() && cache.length() > 10000) {
-                    bitmap = BitmapFactory.decodeFile(cache.getAbsolutePath());
+                    android.graphics.BitmapFactory.Options options = new android.graphics.BitmapFactory.Options();
+                    options.inSampleSize = 2;
+                    bitmap = BitmapFactory.decodeFile(cache.getAbsolutePath(), options);
                 }
                 if (bitmap == null) {
                     HttpURLConnection connection = (HttpURLConnection) new URL(BRAND_ARTWORK_URL).openConnection();
-                    connection.setConnectTimeout(7000);
-                    connection.setReadTimeout(12000);
+                    connection.setConnectTimeout(5000);
+                    connection.setReadTimeout(8000);
                     connection.setInstanceFollowRedirects(true);
                     try (java.io.InputStream input = connection.getInputStream();
                          java.io.FileOutputStream output = new java.io.FileOutputStream(cache)) {
@@ -953,15 +967,27 @@ public class MainActivity extends Activity {
                     bitmap = BitmapFactory.decodeFile(cache.getAbsolutePath(), options);
                 }
             } catch (Exception ignored) {
-                // A failed download leaves the existing interface usable.
+                // Keep the app usable if the first artwork download needs another attempt.
             }
-            if (bitmap != null) {
-                final Bitmap ready = bitmap;
-                synchronized (MainActivity.class) { cachedBrandArtwork = ready; }
+
+            final Bitmap ready = bitmap;
+            synchronized (MainActivity.class) {
+                brandArtworkLoading = false;
+                if (ready != null) cachedBrandArtwork = ready;
+            }
+            if (ready != null) {
                 runOnUiThread(() -> {
-                    target.setImageBitmap(ready);
-                    target.setAlpha(0f);
-                    target.animate().alpha(1f).setDuration(500).start();
+                    synchronized (MainActivity.class) {
+                        for (ImageView image : brandArtworkTargets) {
+                            if (image != null) {
+                                image.setImageBitmap(ready);
+                                image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                                image.setAlpha(0f);
+                                image.animate().alpha(1f).setDuration(250).start();
+                            }
+                        }
+                        brandArtworkTargets.clear();
+                    }
                 });
             }
         }, "FootballGenieBrandArtwork");
@@ -996,12 +1022,12 @@ public class MainActivity extends Activity {
                 android.R.style.Theme_Black_NoTitleBar_Fullscreen);
         splash.setContentView(splashImage);
         splash.setCancelable(false);
+        splash.show();
         loadBrandArtwork(splashImage);
         splashImage.setTag("football_genie_splash");
         splashImage.postDelayed(() -> {
             if (!isFinishing() && splash.isShowing()) splash.dismiss();
-        }, 4500);
-        splash.show();
+        }, 6000);
     }
 
     private void buildHeader() {
@@ -1014,7 +1040,6 @@ public class MainActivity extends Activity {
         FrameLayout.LayoutParams artworkParams = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, dp(204),
                 Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-        artworkParams.setMargins(-dp(16), 0, -dp(16), 0);
         header.addView(brandArtwork, artworkParams);
         // Gradient overlays soften all four artwork edges into the Home background.
         View leftFade = edgeFade(Gravity.LEFT, true);
@@ -1039,17 +1064,9 @@ public class MainActivity extends Activity {
         header.addView(menuButton, menuParams);
         menuButton.setOnClickListener(v -> showNavigationMenu(menuButton));
 
-        TextView settings = label("⚙");
-        settings.setTextColor(WHITE);
-        settings.setTextSize(21);
-        settings.setGravity(Gravity.CENTER);
-        settings.setBackground(rounded(CARD, 14));
-        FrameLayout.LayoutParams settingsParams = new FrameLayout.LayoutParams(dp(40), dp(40),
-                Gravity.TOP | Gravity.RIGHT);
-        settingsParams.setMargins(0, dp(6), dp(2), 0);
-        header.addView(settings, settingsParams);
-        settings.setOnClickListener(v -> showScreen(7));
-        mainLayout.addView(header);
+        LinearLayout.LayoutParams fullBleedHeader = new LinearLayout.LayoutParams(-1, dp(204));
+        fullBleedHeader.setMargins(-dp(16), 0, -dp(16), 0);
+        mainLayout.addView(header, fullBleedHeader);
 
         // The slogan is already included in the stadium artwork.
 
