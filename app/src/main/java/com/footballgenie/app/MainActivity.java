@@ -357,7 +357,7 @@ public class MainActivity extends Activity {
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
                 connection.setConnectTimeout(15000);
-                connection.setReadTimeout(30000);
+                connection.setReadTimeout(110000);
                 connection.setDoOutput(true);
                 connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
                 byte[] bytes = payload.toString().getBytes("UTF-8");
@@ -379,7 +379,8 @@ public class MainActivity extends Activity {
                     error = response.optString("error", "AI request failed (HTTP " + code + ").");
                 }
             } catch (Exception ex) {
-                error = "Could not reach Football Genie AI. Check your internet connection and try again.";
+                error = "AI connection issue (" + ex.getClass().getSimpleName() + "): " +
+                    (ex.getMessage() == null || ex.getMessage().trim().isEmpty() ? "No additional details." : ex.getMessage());
             } finally {
                 if (connection != null) connection.disconnect();
             }
