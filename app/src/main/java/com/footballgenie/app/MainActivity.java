@@ -1699,9 +1699,101 @@ public class MainActivity extends Activity {
         ask.setOnClickListener(v -> {
             String prompt = question.getText().toString().trim();
             if (prompt.isEmpty()) { answer.setText("Type a question about this match first."); return; }
-            answer.setText(answerMatchQuestion(prompt));
             ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(question.getWindowToken(), 0);
+            ask.setEnabled(false);
+            ask.setText("⏳  ANALYSING…");
+            answer.setText("Football Genie is checking the question against this match's model evidence…");
+            requestCloudMatchAnalysis(prompt, answer, () -> answerMatchQuestion(prompt), () -> {
+                ask.setEnabled(true);
+                ask.setText("🧠  ANALYSE MY QUESTION");
+            });
         });
+    }
+
+    // Ask the secure backend AI first; fall back to the transparent on-device analyst
+    // if cloud AI is not configured or the connection is unavailable.
+    private void requestCloudMatchAnalysis(String prompt, TextView answer,
+            java.util.function.Supplier<String> fallback, Runnable onFinished) {
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            String responseText = "";
+            int responseCode = -1;
+            try {
+                URL url = new URL("https://football-genie-api.onrender.com/api/ai/analyze");
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("POST");
+                connection.setConnectTimeout(12000);
+                connection.setReadTimeout(26000);
+                connection.setDoOutput(true);
+                connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                connection.setRequestProperty("Accept", "application/json");
+
+                JSONObject match = new JSONObject();
+                match.put("home", homeInput == null ? "Home team" : homeInput.getText().toString().trim());
+                match.put("away", awayInput == null ? "Away team" : awayInput.getText().toString().trim());
+                match.put("homeXg", readXg(homeGoals));
+                match.put("awayXg", readXg(awayGoals));
+                match.put("homeWin", percentNumber(homeWinValue));
+                match.put("draw", percentNumber(drawValue));
+                match.put("awayWin", percentNumber(awayWinValue));
+                match.put("over25", percentNumber(overValue));
+                match.put("under25", percentNumber(underValue));
+                match.put("btts", percentNumber(bttsValue));
+                JSONObject payload = new JSONObject();
+                payload.put("question", prompt);
+                payload.put("match", match);
+                byte[] bytes = payload.toString().getBytes("UTF-8");
+                connection.getOutputStream().write(bytes);
+                connection.getOutputStream().close();
+                responseCode = connection.getResponseCode();
+                java.io.InputStream stream = (responseCode >= 200 && responseCode < 300)
+                    ? connection.getInputStream() : connection.getErrorStream();
+                if (stream != null) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+                    StringBuilder body = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) body.append(line);
+                    reader.close();
+                    responseText = body.toString();
+                }
+            } catch (Exception ignored) {
+                responseCode = -1;
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+            final String body = responseText;
+            final int code = responseCode;
+            runOnUiThread(() -> {
+                try {
+                    JSONObject response = body.isEmpty() ? new JSONObject() : new JSONObject(body);
+                    if (code >= 200 && code < 300 && !response.optString("answer", "").trim().isEmpty()) {
+                        answer.setText("☁️ FOOTBALL GENIE AI ANALYST\n\n" + response.optString("answer")
+                            + "\n\nEvidence: current model inputs and probabilities. This is an estimate, not a guarantee.");
+                    } else {
+                        String local = fallback.get();
+                        if ("AI_NOT_CONFIGURED".equals(response.optString("code", ""))) {
+                            answer.setText(local + "\n\nCLOUD AI STATUS\nThe secure AI endpoint is ready, but its provider key has not been configured on the server yet. The app is using its on-device evidence-based fallback for now.");
+                        } else {
+                            answer.setText(local + "\n\nCLOUD AI STATUS\nCloud analysis was unavailable this time, so this answer uses the on-device analyst.");
+                        }
+                    }
+                } catch (Exception ignored) {
+                    answer.setText(fallback.get() + "\n\nCloud AI response could not be read; showing the on-device analyst instead.");
+                } finally {
+                    onFinished.run();
+                }
+            });
+        }).start();
+    }
+
+    private double percentNumber(TextView view) {
+        if (view == null) return -1.0;
+        try {
+            String raw = view.getText().toString().replace("%", "").trim();
+            return Math.max(0.0, Math.min(100.0, Double.parseDouble(raw)));
+        } catch (Exception ignored) {
+            return -1.0;
+        }
     }
 
     private String answerMatchQuestion(String prompt) {
