@@ -223,7 +223,7 @@ public class MainActivity extends Activity {
         mainLayout.addView(subtitle);
 
         Button loadFixturesButton = new Button(this);
-        loadFixturesButton.setText("🌐  LOAD LIVE FIXTURES");
+        loadFixturesButton.setText("⚽  LOAD LIVE FIXTURES");
         loadFixturesButton.setTextColor(Color.rgb(4, 25, 20));
         loadFixturesButton.setTextSize(15);
         loadFixturesButton.setTypeface(null, Typeface.BOLD);
