@@ -1649,6 +1649,7 @@ public class MainActivity extends Activity {
         outputCard.addView(viewFullAnalysisButton, fullAnalysisParams);
         outputCard.addView(detailTitle);
         outputCard.addView(detailedAnalysisContainer);
+        buildInteractiveAiAnalyst(outputCard);
         viewFullAnalysisButton.setOnClickListener(v -> {
             boolean opening = detailedAnalysisContainer.getVisibility() != View.VISIBLE;
             detailedAnalysisContainer.setVisibility(opening ? View.VISIBLE : View.GONE);
@@ -1666,6 +1667,85 @@ public class MainActivity extends Activity {
         mainLayout.addView(footer);
     }
 
+    // First phase of the interactive analyst: answers are grounded in this screen's actual model outputs.
+    private void buildInteractiveAiAnalyst(LinearLayout parent) {
+        LinearLayout box = card();
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(14), dp(14), dp(14), dp(14));
+        box.setBackground(glossyCardBackground());
+        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(-1, -2);
+        bp.topMargin = dp(16);
+        parent.addView(box, bp);
+        TextView heading = label("🧠 ASK FOOTBALL GENIE");
+        heading.setTextColor(GREEN); heading.setTextSize(17); heading.setTypeface(null, Typeface.BOLD);
+        box.addView(heading);
+        TextView intro = label("Challenge this match analysis. Ask why a probability is high or low, what could go wrong, or how the 10,000 simulations work.");
+        intro.setTextColor(MUTED); intro.setTextSize(13); intro.setPadding(0, dp(5), 0, dp(10)); box.addView(intro);
+        EditText question = new EditText(this);
+        question.setMinLines(2); question.setMaxLines(4); question.setTextSize(14);
+        question.setTextColor(WHITE); question.setHintTextColor(MUTED);
+        question.setHint("Ask about this match or a prediction...");
+        question.setPadding(dp(12), dp(10), dp(12), dp(10)); question.setBackground(rounded(Color.rgb(9, 19, 34), 10));
+        question.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        box.addView(question, new LinearLayout.LayoutParams(-1, -2));
+        Button ask = new Button(this); ask.setText("🧠  ANALYSE MY QUESTION");
+        ask.setTextColor(Color.rgb(5, 25, 20)); ask.setTextSize(14); ask.setTypeface(null, Typeface.BOLD);
+        ask.setAllCaps(false); ask.setBackground(rounded(GREEN, 10));
+        LinearLayout.LayoutParams ap = new LinearLayout.LayoutParams(-1, dp(48)); ap.topMargin = dp(9); box.addView(ask, ap);
+        TextView answer = label("Your answer will appear here after a question is submitted.");
+        answer.setTextColor(WHITE); answer.setTextSize(14); answer.setLineSpacing(dp(4), 1.05f);
+        answer.setPadding(dp(12), dp(12), dp(12), dp(12)); answer.setBackground(rounded(Color.rgb(12, 24, 40), 10));
+        LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(-1, -2); rp.topMargin = dp(10); box.addView(answer, rp);
+        ask.setOnClickListener(v -> {
+            String prompt = question.getText().toString().trim();
+            if (prompt.isEmpty()) { answer.setText("Type a question about this match first."); return; }
+            answer.setText(answerMatchQuestion(prompt));
+            ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(question.getWindowToken(), 0);
+        });
+    }
+
+    private String answerMatchQuestion(String prompt) {
+        String q = prompt.toLowerCase(Locale.US);
+        boolean ready = result != null && !result.getText().toString().contains("Run a match simulation");
+        if (!ready) return "Run a match simulation first. Select or enter both teams and expected goals, then run 10,000 simulations.";
+        String home = homeInput == null ? "Home team" : homeInput.getText().toString().trim();
+        String away = awayInput == null ? "Away team" : awayInput.getText().toString().trim();
+        double hxg = readXg(homeGoals), axg = readXg(awayGoals);
+        StringBuilder a = new StringBuilder("FOOTBALL GENIE • MATCH ANALYST\n");
+        a.append(home).append(" vs ").append(away).append("\n\n");
+        if (q.contains("over") || q.contains("under") || q.contains("2.5") || q.contains("goal")) {
+            a.append("GOALS ANALYSIS\nExpected goals: ").append(String.format(Locale.US, "%.2f", hxg)).append(" home, ").append(String.format(Locale.US, "%.2f", axg)).append(" away (combined ").append(String.format(Locale.US, "%.2f", hxg + axg)).append(").\n");
+            a.append("Over 2.5 means at least 3 total goals; Under 2.5 means 0–2. The displayed market probability comes from the app's simulated scorelines. Expected goals are averages, not guaranteed scores.");
+        } else if (q.contains("btts") || q.contains("both team") || q.contains("both score")) {
+            a.append("BOTH TEAMS TO SCORE\nThis asks whether each team scores at least once. The current estimate is ").append(readPercent(bttsValue)).append(". Each team's expected-goal input influences its scoring chance, but neither team is guaranteed to score.");
+        } else if (q.contains("draw") || q.contains("home win") || q.contains("away win") || q.contains("1x2") || q.contains("winner") || q.contains("win")) {
+            a.append("1X2 PROBABILITIES\nHome win: ").append(readPercent(homeWinValue)).append("; draw: ").append(readPercent(drawValue)).append("; away win: ").append(readPercent(awayWinValue)).append(". The simulation counts home wins, draws and away wins across its scoreline trials. The highest probability is not a certainty.");
+        } else if (q.contains("xg") || q.contains("expected goal") || q.contains("scoreline") || q.contains("score")) {
+            a.append("EXPECTED GOALS\n").append(home).append(": ").append(String.format(Locale.US, "%.2f", hxg)).append("; ").append(away).append(": ").append(String.format(Locale.US, "%.2f", axg)).append(". These are average goal estimates; an exact scoreline is only one possible outcome. Review the prediction breakdown for the generated scoreline distribution.");
+        } else if (q.contains("simulation") || q.contains("10,000") || q.contains("how")) {
+            a.append("HOW THE SIMULATION WORKS\nFootball Genie runs 10,000 trials from the two expected-goal inputs, then counts scorelines to estimate home/draw/away, Over/Under 2.5 and BTTS. More trials reduce sampling noise, but cannot repair poor inputs or missing team news.");
+        } else if (q.contains("risk") || q.contains("wrong") || q.contains("uncertain") || q.contains("confidence")) {
+            a.append("RISKS & UNCERTAINTY\nA probability is not a guarantee. Risks include inaccurate expected goals, missing line-ups or injury data, tactical changes, red cards and random finishing. Judge reliability over many matches, not one result.");
+        } else if (q.contains("learn") || q.contains("improve") || q.contains("mistake") || q.contains("validation")) {
+            a.append("LEARNING & VALIDATION\nA missed prediction should be recorded and measured across a large sample. Model changes must be back-tested against historical matches before deployment. This analyst does not silently change the prediction engine; open VALIDATION to inspect available actual-versus-predicted comparisons.");
+        } else {
+            a.append("CURRENT MODEL OUTPUTS\nHome win ").append(readPercent(homeWinValue)).append("; draw ").append(readPercent(drawValue)).append("; away win ").append(readPercent(awayWinValue)).append("; Over 2.5 ").append(readPercent(overValue)).append("; BTTS ").append(readPercent(bttsValue)).append(". Try asking why Over 2.5 is likely, what the draw probability means, or what the biggest risks are.");
+        }
+        a.append("\n\nEVIDENCE LIMIT: This answer uses the current on-device model outputs. It does not claim to have checked live injuries, line-ups, shots or possession unless that data is explicitly available.");
+        return a.toString();
+    }
+
+    private double readXg(EditText field) {
+        if (field == null) return 0.0;
+        try { return Math.max(0.0, Math.min(8.0, Double.parseDouble(field.getText().toString().trim()))); }
+        catch (Exception ignored) { return 0.0; }
+    }
+
+    private String readPercent(TextView field) {
+        if (field == null) return "not available";
+        String value = field.getText().toString().trim();
+        return value.isEmpty() || value.equals("--") ? "not available" : value;
+    }
     private void addProbabilityBar(LinearLayout parent, String title, TextView valueSource, int barColor) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.VERTICAL);
