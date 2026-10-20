@@ -96,6 +96,7 @@ public class MainActivity extends Activity {
             new LinearLayout.LayoutParams(-1, dp(62)));
         setContentView(root);
         showScreen(0);
+        showBrandSplash();
         checkApiConnection();
     }
 
@@ -912,46 +913,62 @@ public class MainActivity extends Activity {
         mainLayout.addView(item);
     }
 
+ 
+    private static final String BRAND_ARTWORK_URL =
+            "https://raw.githubusercontent.com/SaShe3boyz/FootballGenie/main/file_000000003e3c8211a84b53f643e60c27.png";
+
+    private void loadBrandArtwork(ImageView target) {
+        Thread worker = new Thread(() -> {
+            HttpURLConnection connection = null;
+            try {
+                connection = (HttpURLConnection) new URL(BRAND_ARTWORK_URL).openConnection();
+                connection.setConnectTimeout(7000);
+                connection.setReadTimeout(10000);
+                connection.setInstanceFollowRedirects(true);
+                connection.connect();
+                Bitmap bitmap = BitmapFactory.decodeStream(connection.getInputStream());
+                if (bitmap != null) {
+                    runOnUiThread(() -> target.setImageBitmap(bitmap));
+                }
+            } catch (Exception ignored) {
+                // Keep the existing native branding/layout usable if the network is unavailable.
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }, "FootballGenieBrandArtwork");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private void showBrandSplash() {
+        ImageView splashImage = new ImageView(this);
+        splashImage.setBackgroundColor(Color.rgb(5, 12, 24));
+        splashImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        splashImage.setContentDescription("Football Genie opening stadium artwork");
+        android.app.Dialog splash = new android.app.Dialog(this,
+                android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+        splash.setContentView(splashImage);
+        splash.setCancelable(false);
+        splash.show();
+        loadBrandArtwork(splashImage);
+        splashImage.postDelayed(() -> {
+            if (!isFinishing() && splash.isShowing()) splash.dismiss();
+        }, 2600);
+    }
+
     private void buildHeader() {
-        // Settings remains at the top-right while the logo and complete branding sit centred.
+        // Stadium artwork replaces the repeated text branding on Home.
         FrameLayout header = new FrameLayout(this);
-        LinearLayout brandStack = new LinearLayout(this);
-        brandStack.setOrientation(LinearLayout.VERTICAL);
-        brandStack.setGravity(Gravity.CENTER_HORIZONTAL);
-        brandStack.setPadding(dp(2), dp(18), dp(2), dp(12));
-
-        FootballGenieLogoMark mark = new FootballGenieLogoMark(this);
-        LinearLayout.LayoutParams markParams = new LinearLayout.LayoutParams(dp(104), dp(104));
-        markParams.gravity = Gravity.CENTER_HORIZONTAL;
-        brandStack.addView(mark, markParams);
-
-        LinearLayout nameRow = new LinearLayout(this);
-        nameRow.setOrientation(LinearLayout.HORIZONTAL);
-        nameRow.setGravity(Gravity.CENTER);
-        TextView football = label("Football");
-        football.setTextColor(WHITE);
-        football.setTextSize(31);
-        football.setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
-        nameRow.addView(football);
-        TextView genie = label("Genie");
-        genie.setTextColor(Color.rgb(25, 235, 105));
-        genie.setTextSize(31);
-        genie.setTypeface(Typeface.create("sans-serif", Typeface.BOLD_ITALIC));
-        nameRow.addView(genie);
-        brandStack.addView(nameRow);
-
-        TextView tagline = label("PREDICT  •  SIMULATE  •  WIN");
-        tagline.setTextColor(Color.rgb(205, 245, 225));
-        tagline.setTextSize(13);
-        tagline.setLetterSpacing(0.16f);
-        tagline.setGravity(Gravity.CENTER);
-        tagline.setPadding(0, dp(5), 0, 0);
-        brandStack.addView(tagline);
-        FrameLayout.LayoutParams brandParams = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT,
+        ImageView brandArtwork = new ImageView(this);
+        brandArtwork.setContentDescription("Football Genie stadium branding");
+        brandArtwork.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        brandArtwork.setBackground(rounded(Color.rgb(9, 16, 31), 16));
+        FrameLayout.LayoutParams artworkParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, dp(174),
                 Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-        header.addView(brandStack, brandParams);
-
+        artworkParams.setMargins(dp(42), dp(4), dp(42), 0);
+        header.addView(brandArtwork, artworkParams);
+        loadBrandArtwork(brandArtwork);
         // Three-line menu button at the top-left for quick access to every major section.
         TextView menuButton = label("☰");
         menuButton.setTextColor(Color.rgb(105, 255, 174));
@@ -977,13 +994,8 @@ public class MainActivity extends Activity {
         settings.setOnClickListener(v -> showScreen(7));
         mainLayout.addView(header);
 
-        TextView slogan = label("SMARTER PREDICTIONS.  DEEPER INSIGHTS.");
-        slogan.setTextColor(Color.rgb(35, 235, 105));
-        slogan.setTextSize(13);
-        slogan.setTypeface(null, Typeface.BOLD);
-        slogan.setGravity(Gravity.CENTER);
-        slogan.setPadding(0, dp(1), 0, dp(15));
-        mainLayout.addView(slogan);
+        // The slogan is already included in the stadium artwork.
+
     }
 
     private void showNavigationMenu(View anchor) {
