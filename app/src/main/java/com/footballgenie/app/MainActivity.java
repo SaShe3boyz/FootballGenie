@@ -172,7 +172,7 @@ public class MainActivity extends Activity {
 
             TextView title = label(labels[i]);
             title.setTextColor(WHITE);
-            title.setTextSize(10);
+            title.setTextSize(13);
             title.setTypeface(null, Typeface.BOLD);
             title.setGravity(Gravity.CENTER);
             title.setSingleLine(true);
@@ -218,14 +218,14 @@ public class MainActivity extends Activity {
         addHeading("⚽", "MATCH CENTRE");
         TextView subtitle = label("Select a match or load live fixtures");
         subtitle.setTextColor(MUTED);
-        subtitle.setTextSize(12);
+        subtitle.setTextSize(14);
         subtitle.setPadding(dp(2), 0, 0, dp(12));
         mainLayout.addView(subtitle);
 
         Button loadFixturesButton = new Button(this);
         loadFixturesButton.setText("🌐  LOAD LIVE FIXTURES");
         loadFixturesButton.setTextColor(Color.rgb(4, 25, 20));
-        loadFixturesButton.setTextSize(14);
+        loadFixturesButton.setTextSize(15);
         loadFixturesButton.setTypeface(null, Typeface.BOLD);
         loadFixturesButton.setAllCaps(false);
         loadFixturesButton.setBackground(rounded(GREEN, 12));
@@ -241,7 +241,7 @@ public class MainActivity extends Activity {
         fixtureCard.setOrientation(LinearLayout.VERTICAL);
         homeDisplayLeague = label("🏆  YOUR NEXT PREDICTION");
         homeDisplayLeague.setTextColor(GREEN);
-        homeDisplayLeague.setTextSize(11);
+        homeDisplayLeague.setTextSize(13);
         homeDisplayLeague.setTypeface(null, Typeface.BOLD);
         fixtureCard.addView(homeDisplayLeague);
 
@@ -266,7 +266,7 @@ public class MainActivity extends Activity {
         homeTeam.addView(homeBadgeHolder);
         homeDisplayName = label("Home Team");
         homeDisplayName.setTextColor(WHITE);
-        homeDisplayName.setTextSize(12);
+        homeDisplayName.setTextSize(14);
         homeDisplayName.setTypeface(null, Typeface.BOLD);
         homeDisplayName.setGravity(Gravity.CENTER);
         homeDisplayName.setMaxLines(2);
@@ -297,7 +297,7 @@ public class MainActivity extends Activity {
         awayTeam.addView(awayBadgeHolder);
         awayDisplayName = label("Away Team");
         awayDisplayName.setTextColor(WHITE);
-        awayDisplayName.setTextSize(12);
+        awayDisplayName.setTextSize(14);
         awayDisplayName.setTypeface(null, Typeface.BOLD);
         awayDisplayName.setGravity(Gravity.CENTER);
         awayDisplayName.setMaxLines(2);
@@ -308,7 +308,7 @@ public class MainActivity extends Activity {
 
         TextView fixtureHelp = label("Choose a live fixture to fill these teams automatically, or enter a match manually.");
         fixtureHelp.setTextColor(MUTED);
-        fixtureHelp.setTextSize(11);
+        fixtureHelp.setTextSize(13);
         fixtureHelp.setGravity(Gravity.CENTER);
         fixtureHelp.setPadding(0, 0, 0, dp(10));
         fixtureCard.addView(fixtureHelp);
@@ -316,7 +316,7 @@ public class MainActivity extends Activity {
         Button predictButton = new Button(this);
         predictButton.setText("▶  CONTINUE TO MATCH PREDICTION");
         predictButton.setTextColor(Color.rgb(4, 25, 20));
-        predictButton.setTextSize(13);
+        predictButton.setTextSize(15);
         predictButton.setTypeface(null, Typeface.BOLD);
         predictButton.setAllCaps(false);
         predictButton.setBackground(rounded(GREEN, 12));
@@ -368,13 +368,13 @@ public class MainActivity extends Activity {
         tile.addView(iconView, iconParams);
         TextView titleView = label(title);
         titleView.setTextColor(WHITE);
-        titleView.setTextSize(13);
+        titleView.setTextSize(15);
         titleView.setTypeface(null, Typeface.BOLD);
         titleView.setPadding(0, dp(5), 0, dp(3));
         tile.addView(titleView);
         TextView detailView = label(detail);
         detailView.setTextColor(MUTED);
-        detailView.setTextSize(11);
+        detailView.setTextSize(13);
         tile.addView(detailView);
         tile.setClickable(true);
         tile.setOnClickListener(v -> showScreen(target));
@@ -388,12 +388,12 @@ public class MainActivity extends Activity {
         shortcut.setOrientation(LinearLayout.VERTICAL);
         TextView heading = label(title);
         heading.setTextColor(GREEN);
-        heading.setTextSize(14);
+        heading.setTextSize(15);
         heading.setTypeface(null, Typeface.BOLD);
         shortcut.addView(heading);
         TextView detail = label(description);
         detail.setTextColor(MUTED);
-        detail.setTextSize(12);
+        detail.setTextSize(14);
         detail.setPadding(0, dp(5), 0, dp(2));
         shortcut.addView(detail);
         shortcut.setClickable(true);
@@ -406,7 +406,7 @@ public class MainActivity extends Activity {
         addHeading("", "MATCH SIMULATION");
         TextView note = label("This screen presents the latest match simulation and its modelled match-flow analysis. Run a prediction from Match Centre first.");
         note.setTextColor(MUTED);
-        note.setTextSize(13);
+        note.setTextSize(15);
         note.setLineSpacing(dp(3), 1.0f);
         note.setPadding(0, 0, 0, dp(12));
         mainLayout.addView(note);
@@ -415,13 +415,13 @@ public class MainActivity extends Activity {
         simulationCard.setOrientation(LinearLayout.VERTICAL);
         TextView title = label("LATEST SIMULATED MATCH");
         title.setTextColor(GREEN);
-        title.setTextSize(13);
+        title.setTextSize(15);
         title.setTypeface(null, Typeface.BOLD);
         simulationCard.addView(title);
 
         simulationSummary = label("No simulation yet. Open MATCH CENTRE, enter both teams and expected goals, then run 10,000 simulations.");
         simulationSummary.setTextColor(WHITE);
-        simulationSummary.setTextSize(13);
+        simulationSummary.setTextSize(15);
         simulationSummary.setLineSpacing(dp(4), 1.0f);
         simulationSummary.setPadding(0, dp(10), 0, dp(8));
         simulationCard.addView(simulationSummary);
@@ -429,7 +429,7 @@ public class MainActivity extends Activity {
         Button predictButton = new Button(this);
         predictButton.setText("⚽  RUN / UPDATE SIMULATION");
         predictButton.setTextColor(Color.rgb(8, 25, 22));
-        predictButton.setTextSize(13);
+        predictButton.setTextSize(15);
         predictButton.setAllCaps(false);
         predictButton.setTypeface(null, Typeface.BOLD);
         predictButton.setBackground(rounded(GREEN, 13));
@@ -442,7 +442,7 @@ public class MainActivity extends Activity {
         addHeading("05", "LIVE FIXTURES");
         TextView note = label("Browse matches by competition and kickoff. Tap any fixture card to select it for your prediction.");
         note.setTextColor(MUTED);
-        note.setTextSize(13);
+        note.setTextSize(15);
         note.setLineSpacing(dp(3), 1.0f);
         note.setPadding(0, 0, 0, dp(12));
         mainLayout.addView(note);
@@ -451,18 +451,18 @@ public class MainActivity extends Activity {
         toolbar.setPadding(dp(12), dp(12), dp(12), dp(12));
         TextView title = label("MATCH SCHEDULE");
         title.setTextColor(GREEN);
-        title.setTextSize(14);
+        title.setTextSize(15);
         title.setTypeface(null, Typeface.BOLD);
         toolbar.addView(title);
         fixtureListStatus = label("Load the latest fixtures to see the schedule here.");
         fixtureListStatus.setTextColor(MUTED);
-        fixtureListStatus.setTextSize(12);
+        fixtureListStatus.setTextSize(14);
         fixtureListStatus.setPadding(0, dp(5), 0, dp(10));
         toolbar.addView(fixtureListStatus);
         Button load = new Button(this);
         load.setText("↻  REFRESH FIXTURES");
         load.setTextColor(Color.rgb(8, 25, 22));
-        load.setTextSize(13);
+        load.setTextSize(15);
         load.setTypeface(null, Typeface.BOLD);
         load.setAllCaps(false);
         load.setBackground(rounded(GREEN, 13));
@@ -494,7 +494,7 @@ public class MainActivity extends Activity {
         for (String filter : filters) {
             TextView tab = label(filter);
             tab.setGravity(Gravity.CENTER);
-            tab.setTextSize(10);
+            tab.setTextSize(13);
             tab.setSingleLine(true);
             tab.setTypeface(null, Typeface.BOLD);
             boolean selected = filter.equals(activeFixtureFilter);
@@ -532,7 +532,7 @@ public class MainActivity extends Activity {
         LinearLayout empty = card();
         TextView text = label("⚽  " + message);
         text.setTextColor(MUTED);
-        text.setTextSize(13);
+        text.setTextSize(15);
         text.setGravity(Gravity.CENTER);
         text.setPadding(dp(8), dp(18), dp(8), dp(18));
         empty.addView(text);
@@ -610,13 +610,13 @@ public class MainActivity extends Activity {
             top.setGravity(Gravity.CENTER_VERTICAL);
             TextView league = label(competitionName.isEmpty() ? "FOOTBALL FIXTURE" : competitionName.toUpperCase());
             league.setTextColor(GREEN);
-            league.setTextSize(10);
+            league.setTextSize(13);
             league.setTypeface(null, Typeface.BOLD);
             top.addView(league, new LinearLayout.LayoutParams(0, -2, 1f));
             TextView statusView = label(fixtureStatusLabel(status));
             statusView.setTextColor(("IN_PLAY".equals(status) || "PAUSED".equals(status)
                     || "EXTRA_TIME".equals(status) || "PENALTY_SHOOTOUT".equals(status)) ? GREEN : MUTED);
-            statusView.setTextSize(10);
+            statusView.setTextSize(13);
             statusView.setTypeface(null, Typeface.BOLD);
             top.addView(statusView);
             fixtureCard.addView(top);
@@ -624,7 +624,7 @@ public class MainActivity extends Activity {
             if (kickoff.length() >= 16) {
                 TextView date = label(kickoff.substring(0, 10) + "  •  " + kickoff.substring(11, 16) + " UTC");
                 date.setTextColor(MUTED);
-                date.setTextSize(11);
+                date.setTextSize(13);
                 date.setPadding(0, dp(6), 0, dp(10));
                 fixtureCard.addView(date);
             }
@@ -641,7 +641,7 @@ public class MainActivity extends Activity {
             homeColumn.addView(homeCrest);
             TextView homeView = label(homeName);
             homeView.setTextColor(WHITE);
-            homeView.setTextSize(12);
+            homeView.setTextSize(14);
             homeView.setTypeface(null, Typeface.BOLD);
             homeView.setGravity(Gravity.CENTER);
             homeView.setMaxLines(2);
@@ -655,14 +655,14 @@ public class MainActivity extends Activity {
             awayColumn.addView(awayCrest);
             TextView awayView = label(awayName);
             awayView.setTextColor(WHITE);
-            awayView.setTextSize(12);
+            awayView.setTextSize(14);
             awayView.setTypeface(null, Typeface.BOLD);
             awayView.setGravity(Gravity.CENTER);
             awayView.setMaxLines(2);
             awayColumn.addView(awayView);
             TextView vs = label(scoreText.isEmpty() ? "VS" : scoreText);
             vs.setTextColor(GREEN);
-            vs.setTextSize(12);
+            vs.setTextSize(14);
             vs.setTypeface(null, Typeface.BOLD);
             vs.setGravity(Gravity.CENTER);
             teams.addView(homeColumn, new LinearLayout.LayoutParams(0, -2, 1f));
@@ -674,7 +674,7 @@ public class MainActivity extends Activity {
 
             TextView choose = label("TAP TO SELECT  →");
             choose.setTextColor(MUTED);
-            choose.setTextSize(10);
+            choose.setTextSize(13);
             choose.setGravity(Gravity.RIGHT);
             choose.setPadding(0, dp(10), 0, 0);
             fixtureCard.addView(choose);
@@ -834,7 +834,7 @@ public class MainActivity extends Activity {
         addHeading("06", "VALIDATION & PERFORMANCE");
         TextView note = label("Use finished matches to evaluate the model. Accuracy and calibration metrics should be based on saved predictions with known final scores—not on predictions that are still pending.");
         note.setTextColor(MUTED);
-        note.setTextSize(13);
+        note.setTextSize(15);
         note.setLineSpacing(dp(3), 1.0f);
         note.setPadding(0, 0, 0, dp(14));
         mainLayout.addView(note);
@@ -842,19 +842,19 @@ public class MainActivity extends Activity {
         LinearLayout validationCard = card();
         TextView title = label("MODEL PERFORMANCE REPORT");
         title.setTextColor(GREEN);
-        title.setTextSize(14);
+        title.setTextSize(15);
         title.setTypeface(null, Typeface.BOLD);
         validationCard.addView(title);
         TextView detail = label("Open prediction history to update actual scores and inspect evaluated predictions, goal prediction error, probability calibration and baseline comparisons.");
         detail.setTextColor(MUTED);
-        detail.setTextSize(12);
+        detail.setTextSize(14);
         detail.setLineSpacing(dp(3), 1.0f);
         detail.setPadding(0, dp(6), 0, dp(12));
         validationCard.addView(detail);
         Button open = new Button(this);
         open.setText("📈  OPEN VALIDATION REPORT");
         open.setTextColor(WHITE);
-        open.setTextSize(13);
+        open.setTextSize(15);
         open.setAllCaps(false);
         open.setBackground(rounded(CARD, 13));
         validationCard.addView(open, new LinearLayout.LayoutParams(-1, dp(50)));
@@ -866,7 +866,7 @@ public class MainActivity extends Activity {
         addHeading("07", "SETTINGS");
         TextView note = label("Manage data connection, app information and prediction history.");
         note.setTextColor(MUTED);
-        note.setTextSize(13);
+        note.setTextSize(15);
         note.setPadding(0, 0, 0, dp(12));
         mainLayout.addView(note);
 
@@ -899,12 +899,12 @@ public class MainActivity extends Activity {
         LinearLayout item = card();
         TextView heading = label(title);
         heading.setTextColor(GREEN);
-        heading.setTextSize(13);
+        heading.setTextSize(15);
         heading.setTypeface(null, Typeface.BOLD);
         item.addView(heading);
         TextView detail = label(description);
         detail.setTextColor(MUTED);
-        detail.setTextSize(12);
+        detail.setTextSize(14);
         detail.setPadding(0, dp(5), 0, dp(2));
         item.addView(detail);
         item.setClickable(true);
@@ -942,7 +942,7 @@ public class MainActivity extends Activity {
 
         TextView tagline = label("PREDICT  •  SIMULATE  •  WIN");
         tagline.setTextColor(Color.rgb(205, 245, 225));
-        tagline.setTextSize(11);
+        tagline.setTextSize(13);
         tagline.setLetterSpacing(0.16f);
         tagline.setGravity(Gravity.CENTER);
         tagline.setPadding(0, dp(5), 0, 0);
@@ -979,7 +979,7 @@ public class MainActivity extends Activity {
 
         TextView slogan = label("SMARTER PREDICTIONS.  DEEPER INSIGHTS.");
         slogan.setTextColor(Color.rgb(35, 235, 105));
-        slogan.setTextSize(10);
+        slogan.setTextSize(13);
         slogan.setTypeface(null, Typeface.BOLD);
         slogan.setGravity(Gravity.CENTER);
         slogan.setPadding(0, dp(1), 0, dp(15));
@@ -1019,7 +1019,7 @@ public class MainActivity extends Activity {
             final boolean about = (i == menuTitles.length - 1);
             TextView row = label(menuTitles[i]);
             row.setTextColor(destination == activeScreen ? Color.rgb(105, 255, 174) : WHITE);
-            row.setTextSize(14);
+            row.setTextSize(15);
             row.setGravity(Gravity.CENTER_VERTICAL);
             row.setPadding(dp(14), dp(12), dp(12), dp(12));
             row.setBackground(rounded(destination == activeScreen
@@ -1169,7 +1169,7 @@ public class MainActivity extends Activity {
         introCard.setPadding(dp(16), dp(16), dp(16), dp(16));
         TextView introTag = label("⚽  MATCH INTELLIGENCE");
         introTag.setTextColor(GREEN);
-        introTag.setTextSize(11);
+        introTag.setTextSize(13);
         introTag.setTypeface(null, Typeface.BOLD);
         introCard.addView(introTag);
 
@@ -1182,7 +1182,7 @@ public class MainActivity extends Activity {
 
         TextView introNote = label("Choose a fixture or enter both teams and their expected goals (xG). Football Genie will model 10,000 possible scorelines.");
         introNote.setTextColor(MUTED);
-        introNote.setTextSize(13);
+        introNote.setTextSize(15);
         introNote.setLineSpacing(dp(3), 1.0f);
         introCard.addView(introNote);
         mainLayout.addView(introCard);
@@ -1190,7 +1190,7 @@ public class MainActivity extends Activity {
         LinearLayout teamsCard = card();
         TextView teamsTitle = label("SELECT TEAMS");
         teamsTitle.setTextColor(GREEN);
-        teamsTitle.setTextSize(14);
+        teamsTitle.setTextSize(15);
         teamsTitle.setTypeface(null, Typeface.BOLD);
         teamsTitle.setPadding(0, 0, 0, dp(12));
         teamsCard.addView(teamsTitle);
@@ -1218,7 +1218,7 @@ public class MainActivity extends Activity {
 
         homeInput = addInput(setupHomeColumn, "Home team", false);
         homeInput.setSingleLine(true);
-        homeInput.setTextSize(13);
+        homeInput.setTextSize(15);
         homeInput.setGravity(Gravity.CENTER);
         homeInput.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(50)));
         setupTeamsRow.addView(setupHomeColumn, new LinearLayout.LayoutParams(0, -2, 1f));
@@ -1249,7 +1249,7 @@ public class MainActivity extends Activity {
 
         awayInput = addInput(setupAwayColumn, "Away team", false);
         awayInput.setSingleLine(true);
-        awayInput.setTextSize(13);
+        awayInput.setTextSize(15);
         awayInput.setGravity(Gravity.CENTER);
         awayInput.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(50)));
         setupTeamsRow.addView(setupAwayColumn, new LinearLayout.LayoutParams(0, -2, 1f));
@@ -1258,7 +1258,7 @@ public class MainActivity extends Activity {
         Button fixturesButton = new Button(this);
         fixturesButton.setText("🌐  BROWSE LIVE FIXTURES");
         fixturesButton.setTextColor(WHITE);
-        fixturesButton.setTextSize(13);
+        fixturesButton.setTextSize(15);
         fixturesButton.setTypeface(null, Typeface.BOLD);
         fixturesButton.setAllCaps(false);
         fixturesButton.setBackground(rounded(Color.rgb(37, 57, 78), 13));
@@ -1274,13 +1274,13 @@ public class MainActivity extends Activity {
         LinearLayout xgCard = card();
         TextView xgTitle = label("EXPECTED GOALS (xG)");
         xgTitle.setTextColor(GREEN);
-        xgTitle.setTextSize(14);
+        xgTitle.setTextSize(15);
         xgTitle.setTypeface(null, Typeface.BOLD);
         xgTitle.setPadding(0, 0, 0, dp(5));
         xgCard.addView(xgTitle);
         TextView xgNote = label("Estimate each team's scoring strength. Use recent form and available statistics where possible.");
         xgNote.setTextColor(MUTED);
-        xgNote.setTextSize(12);
+        xgNote.setTextSize(14);
         xgNote.setLineSpacing(dp(2), 1.0f);
         xgNote.setPadding(0, 0, 0, dp(10));
         xgCard.addView(xgNote);
@@ -1297,7 +1297,7 @@ public class MainActivity extends Activity {
         LinearLayout formCard = card();
         TextView formTitle = label("RECENT TEAM FORM");
         formTitle.setTextColor(GREEN);
-        formTitle.setTextSize(14);
+        formTitle.setTextSize(15);
         formTitle.setTypeface(null, Typeface.BOLD);
         formTitle.setPadding(0, 0, 0, dp(8));
         formCard.addView(formTitle);
@@ -1314,7 +1314,7 @@ public class MainActivity extends Activity {
         LinearLayout runCard = card();
         TextView runNote = label("READY TO ANALYSE?");
         runNote.setTextColor(MUTED);
-        runNote.setTextSize(10);
+        runNote.setTextSize(13);
         runNote.setTypeface(null, Typeface.BOLD);
         runNote.setGravity(Gravity.CENTER);
         runNote.setPadding(0, 0, 0, dp(8));
@@ -1323,7 +1323,7 @@ public class MainActivity extends Activity {
         Button simulateButton = new Button(this);
         simulateButton.setText("⚽  SIMULATE 10,000 MATCHES");
         simulateButton.setTextColor(Color.rgb(8, 25, 22));
-        simulateButton.setTextSize(14);
+        simulateButton.setTextSize(15);
         simulateButton.setTypeface(null, Typeface.BOLD);
         simulateButton.setAllCaps(false);
         simulateButton.setBackground(rounded(GREEN, 14));
@@ -1341,14 +1341,14 @@ public class MainActivity extends Activity {
         historyCard.setOrientation(LinearLayout.VERTICAL);
         TextView historyNote = label("Review saved predictions, update finished match results, or remove records you no longer need.");
         historyNote.setTextColor(MUTED);
-        historyNote.setTextSize(12);
+        historyNote.setTextSize(14);
         historyNote.setLineSpacing(dp(3), 1.0f);
         historyNote.setPadding(0, 0, 0, dp(10));
         historyCard.addView(historyNote);
         Button historyButton = new Button(this);
         historyButton.setText("📊  PREDICTION HISTORY / UPDATE RESULTS");
         historyButton.setTextColor(WHITE);
-        historyButton.setTextSize(13);
+        historyButton.setTextSize(15);
         historyButton.setAllCaps(false);
         historyButton.setBackground(rounded(CARD, 14));
         LinearLayout.LayoutParams historyParams =
@@ -1360,7 +1360,7 @@ public class MainActivity extends Activity {
         Button resetHistoryButton = new Button(this);
         resetHistoryButton.setText("RESET PREDICTION HISTORY");
         resetHistoryButton.setTextColor(Color.rgb(255, 235, 235));
-        resetHistoryButton.setTextSize(13);
+        resetHistoryButton.setTextSize(15);
         resetHistoryButton.setAllCaps(false);
         resetHistoryButton.setBackground(rounded(Color.rgb(125, 39, 53), 14));
         LinearLayout.LayoutParams resetParams = new LinearLayout.LayoutParams(-1, dp(48));
@@ -1371,7 +1371,7 @@ public class MainActivity extends Activity {
         Button removeFixtureButton = new Button(this);
         removeFixtureButton.setText("REMOVE ONE FIXTURE FROM HISTORY");
         removeFixtureButton.setTextColor(Color.WHITE);
-        removeFixtureButton.setTextSize(13);
+        removeFixtureButton.setTextSize(15);
         removeFixtureButton.setAllCaps(false);
         removeFixtureButton.setBackground(rounded(Color.rgb(48, 75, 103), 14));
         LinearLayout.LayoutParams removeFixtureParams = new LinearLayout.LayoutParams(-1, dp(48));
@@ -1389,7 +1389,7 @@ public class MainActivity extends Activity {
 
         status = label("AWAITING MATCH SIMULATION");
         status.setTextColor(GREEN);
-        status.setTextSize(12);
+        status.setTextSize(14);
         status.setTypeface(null, Typeface.BOLD);
         status.setPadding(dp(10), dp(10), dp(10), dp(10));
         status.setBackground(rounded(Color.rgb(17, 49, 52), 10));
@@ -1397,7 +1397,7 @@ public class MainActivity extends Activity {
 
         TextView outcomeHeading = label("1X2 WIN PROBABILITIES");
         outcomeHeading.setTextColor(MUTED);
-        outcomeHeading.setTextSize(10);
+        outcomeHeading.setTextSize(13);
         outcomeHeading.setTypeface(null, Typeface.BOLD);
         outcomeHeading.setPadding(0, dp(16), 0, dp(8));
         outputCard.addView(outcomeHeading);
@@ -1411,7 +1411,7 @@ public class MainActivity extends Activity {
 
         TextView goalsHeading = label("GOALS MARKETS");
         goalsHeading.setTextColor(MUTED);
-        goalsHeading.setTextSize(10);
+        goalsHeading.setTextSize(13);
         goalsHeading.setTypeface(null, Typeface.BOLD);
         goalsHeading.setPadding(0, dp(16), 0, dp(8));
         outputCard.addView(goalsHeading);
@@ -1425,7 +1425,7 @@ public class MainActivity extends Activity {
 
         TextView visualHeading = label("PROBABILITY SNAPSHOT");
         visualHeading.setTextColor(MUTED);
-        visualHeading.setTextSize(10);
+        visualHeading.setTextSize(13);
         visualHeading.setTypeface(null, Typeface.BOLD);
         visualHeading.setPadding(0, dp(18), 0, dp(8));
         outputCard.addView(visualHeading);
@@ -1442,21 +1442,21 @@ public class MainActivity extends Activity {
 
         TextView detailsHeading = label("MATCH INTELLIGENCE & MODEL ANALYSIS");
         detailsHeading.setTextColor(GREEN);
-        detailsHeading.setTextSize(11);
+        detailsHeading.setTextSize(13);
         detailsHeading.setTypeface(null, Typeface.BOLD);
         detailsHeading.setPadding(0, dp(18), 0, dp(4));
         outputCard.addView(detailsHeading);
 
         TextView analysisLabel = label("PREDICTION BREAKDOWN");
         analysisLabel.setTextColor(GREEN);
-        analysisLabel.setTextSize(13);
+        analysisLabel.setTextSize(15);
         analysisLabel.setTypeface(null, Typeface.BOLD);
         analysisLabel.setPadding(0, dp(18), 0, dp(8));
         outputCard.addView(analysisLabel);
 
         result = label("Run a match simulation to generate the prediction summary and most likely scorelines.");
         result.setTextColor(WHITE);
-        result.setTextSize(14);
+        result.setTextSize(15);
         result.setLineSpacing(dp(5), 1.05f);
         result.setPadding(dp(14), dp(15), dp(14), dp(15));
         result.setBackground(rounded(Color.rgb(15, 26, 43), 14));
@@ -1465,7 +1465,7 @@ public class MainActivity extends Activity {
 
         TextView detailTitle = label("DETAILED MATCH INTELLIGENCE");
         detailTitle.setTextColor(GREEN);
-        detailTitle.setTextSize(14);
+        detailTitle.setTextSize(15);
         detailTitle.setTypeface(null, Typeface.BOLD);
         detailTitle.setPadding(0, dp(18), 0, dp(10));
         detailTitle.setVisibility(View.GONE);
@@ -1478,7 +1478,7 @@ public class MainActivity extends Activity {
         viewFullAnalysisButton = new Button(this);
         viewFullAnalysisButton.setText("▤  VIEW FULL ANALYSIS");
         viewFullAnalysisButton.setTextColor(Color.rgb(7, 22, 31));
-        viewFullAnalysisButton.setTextSize(13);
+        viewFullAnalysisButton.setTextSize(15);
         viewFullAnalysisButton.setTypeface(null, Typeface.BOLD);
         viewFullAnalysisButton.setAllCaps(false);
         viewFullAnalysisButton.setBackground(rounded(GREEN, 14));
@@ -1498,7 +1498,7 @@ public class MainActivity extends Activity {
 
         TextView footer = label("FOOTBALL GENIE  •  STATISTICS, NOT CERTAINTY\nProbabilities describe modelled outcomes. Real matches can differ.");
         footer.setTextColor(MUTED);
-        footer.setTextSize(10);
+        footer.setTextSize(13);
         footer.setGravity(Gravity.CENTER);
         footer.setPadding(0, dp(24), 0, dp(10));
         mainLayout.addView(footer);
@@ -1514,12 +1514,12 @@ public class MainActivity extends Activity {
         labelRow.setOrientation(LinearLayout.HORIZONTAL);
         TextView titleView = label(title);
         titleView.setTextColor(WHITE);
-        titleView.setTextSize(10);
+        titleView.setTextSize(13);
         titleView.setTypeface(null, Typeface.BOLD);
         labelRow.addView(titleView, new LinearLayout.LayoutParams(0, -2, 1f));
         TextView percentView = label("--");
         percentView.setTextColor(barColor);
-        percentView.setTextSize(11);
+        percentView.setTextSize(13);
         percentView.setTypeface(null, Typeface.BOLD);
         labelRow.addView(percentView);
         row.addView(labelRow);
@@ -1580,7 +1580,7 @@ public class MainActivity extends Activity {
         if (source.isEmpty()) {
             TextView empty = label("Your full match breakdown will appear here after the simulation. Each topic will be shown in its own easy-to-read card.");
             empty.setTextColor(MUTED);
-            empty.setTextSize(13);
+            empty.setTextSize(15);
             empty.setLineSpacing(dp(4), 1.05f);
             empty.setPadding(dp(14), dp(14), dp(14), dp(14));
             empty.setBackground(rounded(Color.rgb(15, 26, 43), 14));
@@ -1631,12 +1631,12 @@ public class MainActivity extends Activity {
             titleColumn.setOrientation(LinearLayout.VERTICAL);
             TextView eyebrow = label("MATCH INSIGHT  •  ANALYSIS");
             eyebrow.setTextColor(accentColor);
-            eyebrow.setTextSize(10);
+            eyebrow.setTextSize(13);
             eyebrow.setTypeface(null, Typeface.BOLD);
             titleColumn.addView(eyebrow);
             TextView headingView = label(heading.isEmpty() ? "MATCH INSIGHT" : heading.toUpperCase(Locale.US));
             headingView.setTextColor(accentColor);
-            headingView.setTextSize(14);
+            headingView.setTextSize(15);
             headingView.setTypeface(null, Typeface.BOLD);
             headingView.setLetterSpacing(0.025f);
             titleColumn.addView(headingView);
@@ -1646,7 +1646,7 @@ public class MainActivity extends Activity {
             if (bodyText.length() > 0) {
                 TextView body = label(bodyText.toString());
                 body.setTextColor(WHITE);
-                body.setTextSize(14);
+                body.setTextSize(15);
                 body.setLineSpacing(dp(5), 1.08f);
                 body.setPadding(0, dp(10), 0, dp(2));
                 body.setGravity(Gravity.START);
@@ -1706,12 +1706,12 @@ public class MainActivity extends Activity {
         top.setOrientation(LinearLayout.HORIZONTAL);
         TextView name = label(labelText);
         name.setTextColor(MUTED);
-        name.setTextSize(9);
+        name.setTextSize(12);
         name.setTypeface(null, Typeface.BOLD);
         top.addView(name, new LinearLayout.LayoutParams(0, -2, 1f));
         TextView pct = label(String.format(Locale.US, "%.1f%%", percentage));
         pct.setTextColor(barColor);
-        pct.setTextSize(10);
+        pct.setTextSize(13);
         pct.setTypeface(null, Typeface.BOLD);
         top.addView(pct);
         meter.addView(top);
@@ -1740,7 +1740,7 @@ public class MainActivity extends Activity {
 
         TextView title = label(heading);
         title.setTextColor(MUTED);
-        title.setTextSize(8);
+        title.setTextSize(11);
         title.setTypeface(null, Typeface.BOLD);
         title.setGravity(Gravity.CENTER);
         metric.addView(title);
@@ -1801,7 +1801,7 @@ public class MainActivity extends Activity {
         input.setHint(hint);
         input.setHintTextColor(MUTED);
         input.setTextColor(WHITE);
-        input.setTextSize(14);
+        input.setTextSize(15);
         input.setPadding(dp(12), dp(8), dp(12), dp(8));
         input.setBackground(rounded(
             Color.rgb(31, 44, 65), 10
@@ -3400,13 +3400,13 @@ public class MainActivity extends Activity {
         statsSummary.removeAllViews();
         TextView heading = label(title);
         heading.setTextColor(GREEN);
-        heading.setTextSize(11);
+        heading.setTextSize(13);
         heading.setTypeface(null, Typeface.BOLD);
         heading.setPadding(0, 0, 0, dp(6));
         statsSummary.addView(heading);
         TextView body = label(message);
         body.setTextColor(MUTED);
-        body.setTextSize(12);
+        body.setTextSize(14);
         body.setLineSpacing(dp(3), 1.0f);
         statsSummary.addView(body);
     }
@@ -3426,7 +3426,7 @@ public class MainActivity extends Activity {
 
         TextView caption = label("LAST MATCHES  •  MOST RECENT FIRST");
         caption.setTextColor(MUTED);
-        caption.setTextSize(10);
+        caption.setTextSize(13);
         caption.setTypeface(null, Typeface.BOLD);
         caption.setPadding(0, 0, 0, dp(10));
         statsSummary.addView(caption);
@@ -3441,14 +3441,14 @@ public class MainActivity extends Activity {
         TextView venue = label("VENUE SPLIT   Home team at home: " + homeVenueSample
             + " matches   •   Away team away: " + awayVenueSample + " matches");
         venue.setTextColor(MUTED);
-        venue.setTextSize(10);
+        venue.setTextSize(13);
         venue.setPadding(dp(2), dp(8), dp(2), dp(2));
         venue.setLineSpacing(dp(2), 1.0f);
         statsSummary.addView(venue);
 
         TextView details = label("＋  MODEL NOTES & DATA QUALITY");
         details.setTextColor(GREEN);
-        details.setTextSize(11);
+        details.setTextSize(13);
         details.setTypeface(null, Typeface.BOLD);
         details.setPadding(dp(2), dp(12), dp(2), dp(7));
         details.setClickable(true);
@@ -3460,12 +3460,12 @@ public class MainActivity extends Activity {
         detailPanel.setBackground(rounded(Color.rgb(17, 34, 51), 10));
         TextView strength = label(relativeStrength);
         strength.setTextColor(WHITE);
-        strength.setTextSize(11);
+        strength.setTextSize(13);
         strength.setLineSpacing(dp(3), 1.0f);
         detailPanel.addView(strength);
         TextView notes = label(modelNotes);
         notes.setTextColor(MUTED);
-        notes.setTextSize(10);
+        notes.setTextSize(13);
         notes.setLineSpacing(dp(3), 1.0f);
         LinearLayout.LayoutParams noteParams = new LinearLayout.LayoutParams(-1, -2);
         noteParams.topMargin = dp(8);
@@ -3499,7 +3499,7 @@ public class MainActivity extends Activity {
 
         TextView team = label(teamName);
         team.setTextColor(WHITE);
-        team.setTextSize(13);
+        team.setTextSize(15);
         team.setTypeface(null, Typeface.BOLD);
         team.setMaxLines(2);
         team.setEllipsize(android.text.TextUtils.TruncateAt.END);
@@ -3507,7 +3507,7 @@ public class MainActivity extends Activity {
 
         TextView venueTag = label(homeTeam ? "HOME" : "AWAY");
         venueTag.setTextColor(homeTeam ? GREEN : Color.rgb(105, 190, 255));
-        venueTag.setTextSize(9);
+        venueTag.setTextSize(12);
         venueTag.setTypeface(null, Typeface.BOLD);
         venueTag.setGravity(Gravity.CENTER);
         venueTag.setPadding(dp(8), dp(4), dp(8), dp(4));
@@ -3516,7 +3516,7 @@ public class MainActivity extends Activity {
 
         TextView sampleLabel = label(sample + " matches analysed");
         sampleLabel.setTextColor(MUTED);
-        sampleLabel.setTextSize(10);
+        sampleLabel.setTextSize(13);
         sampleLabel.setPadding(0, dp(3), 0, dp(7));
         teamCard.addView(sampleLabel);
 
@@ -3529,7 +3529,7 @@ public class MainActivity extends Activity {
         if (cleanedForm.isEmpty() || upperForm.contains("NOT") || upperForm.contains("UNAVAILABLE")) {
             TextView noForm = label("Recent form unavailable");
             noForm.setTextColor(MUTED);
-            noForm.setTextSize(11);
+            noForm.setTextSize(13);
             formRow.addView(noForm);
         } else {
             for (int i = 0; i < cleanedForm.length(); i++) {
@@ -3539,7 +3539,7 @@ public class MainActivity extends Activity {
                     : Color.rgb(255, 91, 105));
                 TextView badge = label(outcome);
                 badge.setTextColor(Color.rgb(7, 23, 20));
-                badge.setTextSize(10);
+                badge.setTextSize(13);
                 badge.setTypeface(null, Typeface.BOLD);
                 badge.setGravity(Gravity.CENTER);
                 badge.setBackground(rounded(tone, 6));
@@ -3567,7 +3567,7 @@ public class MainActivity extends Activity {
         teamCard.addView(xgRow, xgParams);
         TextView xgLabel = label("ESTIMATED xG");
         xgLabel.setTextColor(MUTED);
-        xgLabel.setTextSize(10);
+        xgLabel.setTextSize(13);
         xgLabel.setTypeface(null, Typeface.BOLD);
         xgRow.addView(xgLabel, new LinearLayout.LayoutParams(0, -2, 1f));
         TextView xgValue = label(xg);
@@ -3578,14 +3578,14 @@ public class MainActivity extends Activity {
 
         TextView trend = label("Scoring trend: " + scoringTrend + "   •   Conceding: " + concedingTrend);
         trend.setTextColor(MUTED);
-        trend.setTextSize(10);
+        trend.setTextSize(13);
         trend.setLineSpacing(dp(2), 1.0f);
         trend.setPadding(dp(1), dp(8), dp(1), 0);
         teamCard.addView(trend);
 
         TextView baseline = label("Overall average: " + overallScored + " scored  •  " + overallConceded + " conceded per match");
         baseline.setTextColor(Color.rgb(155, 177, 194));
-        baseline.setTextSize(9);
+        baseline.setTextSize(12);
         baseline.setPadding(dp(1), dp(5), dp(1), 0);
         teamCard.addView(baseline);
     }
@@ -3600,7 +3600,7 @@ public class MainActivity extends Activity {
         row.addView(metric, params);
         TextView metricTitle = label(title);
         metricTitle.setTextColor(MUTED);
-        metricTitle.setTextSize(8);
+        metricTitle.setTextSize(11);
         metricTitle.setTypeface(null, Typeface.BOLD);
         metricTitle.setMaxLines(2);
         metric.addView(metricTitle);
