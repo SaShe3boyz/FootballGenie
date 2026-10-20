@@ -916,31 +916,78 @@ public class MainActivity extends Activity {
  
     private static final String BRAND_ARTWORK_URL =
             "https://raw.githubusercontent.com/SaShe3boyz/FootballGenie/main/file_000000003e3c8211a84b53f643e60c27.png";
+    private static Bitmap cachedBrandArtwork;
+    private static boolean brandArtworkLoading;
 
     private void loadBrandArtwork(ImageView target) {
+        synchronized (MainActivity.class) {
+            if (cachedBrandArtwork != null && !cachedBrandArtwork.isRecycled()) {
+                target.setImageBitmap(cachedBrandArtwork);
+                target.setAlpha(0f);
+                target.animate().alpha(1f).setDuration(450).start();
+                return;
+            }
+        }
         Thread worker = new Thread(() -> {
-            HttpURLConnection connection = null;
+            Bitmap bitmap = null;
+            java.io.File cache = new java.io.File(getCacheDir(), "football_genie_stadium.png");
             try {
-                connection = (HttpURLConnection) new URL(BRAND_ARTWORK_URL).openConnection();
-                connection.setConnectTimeout(7000);
-                connection.setReadTimeout(10000);
-                connection.setInstanceFollowRedirects(true);
-                connection.connect();
-                Bitmap bitmap = BitmapFactory.decodeStream(connection.getInputStream());
-                if (bitmap != null) {
-                    runOnUiThread(() -> target.setImageBitmap(bitmap));
+                if (cache.isFile() && cache.length() > 10000) {
+                    bitmap = BitmapFactory.decodeFile(cache.getAbsolutePath());
+                }
+                if (bitmap == null) {
+                    HttpURLConnection connection = (HttpURLConnection) new URL(BRAND_ARTWORK_URL).openConnection();
+                    connection.setConnectTimeout(7000);
+                    connection.setReadTimeout(12000);
+                    connection.setInstanceFollowRedirects(true);
+                    try (java.io.InputStream input = connection.getInputStream();
+                         java.io.FileOutputStream output = new java.io.FileOutputStream(cache)) {
+                        byte[] buffer = new byte[16384];
+                        int count;
+                        while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
+                    } finally {
+                        connection.disconnect();
+                    }
+                    android.graphics.BitmapFactory.Options options = new android.graphics.BitmapFactory.Options();
+                    options.inSampleSize = 2;
+                    bitmap = BitmapFactory.decodeFile(cache.getAbsolutePath(), options);
                 }
             } catch (Exception ignored) {
-                // Keep the existing native branding/layout usable if the network is unavailable.
-            } finally {
-                if (connection != null) connection.disconnect();
+                // A failed download leaves the existing interface usable.
+            }
+            if (bitmap != null) {
+                final Bitmap ready = bitmap;
+                synchronized (MainActivity.class) { cachedBrandArtwork = ready; }
+                runOnUiThread(() -> {
+                    target.setImageBitmap(ready);
+                    target.setAlpha(0f);
+                    target.animate().alpha(1f).setDuration(500).start();
+                });
             }
         }, "FootballGenieBrandArtwork");
         worker.setDaemon(true);
         worker.start();
     }
 
+    private View edgeFade(int gravity, boolean horizontal) {
+        View fade = new View(this);
+        android.graphics.drawable.GradientDrawable gradient = new android.graphics.drawable.GradientDrawable();
+        if (horizontal) {
+            gradient.setOrientation(gravity == Gravity.LEFT
+                    ? android.graphics.drawable.GradientDrawable.Orientation.LEFT_RIGHT
+                    : android.graphics.drawable.GradientDrawable.Orientation.RIGHT_LEFT);
+        } else {
+            gradient.setOrientation(gravity == Gravity.TOP
+                    ? android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM
+                    : android.graphics.drawable.GradientDrawable.Orientation.BOTTOM_TOP);
+        }
+        gradient.setColors(new int[] { Color.rgb(9, 16, 31), Color.TRANSPARENT });
+        fade.setBackground(gradient);
+        return fade;
+    }
+
     private void showBrandSplash() {
+        // Use the same cached image as Home, and keep it visible until the artwork is ready.
         ImageView splashImage = new ImageView(this);
         splashImage.setBackgroundColor(Color.rgb(5, 12, 24));
         splashImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
@@ -949,11 +996,12 @@ public class MainActivity extends Activity {
                 android.R.style.Theme_Black_NoTitleBar_Fullscreen);
         splash.setContentView(splashImage);
         splash.setCancelable(false);
-        splash.show();
         loadBrandArtwork(splashImage);
+        splashImage.setTag("football_genie_splash");
         splashImage.postDelayed(() -> {
             if (!isFinishing() && splash.isShowing()) splash.dismiss();
-        }, 2600);
+        }, 4500);
+        splash.show();
     }
 
     private void buildHeader() {
@@ -964,10 +1012,19 @@ public class MainActivity extends Activity {
         brandArtwork.setScaleType(ImageView.ScaleType.FIT_CENTER);
         brandArtwork.setBackground(rounded(Color.rgb(9, 16, 31), 16));
         FrameLayout.LayoutParams artworkParams = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, dp(174),
+                FrameLayout.LayoutParams.MATCH_PARENT, dp(204),
                 Gravity.TOP | Gravity.CENTER_HORIZONTAL);
-        artworkParams.setMargins(dp(42), dp(4), dp(42), 0);
+        artworkParams.setMargins(-dp(16), 0, -dp(16), 0);
         header.addView(brandArtwork, artworkParams);
+        // Gradient overlays soften all four artwork edges into the Home background.
+        View leftFade = edgeFade(Gravity.LEFT, true);
+        header.addView(leftFade, new FrameLayout.LayoutParams(dp(22), dp(204), Gravity.LEFT | Gravity.TOP));
+        View rightFade = edgeFade(Gravity.RIGHT, true);
+        header.addView(rightFade, new FrameLayout.LayoutParams(dp(22), dp(204), Gravity.RIGHT | Gravity.TOP));
+        View topFade = edgeFade(Gravity.TOP, false);
+        header.addView(topFade, new FrameLayout.LayoutParams(-1, dp(12), Gravity.TOP));
+        View bottomFade = edgeFade(Gravity.BOTTOM, false);
+        header.addView(bottomFade, new FrameLayout.LayoutParams(-1, dp(24), Gravity.BOTTOM));
         loadBrandArtwork(brandArtwork);
         // Three-line menu button at the top-left for quick access to every major section.
         TextView menuButton = label("☰");
