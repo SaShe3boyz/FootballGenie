@@ -10,6 +10,5 @@
         <item name="android:windowSplashScreenBackground">@color/football_genie_navy</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/football_genie_logo</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@color/football_genie_navy</item>
-        <item name="android:postSplashScreenTheme">@style/AppTheme</item>
     </style>
 </resources>
