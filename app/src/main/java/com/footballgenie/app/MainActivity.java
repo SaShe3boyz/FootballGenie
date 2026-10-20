@@ -29,6 +29,9 @@ public class MainActivity extends Activity {
     private EditText homeInput, awayInput, homeGoals, awayGoals;
     private TextView result, status;
     private LinearLayout mainLayout;
+    private LinearLayout aiMessages;
+    private EditText aiQuestion;
+    private String lastAiContext = "";
 
     private final int BG = Color.rgb(9, 16, 31);
     private final int CARD = Color.rgb(20, 31, 51);
@@ -54,7 +57,24 @@ public class MainActivity extends Activity {
         buildMatchForm();
         buildResults();
 
-        setContentView(scroll);
+        FrameLayout root = new FrameLayout(this);
+        root.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
+
+        Button aiFab = new Button(this);
+        aiFab.setText("🤖 AI");
+        aiFab.setTextColor(Color.rgb(8, 25, 22));
+        aiFab.setTextSize(14);
+        aiFab.setTypeface(null, Typeface.BOLD);
+        aiFab.setAllCaps(false);
+        aiFab.setBackground(rounded(GREEN, 28));
+        FrameLayout.LayoutParams fabParams = new FrameLayout.LayoutParams(
+            dp(82), dp(58), Gravity.BOTTOM | Gravity.END
+        );
+        fabParams.setMargins(dp(12), dp(12), dp(18), dp(22));
+        root.addView(aiFab, fabParams);
+        aiFab.setOnClickListener(v -> openAiChat());
+
+        setContentView(root);
         checkApiConnection();
     }
 
@@ -81,8 +101,32 @@ public class MainActivity extends Activity {
         subtitle.setTextColor(MUTED);
         subtitle.setTextSize(11);
         subtitle.setGravity(Gravity.CENTER);
-        subtitle.setPadding(0, dp(8), 0, dp(20));
+        subtitle.setPadding(0, dp(8), 0, dp(12));
         mainLayout.addView(subtitle);
+
+        LinearLayout quickNav = new LinearLayout(this);
+        quickNav.setOrientation(LinearLayout.HORIZONTAL);
+        Button aiTab = new Button(this);
+        aiTab.setText("💬 FOOTBALL GENIE AI");
+        aiTab.setAllCaps(false);
+        aiTab.setTextColor(Color.rgb(8, 25, 22));
+        aiTab.setTypeface(null, Typeface.BOLD);
+        aiTab.setBackground(rounded(GREEN, 14));
+        quickNav.addView(aiTab, new LinearLayout.LayoutParams(0, dp(50), 1));
+        aiTab.setOnClickListener(v -> openAiChat());
+
+        Button menuButton = new Button(this);
+        menuButton.setText("☰ MENU");
+        menuButton.setAllCaps(false);
+        menuButton.setTextColor(WHITE);
+        menuButton.setBackground(rounded(Color.rgb(40, 55, 77), 14));
+        LinearLayout.LayoutParams menuParams = new LinearLayout.LayoutParams(dp(105), dp(50));
+        menuParams.leftMargin = dp(8);
+        quickNav.addView(menuButton, menuParams);
+        menuButton.setOnClickListener(v -> showAppMenu());
+        mainLayout.addView(quickNav);
+        View navGap = new View(this);
+        mainLayout.addView(navGap, new LinearLayout.LayoutParams(1, dp(14)));
 
         LinearLayout banner = card();
         banner.setOrientation(LinearLayout.VERTICAL);
@@ -210,6 +254,216 @@ public class MainActivity extends Activity {
         footer.setGravity(Gravity.CENTER);
         footer.setPadding(0, dp(24), 0, dp(10));
         mainLayout.addView(footer);
+    }
+
+    private void showAppMenu() {
+        String[] options = {
+            "🏠 Home / Predictions",
+            "🤖 FOOTBALL GENIE AI",
+            "🌐 Load Live Fixtures"
+        };
+        new AlertDialog.Builder(this)
+            .setTitle("FOOTBALL GENIE MENU")
+            .setItems(options, (dialog, which) -> {
+                if (which == 0) {
+                    Toast.makeText(this, "You are on Home / Predictions.", Toast.LENGTH_SHORT).show();
+                } else if (which == 1) {
+                    openAiChat();
+                } else if (which == 2) {
+                    loadFixtures();
+                }
+            }).show();
+    }
+
+    private void openAiChat() {
+        LinearLayout screen = new LinearLayout(this);
+        screen.setOrientation(LinearLayout.VERTICAL);
+        screen.setPadding(dp(14), dp(12), dp(14), dp(10));
+        screen.setBackgroundColor(BG);
+
+        TextView title = label("🤖 FOOTBALL GENIE AI");
+        title.setTextColor(GREEN);
+        title.setTextSize(22);
+        title.setTypeface(null, Typeface.BOLD);
+        title.setGravity(Gravity.CENTER);
+        title.setPadding(0, dp(8), 0, dp(4));
+        screen.addView(title);
+
+        TextView subtitle = label("Live AI chat • Ask, follow up, challenge the analysis");
+        subtitle.setTextColor(MUTED);
+        subtitle.setTextSize(12);
+        subtitle.setGravity(Gravity.CENTER);
+        subtitle.setPadding(0, 0, 0, dp(10));
+        screen.addView(subtitle);
+
+        ScrollView chatScroll = new ScrollView(this);
+        chatScroll.setFillViewport(false);
+        aiMessages = new LinearLayout(this);
+        aiMessages.setOrientation(LinearLayout.VERTICAL);
+        aiMessages.setPadding(dp(4), dp(4), dp(4), dp(10));
+        chatScroll.addView(aiMessages);
+        screen.addView(chatScroll, new LinearLayout.LayoutParams(-1, 0, 1));
+
+        if (aiMessages.getChildCount() == 0) {
+            addChatMessage("Football Genie AI",
+                "Hello! Ask me about a match, your simulation, probabilities, or why a prediction may be wrong. I will use the match details you provide and be clear about missing live statistics.", false);
+        }
+
+        LinearLayout inputRow = new LinearLayout(this);
+        inputRow.setOrientation(LinearLayout.HORIZONTAL);
+        aiQuestion = new EditText(this);
+        aiQuestion.setSingleLine(false);
+        aiQuestion.setMinLines(1);
+        aiQuestion.setMaxLines(3);
+        aiQuestion.setHint("Ask Football Genie AI...");
+        aiQuestion.setHintTextColor(MUTED);
+        aiQuestion.setTextColor(WHITE);
+        aiQuestion.setTextSize(14);
+        aiQuestion.setPadding(dp(12), dp(8), dp(12), dp(8));
+        aiQuestion.setBackground(rounded(Color.rgb(31, 44, 65), 12));
+        inputRow.addView(aiQuestion, new LinearLayout.LayoutParams(0, dp(54), 1));
+
+        Button send = new Button(this);
+        send.setText("SEND ➤");
+        send.setAllCaps(false);
+        send.setTextColor(Color.rgb(8, 25, 22));
+        send.setTypeface(null, Typeface.BOLD);
+        send.setBackground(rounded(GREEN, 12));
+        LinearLayout.LayoutParams sendParams = new LinearLayout.LayoutParams(dp(94), dp(54));
+        sendParams.leftMargin = dp(8);
+        inputRow.addView(send, sendParams);
+        send.setOnClickListener(v -> sendAiQuestion());
+        aiQuestion.setOnEditorActionListener((v, actionId, event) -> {
+            sendAiQuestion();
+            return true;
+        });
+        screen.addView(inputRow);
+
+        LinearLayout nav = new LinearLayout(this);
+        nav.setOrientation(LinearLayout.HORIZONTAL);
+        Button home = new Button(this);
+        home.setText("🏠 HOME");
+        home.setAllCaps(false);
+        home.setTextColor(WHITE);
+        home.setBackground(rounded(Color.rgb(40, 55, 77), 12));
+        nav.addView(home, new LinearLayout.LayoutParams(0, dp(48), 1));
+        home.setOnClickListener(v -> {
+            recreate();
+        });
+        Button menu = new Button(this);
+        menu.setText("☰ MENU");
+        menu.setAllCaps(false);
+        menu.setTextColor(WHITE);
+        menu.setBackground(rounded(Color.rgb(40, 55, 77), 12));
+        LinearLayout.LayoutParams menuParams = new LinearLayout.LayoutParams(0, dp(48), 1);
+        menuParams.leftMargin = dp(8);
+        nav.addView(menu, menuParams);
+        menu.setOnClickListener(v -> showAppMenu());
+        screen.addView(nav, new LinearLayout.LayoutParams(-1, dp(52)));
+
+        setContentView(screen);
+    }
+
+    private void addChatMessage(String sender, String message, boolean fromAi) {
+        if (aiMessages == null) return;
+        LinearLayout bubble = new LinearLayout(this);
+        bubble.setOrientation(LinearLayout.VERTICAL);
+        bubble.setPadding(dp(12), dp(10), dp(12), dp(10));
+        bubble.setBackground(rounded(fromAi ? Color.rgb(25, 48, 62) : Color.rgb(37, 61, 49), 14));
+        TextView who = label(sender);
+        who.setTextColor(fromAi ? GREEN : Color.rgb(170, 255, 200));
+        who.setTextSize(12);
+        who.setTypeface(null, Typeface.BOLD);
+        bubble.addView(who);
+        TextView body = label(message);
+        body.setTextColor(WHITE);
+        body.setTextSize(14);
+        body.setPadding(0, dp(5), 0, 0);
+        bubble.addView(body);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+        params.bottomMargin = dp(9);
+        aiMessages.addView(bubble, params);
+    }
+
+    private void sendAiQuestion() {
+        if (aiQuestion == null || aiMessages == null) return;
+        String question = aiQuestion.getText().toString().trim();
+        if (question.isEmpty()) {
+            Toast.makeText(this, "Type a question first.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (question.length() > 1200) {
+            Toast.makeText(this, "Please keep the question under 1,200 characters.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        String home = homeInput == null ? "" : homeInput.getText().toString().trim();
+        String away = awayInput == null ? "" : awayInput.getText().toString().trim();
+        String hx = homeGoals == null ? "" : homeGoals.getText().toString().trim();
+        String ax = awayGoals == null ? "" : awayGoals.getText().toString().trim();
+        addChatMessage("YOU", question, false);
+        aiQuestion.setText("");
+        aiQuestion.setEnabled(false);
+
+        TextView waiting = label("Football Genie AI is thinking...");
+        waiting.setTextColor(GREEN);
+        waiting.setTextSize(13);
+        aiMessages.addView(waiting);
+        JSONObject payload = new JSONObject();
+        JSONObject match = new JSONObject();
+        try {
+            payload.put("question", question);
+            match.put("home", home.isEmpty() ? "Home team (not supplied)" : home);
+            match.put("away", away.isEmpty() ? "Away team (not supplied)" : away);
+            if (!hx.isEmpty()) match.put("homeXg", Double.parseDouble(hx.replace(',', '.')));
+            if (!ax.isEmpty()) match.put("awayXg", Double.parseDouble(ax.replace(',', '.')));
+            payload.put("match", match);
+        } catch (Exception ignored) { }
+
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            String answer = null;
+            String error = null;
+            try {
+                URL url = new URL("https://football-genie-api.onrender.com/api/ai/analyze");
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("POST");
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(30000);
+                connection.setDoOutput(true);
+                connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                byte[] bytes = payload.toString().getBytes("UTF-8");
+                connection.getOutputStream().write(bytes);
+                int code = connection.getResponseCode();
+                java.io.InputStream stream = code >= 200 && code < 400
+                    ? connection.getInputStream() : connection.getErrorStream();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+                StringBuilder body = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) body.append(line);
+                reader.close();
+                JSONObject response = new JSONObject(body.toString());
+                if (code >= 200 && code < 300) {
+                    answer = response.optString("answer", "The AI returned no answer.");
+                    String provider = response.optString("provider", "");
+                    if (!provider.isEmpty()) answer += "\n\n— Powered by " + provider + " (" + response.optString("model", "AI model") + ")";
+                } else {
+                    error = response.optString("error", "AI request failed (HTTP " + code + ").");
+                }
+            } catch (Exception ex) {
+                error = "Could not reach Football Genie AI. Check your internet connection and try again.";
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+            final String finalAnswer = answer;
+            final String finalError = error;
+            runOnUiThread(() -> {
+                if (waiting.getParent() != null) aiMessages.removeView(waiting);
+                aiQuestion.setEnabled(true);
+                if (finalAnswer != null) addChatMessage("FOOTBALL GENIE AI", finalAnswer, true);
+                else addChatMessage("AI CONNECTION", finalError == null ? "Unknown error. Please try again." : finalError, true);
+            });
+        }).start();
     }
 
     private void addHeading(String number, String heading) {
