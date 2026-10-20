@@ -1743,8 +1743,10 @@ public class MainActivity extends Activity {
                 payload.put("question", prompt);
                 payload.put("match", match);
                 byte[] bytes = payload.toString().getBytes("UTF-8");
-                connection.getOutputStream().write(bytes);
-                connection.getOutputStream().close();
+                java.io.OutputStream output = connection.getOutputStream();
+                output.write(bytes);
+                output.flush();
+                output.close();
                 responseCode = connection.getResponseCode();
                 java.io.InputStream stream = (responseCode >= 200 && responseCode < 300)
                     ? connection.getInputStream() : connection.getErrorStream();
@@ -3059,6 +3061,47 @@ public class MainActivity extends Activity {
         return String.format(Locale.US, "%d matches, %.1f%% correct", count, 100.0 * correct / count);
     }
 
+    private String learningReviewText(int sample, int outcomeCorrect, int goalsCorrect,
+            int bttsCorrect, double homeBias, double awayBias,
+            double homeMae, double awayMae) {
+        StringBuilder review = new StringBuilder();
+        if (sample < 10) {
+            review.append("Not enough completed matches for a dependable adjustment. Collect at least 10, preferably 30+, before changing model settings.\n");
+        } else {
+            review.append("Observed outcome hit rate: ")
+                .append(String.format(Locale.US, "%.1f%%", 100.0 * outcomeCorrect / sample))
+                .append("; Over/Under hit rate: ")
+                .append(String.format(Locale.US, "%.1f%%", 100.0 * goalsCorrect / sample))
+                .append("; BTTS hit rate: ")
+                .append(String.format(Locale.US, "%.1f%%", 100.0 * bttsCorrect / sample)).append(".\n");
+            if (sample < 30) {
+                review.append("Early-sample caution: these patterns are provisional. No automatic parameter change has been applied.\n");
+            } else {
+                review.append("Sample size is suitable for a preliminary back-test, not proof of future performance. Re-test candidate changes on held-out matches before deployment.\n");
+            }
+        }
+        review.append("Average actual-minus-expected goals: home ")
+            .append(String.format(Locale.US, "%+.2f", homeBias))
+            .append(", away ").append(String.format(Locale.US, "%+.2f", awayBias)).append(".\n");
+        if (sample >= 10 && Math.abs(homeBias) >= 0.35) {
+            review.append("Home xG review: the saved sample suggests ")
+                .append(homeBias > 0 ? "home scoring may be underestimated" : "home scoring may be overestimated")
+                .append("; test a small calibration adjustment against held-out results.\n");
+        }
+        if (sample >= 10 && Math.abs(awayBias) >= 0.35) {
+            review.append("Away xG review: the saved sample suggests ")
+                .append(awayBias > 0 ? "away scoring may be underestimated" : "away scoring may be overestimated")
+                .append("; test a small calibration adjustment against held-out results.\n");
+        }
+        if (sample >= 10 && homeMae > awayMae + 0.25) {
+            review.append("Home goal forecasts have larger average absolute error than away forecasts; review home-venue inputs and data coverage.\n");
+        } else if (sample >= 10 && awayMae > homeMae + 0.25) {
+            review.append("Away goal forecasts have larger average absolute error than home forecasts; review away-venue inputs and data coverage.\n");
+        }
+        review.append("Safeguard: Football Genie reports learning signals but does not silently rewrite its prediction model from a small or biased sample.");
+        return review.toString();
+    }
+
     private void showPredictionHistory(int newlyUpdated) {
         JSONArray history = readPredictionHistory();
         int finished = 0, outcomeCorrect = 0, goalsCorrect = 0;
@@ -3071,6 +3114,7 @@ public class MainActivity extends Activity {
         double bttsBrierTotal = 0.0;
         double homeGoalAbsError = 0.0, awayGoalAbsError = 0.0;
         double totalGoalAbsError = 0.0;
+        double homeGoalBias = 0.0, awayGoalBias = 0.0;
         int[] confidenceBinCount = new int[5];
         int[] confidenceBinCorrect = new int[5];
         StringBuilder summary = new StringBuilder();
@@ -3126,6 +3170,8 @@ public class MainActivity extends Activity {
                     finished++;
                     homeGoalAbsError += Math.abs(record.optInt("predictedHome", 0) - ah);
                     awayGoalAbsError += Math.abs(record.optInt("predictedAway", 0) - aa);
+                    homeGoalBias += ah - record.optDouble("homeXg", 0.0);
+                    awayGoalBias += aa - record.optDouble("awayXg", 0.0);
                     totalGoalAbsError += Math.abs(record.optInt("predictedHome", 0) + record.optInt("predictedAway", 0) - ah - aa);
                     String predictedOutcome = record.optDouble("homeP", 0) >=
                         Math.max(record.optDouble("drawP", 0), record.optDouble("awayP", 0))
@@ -3206,7 +3252,11 @@ public class MainActivity extends Activity {
                 "PROBABILITY QUALITY (Brier score; lower is better)\n" +
                 "Home/Draw/Away: " + String.format(Locale.US, "%.3f", outcomeBrierTotal / finished) + "\n" +
                 "Over 2.5: " + String.format(Locale.US, "%.3f", goalsBrierTotal / finished) + "\n" +
-                "Both teams score: " + String.format(Locale.US, "%.3f", bttsBrierTotal / finished) + "\n\n");
+                "Both teams score: " + String.format(Locale.US, "%.3f", bttsBrierTotal / finished) + "\n\n" +
+                "LEARNING REVIEW • CONTROLLED MODEL IMPROVEMENT\n" +
+                learningReviewText(finished, outcomeCorrect, goalsCorrect, bttsCorrect,
+                    homeGoalBias / finished, awayGoalBias / finished,
+                    homeGoalAbsError / finished, awayGoalAbsError / finished) + "\n\n");
         } else {
             summary.append("\nNo saved predictions have a final result yet. Save predictions for upcoming matches, then use this button again after they finish.\n");
         }
