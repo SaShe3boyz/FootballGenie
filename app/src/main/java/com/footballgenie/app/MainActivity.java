@@ -3834,11 +3834,13 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> {
                     if (showProgress) hideLoading();
                     updateConnectionStatus(false);
-                    Toast.makeText(
-                        MainActivity.this,
-                        "Could not load fixtures. Please try again.",
-                        Toast.LENGTH_LONG
-                    ).show();
+                    if (showProgress) {
+                        Toast.makeText(
+                            MainActivity.this,
+                            "Could not load fixtures. Please try again.",
+                            Toast.LENGTH_LONG
+                        ).show();
+                    }
                 });
             } finally {
                 if (connection != null) {
