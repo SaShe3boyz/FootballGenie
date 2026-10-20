@@ -255,10 +255,9 @@ public class MainActivity extends Activity {
         homeTeam.setGravity(Gravity.CENTER);
         FrameLayout homeBadgeHolder = new FrameLayout(this);
         homeBadgeHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
-        homeBadgeFallback = label("🛡️");
-        homeBadgeFallback.setTextColor(GREEN);
-        homeBadgeFallback.setTextSize(39);
+        homeBadgeFallback = label("");
         homeBadgeFallback.setGravity(Gravity.CENTER);
+        homeBadgeFallback.setBackground(createShieldPlaceholderDrawable());
         homeBadgeHolder.addView(homeBadgeFallback, new FrameLayout.LayoutParams(-1, -1));
         homeCrestImage = new ImageView(this);
         homeCrestImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
@@ -287,10 +286,9 @@ public class MainActivity extends Activity {
         awayTeam.setGravity(Gravity.CENTER);
         FrameLayout awayBadgeHolder = new FrameLayout(this);
         awayBadgeHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
-        awayBadgeFallback = label("🛡️");
-        awayBadgeFallback.setTextColor(GREEN);
-        awayBadgeFallback.setTextSize(39);
+        awayBadgeFallback = label("");
         awayBadgeFallback.setGravity(Gravity.CENTER);
+        awayBadgeFallback.setBackground(createShieldPlaceholderDrawable());
         awayBadgeHolder.addView(awayBadgeFallback, new FrameLayout.LayoutParams(-1, -1));
         awayCrestImage = new ImageView(this);
         awayCrestImage.setScaleType(ImageView.ScaleType.FIT_CENTER);
@@ -736,38 +734,63 @@ public class MainActivity extends Activity {
         }
     }
 
-    // Load club crests off the UI thread; keep the football icon visible if a crest is unavailable.
-    // Load club crests off the UI thread; optional fallback text is used on home/setup cards.
+    // White shield with a green outline, used whenever a club crest is unavailable.
+    private android.graphics.drawable.Drawable createShieldPlaceholderDrawable() {
+        return new android.graphics.drawable.Drawable() {
+            private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
+            private final Paint outline = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+            @Override public void draw(Canvas canvas) {
+                android.graphics.Rect bounds = getBounds();
+                float w = bounds.width();
+                float h = bounds.height();
+                if (w <= 0 || h <= 0) return;
+                Path shield = new Path();
+                shield.moveTo(w * 0.50f, h * 0.06f);
+                shield.lineTo(w * 0.89f, h * 0.20f);
+                shield.lineTo(w * 0.84f, h * 0.58f);
+                shield.quadTo(w * 0.78f, h * 0.79f, w * 0.50f, h * 0.94f);
+                shield.quadTo(w * 0.22f, h * 0.79f, w * 0.16f, h * 0.58f);
+                shield.lineTo(w * 0.11f, h * 0.20f);
+                shield.close();
+
+                fill.setStyle(Paint.Style.FILL);
+                fill.setColor(Color.WHITE);
+                canvas.drawPath(shield, fill);
+
+                outline.setStyle(Paint.Style.STROKE);
+                outline.setStrokeJoin(Paint.Join.ROUND);
+                outline.setStrokeCap(Paint.Cap.ROUND);
+                outline.setStrokeWidth(MainActivity.this.dp(2));
+                outline.setColor(GREEN);
+                canvas.drawPath(shield, outline);
+            }
+
+            @Override public void setAlpha(int alpha) { }
+            @Override public void setColorFilter(android.graphics.ColorFilter colorFilter) { }
+            @Override public int getOpacity() { return android.graphics.PixelFormat.TRANSLUCENT; }
+        };
+    }
+
+    // Load club crests off the UI thread. If a provider gives an SVG crest that Android
+    // cannot decode directly, retry the matching PNG endpoint before showing the placeholder.
     private void loadTeamCrest(String crestUrl, ImageView target, TextView fallback) {
         if (target == null) return;
         target.setImageDrawable(null);
         target.setVisibility(View.GONE);
         if (fallback != null) fallback.setVisibility(View.VISIBLE);
         if (crestUrl == null || crestUrl.trim().isEmpty()
-                || !crestUrl.trim().startsWith("https://")) return;
+                || !crestUrl.trim().startsWith("https://")) {
+            target.setTag(null);
+            return;
+        }
 
         final String requestedUrl = crestUrl.trim();
         target.setTag(requestedUrl);
         new Thread(() -> {
-            HttpURLConnection connection = null;
-            Bitmap bitmap = null;
-            try {
-                URL url = new URL(requestedUrl);
-                connection = (HttpURLConnection) url.openConnection();
-                connection.setRequestMethod("GET");
-                connection.setConnectTimeout(8000);
-                connection.setReadTimeout(8000);
-                connection.setInstanceFollowRedirects(true);
-                connection.connect();
-                if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                    try (java.io.InputStream stream = connection.getInputStream()) {
-                        bitmap = BitmapFactory.decodeStream(stream);
-                    }
-                }
-            } catch (Exception ignored) {
-                // The fallback football icon remains visible if loading fails.
-            } finally {
-                if (connection != null) connection.disconnect();
+            Bitmap bitmap = downloadCrestBitmap(requestedUrl);
+            if (bitmap == null && requestedUrl.toLowerCase(java.util.Locale.ROOT).endsWith(".svg")) {
+                bitmap = downloadCrestBitmap(requestedUrl.substring(0, requestedUrl.length() - 4) + ".png");
             }
             final Bitmap loadedBitmap = bitmap;
             runOnUiThread(() -> {
@@ -782,6 +805,29 @@ public class MainActivity extends Activity {
                 }
             });
         }).start();
+    }
+
+    private Bitmap downloadCrestBitmap(String crestUrl) {
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL(crestUrl);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(10000);
+            connection.setInstanceFollowRedirects(true);
+            connection.setRequestProperty("User-Agent", "FootballGenie/1.0 (Android)");
+            connection.setRequestProperty("Accept", "image/png,image/*;q=0.9,*/*;q=0.5");
+            connection.connect();
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return null;
+            try (java.io.InputStream stream = connection.getInputStream()) {
+                return BitmapFactory.decodeStream(stream);
+            }
+        } catch (Exception ignored) {
+            return null;
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
     }
 
     private void buildValidationScreen() {
@@ -1160,10 +1206,9 @@ public class MainActivity extends Activity {
         setupHomeColumn.setPadding(dp(3), 0, dp(3), 0);
         FrameLayout setupHomeHolder = new FrameLayout(this);
         setupHomeHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
-        setupHomeFallback = label("🛡️");
-        setupHomeFallback.setTextColor(GREEN);
-        setupHomeFallback.setTextSize(39);
+        setupHomeFallback = label("");
         setupHomeFallback.setGravity(Gravity.CENTER);
+        setupHomeFallback.setBackground(createShieldPlaceholderDrawable());
         setupHomeHolder.addView(setupHomeFallback, new FrameLayout.LayoutParams(-1, -1));
         setupHomeCrest = new ImageView(this);
         setupHomeCrest.setScaleType(ImageView.ScaleType.FIT_CENTER);
@@ -1192,10 +1237,9 @@ public class MainActivity extends Activity {
         setupAwayColumn.setPadding(dp(3), 0, dp(3), 0);
         FrameLayout setupAwayHolder = new FrameLayout(this);
         setupAwayHolder.setLayoutParams(new LinearLayout.LayoutParams(dp(58), dp(58)));
-        setupAwayFallback = label("🛡️");
-        setupAwayFallback.setTextColor(GREEN);
-        setupAwayFallback.setTextSize(39);
+        setupAwayFallback = label("");
         setupAwayFallback.setGravity(Gravity.CENTER);
+        setupAwayFallback.setBackground(createShieldPlaceholderDrawable());
         setupAwayHolder.addView(setupAwayFallback, new FrameLayout.LayoutParams(-1, -1));
         setupAwayCrest = new ImageView(this);
         setupAwayCrest.setScaleType(ImageView.ScaleType.FIT_CENTER);
