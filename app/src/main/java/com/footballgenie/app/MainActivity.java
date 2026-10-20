@@ -98,6 +98,7 @@ public class MainActivity extends Activity {
         root.addView(buildBottomNavigation(),
             new LinearLayout.LayoutParams(-1, dp(62)));
         setContentView(root);
+        applyPressFeedback(root);
         showScreen(0);
         showBrandSplash();
         checkApiConnection();
