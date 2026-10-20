@@ -47,6 +47,7 @@ public class MainActivity extends Activity {
     private ImageView setupHomeCrest, setupAwayCrest;
     private TextView setupHomeFallback, setupAwayFallback;
     private LinearLayout mainLayout;
+    private LinearLayout historyResultsContainer;
     private FrameLayout screenHost;
     private final View[] appScreens = new View[8];
     private TextView simulationSummary;
@@ -1468,6 +1469,14 @@ public class MainActivity extends Activity {
         historyCard.addView(removeFixtureButton, removeFixtureParams);
         removeFixtureButton.setOnClickListener(v -> choosePredictionToRemove());
         mainLayout.addView(historyCard);
+
+        historyResultsContainer = new LinearLayout(this);
+        historyResultsContainer.setOrientation(LinearLayout.VERTICAL);
+        historyResultsContainer.setVisibility(View.GONE);
+        LinearLayout.LayoutParams historyResultsParams =
+            new LinearLayout.LayoutParams(-1, -2);
+        historyResultsParams.topMargin = dp(12);
+        mainLayout.addView(historyResultsContainer, historyResultsParams);
     }
 
     private void buildResults() {
@@ -2942,11 +2951,139 @@ public class MainActivity extends Activity {
             summary.append("\nNo saved predictions have a final result yet. Save predictions for upcoming matches, then use this button again after they finish.\n");
         }
 
-        new AlertDialog.Builder(this)
-            .setTitle("Football Genie • Prediction History")
-            .setMessage(summary.toString())
-            .setPositiveButton("Close", null)
-            .show();
+        // Render the report as a proper in-page dashboard, not a plain-text popup.
+        if (historyResultsContainer == null) {
+            showScreen(4);
+            return;
+        }
+        historyResultsContainer.removeAllViews();
+        historyResultsContainer.setVisibility(View.VISIBLE);
+
+        TextView reportTitle = label("RESULTS & MODEL PERFORMANCE");
+        reportTitle.setTextColor(GREEN);
+        reportTitle.setTextSize(18);
+        reportTitle.setTypeface(null, Typeface.BOLD);
+        reportTitle.setPadding(dp(2), dp(4), dp(2), dp(10));
+        historyResultsContainer.addView(reportTitle);
+
+        LinearLayout overview = card();
+        overview.setOrientation(LinearLayout.VERTICAL);
+        TextView overviewTitle = label("HISTORY OVERVIEW");
+        overviewTitle.setTextColor(WHITE);
+        overviewTitle.setTextSize(15);
+        overviewTitle.setTypeface(null, Typeface.BOLD);
+        overview.addView(overviewTitle);
+        TextView overviewStats = label("Saved predictions: " + history.length()
+            + "     •     Evaluated: " + finished
+            + "     •     Pending: " + pendingCount);
+        overviewStats.setTextColor(MUTED);
+        overviewStats.setTextSize(14);
+        overviewStats.setPadding(0, dp(8), 0, dp(4));
+        overview.addView(overviewStats);
+        TextView newResults = label("New final results found: " + newlyUpdated);
+        newResults.setTextColor(GREEN);
+        newResults.setTextSize(14);
+        newResults.setTypeface(null, Typeface.BOLD);
+        overview.addView(newResults);
+        if (finished > 0) {
+            TextView accuracy = label("Outcome accuracy: " + outcomeCorrect + "/" + finished
+                + " (" + String.format(Locale.US, "%.1f", 100.0 * outcomeCorrect / finished) + "%)"
+                + "\\nExact scores: " + exactCorrect + "/" + finished
+                + "     •     Over 2.5: " + goalsCorrect + "/" + finished
+                + "     •     BTTS: " + bttsCorrect + "/" + finished);
+            accuracy.setTextColor(WHITE);
+            accuracy.setTextSize(14);
+            accuracy.setLineSpacing(dp(3), 1f);
+            accuracy.setPadding(0, dp(8), 0, dp(2));
+            overview.addView(accuracy);
+            TextView sampleNote = label(finished < 30
+                ? "Early sample: accuracy can change significantly as more matches are evaluated."
+                : "Metrics are estimates based on your saved matches; they do not guarantee future accuracy.");
+            sampleNote.setTextColor(MUTED);
+            sampleNote.setTextSize(12);
+            sampleNote.setPadding(0, dp(6), 0, 0);
+            overview.addView(sampleNote);
+        } else {
+            TextView noResults = label("No completed saved predictions yet. Results will appear here after matches finish and you update history.");
+            noResults.setTextColor(MUTED);
+            noResults.setTextSize(13);
+            noResults.setPadding(0, dp(8), 0, 0);
+            overview.addView(noResults);
+        }
+        historyResultsContainer.addView(overview);
+
+        TextView matchHeading = label("SAVED MATCHES");
+        matchHeading.setTextColor(GREEN);
+        matchHeading.setTextSize(16);
+        matchHeading.setTypeface(null, Typeface.BOLD);
+        matchHeading.setPadding(dp(2), dp(16), dp(2), dp(8));
+        historyResultsContainer.addView(matchHeading);
+
+        for (int i = history.length() - 1; i >= 0; i--) {
+            JSONObject record = history.optJSONObject(i);
+            if (record == null) continue;
+            String home = record.optString("home", "Home");
+            String away = record.optString("away", "Away");
+            String state = record.optString("predictionStatus", "PENDING");
+            boolean isFinished = "FINISHED".equals(state);
+            LinearLayout matchCard = card();
+            matchCard.setOrientation(LinearLayout.VERTICAL);
+
+            TextView teams = label(home + "\\nvs\\n" + away);
+            teams.setTextColor(WHITE);
+            teams.setTextSize(17);
+            teams.setTypeface(null, Typeface.BOLD);
+            teams.setLineSpacing(dp(2), 1f);
+            matchCard.addView(teams);
+
+            String kickoff = record.optString("kickoff", "");
+            if (kickoff.length() >= 16) kickoff = kickoff.substring(0, 10) + "  •  " + kickoff.substring(11, 16) + " UTC";
+            TextView date = label(kickoff.isEmpty() ? "Kick-off date unavailable" : kickoff);
+            date.setTextColor(MUTED);
+            date.setTextSize(12);
+            date.setPadding(0, dp(4), 0, dp(8));
+            matchCard.addView(date);
+
+            TextView stateLabel = label(isFinished ? "✓ FINAL RESULT RECORDED" : "◷ WAITING FOR FINAL RESULT");
+            stateLabel.setTextColor(isFinished ? GREEN : Color.rgb(255, 204, 102));
+            stateLabel.setTextSize(12);
+            stateLabel.setTypeface(null, Typeface.BOLD);
+            matchCard.addView(stateLabel);
+
+            TextView scoreLine = label("PREDICTED SCORE     "
+                + record.optInt("predictedHome", 0) + " - " + record.optInt("predictedAway", 0)
+                + (isFinished ? "\\nACTUAL SCORE              " + record.optInt("actualHome", -1)
+                    + " - " + record.optInt("actualAway", -1) : ""));
+            scoreLine.setTextColor(WHITE);
+            scoreLine.setTextSize(15);
+            scoreLine.setTypeface(null, Typeface.BOLD);
+            scoreLine.setLineSpacing(dp(3), 1f);
+            scoreLine.setPadding(0, dp(10), 0, dp(8));
+            matchCard.addView(scoreLine);
+
+            TextView probabilities = label("1X2 probabilities  •  "
+                + String.format(Locale.US, "%.0f%% / %.0f%% / %.0f%%",
+                    record.optDouble("homeP", 0), record.optDouble("drawP", 0), record.optDouble("awayP", 0))
+                + "\\nExpected goals  •  "
+                + String.format(Locale.US, "%.2f - %.2f",
+                    record.optDouble("homeXg", 0), record.optDouble("awayXg", 0))
+                + "\\nOver 2.5  •  " + String.format(Locale.US, "%.0f%%", record.optDouble("overP", 0))
+                + "     BTTS  •  " + String.format(Locale.US, "%.0f%%", record.optDouble("bttsP", 0)));
+            probabilities.setTextColor(MUTED);
+            probabilities.setTextSize(13);
+            probabilities.setLineSpacing(dp(3), 1f);
+            matchCard.addView(probabilities);
+
+            LinearLayout.LayoutParams matchParams = new LinearLayout.LayoutParams(-1, -2);
+            matchParams.bottomMargin = dp(10);
+            historyResultsContainer.addView(matchCard, matchParams);
+        }
+        showScreen(4);
+        historyResultsContainer.post(() -> {
+            if (historyResultsContainer != null) {
+                historyResultsContainer.requestFocus();
+            }
+        });
     }
 
     private void loadFixtures() {
