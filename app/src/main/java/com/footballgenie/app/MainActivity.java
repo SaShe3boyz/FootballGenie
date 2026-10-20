@@ -149,7 +149,7 @@ public class MainActivity extends Activity {
         nav.setPadding(dp(4), dp(5), dp(4), dp(6));
         nav.setBackground(rounded(Color.rgb(5, 13, 26), 0));
 
-        String[] icons = {"⌂", "⚽", "▥", "◉", "◷"};
+        String[] icons = {"🏠", "🎯", "📊", "⚡", "🕘"};
         String[] labels = {"HOME", "PREDICT", "RESULTS", "SIMULATE", "HISTORY"};
         int[] targets = {0, 1, 2, 3, 4};
 
@@ -341,14 +341,14 @@ public class MainActivity extends Activity {
         LinearLayout rowOne = new LinearLayout(this);
         rowOne.setOrientation(LinearLayout.HORIZONTAL);
         mainLayout.addView(rowOne);
-        addHomeTile(rowOne, "🌐", "Live Fixtures", "Get latest matches", 5);
-        addHomeTile(rowOne, "📋", "My Predictions", "View saved picks", 4);
+        addHomeTile(rowOne, "⚽", "Live Fixtures", "Get latest matches", 5);
+        addHomeTile(rowOne, "🎯", "My Predictions", "View saved picks", 4);
 
         LinearLayout rowTwo = new LinearLayout(this);
         rowTwo.setOrientation(LinearLayout.HORIZONTAL);
         mainLayout.addView(rowTwo);
-        addHomeTile(rowTwo, "✓", "Validation", "Accuracy & performance", 6);
-        addHomeTile(rowTwo, "◷", "History", "Past results & insights", 4);
+        addHomeTile(rowTwo, "📈", "Validation", "Accuracy & performance", 6);
+        addHomeTile(rowTwo, "🕘", "History", "Past results & insights", 4);
     }
 
     private void addHomeTile(LinearLayout row, String icon, String title,
@@ -359,11 +359,11 @@ public class MainActivity extends Activity {
         tile.setBackground(glossyCardBackground());
         tile.setElevation(dp(3));
         TextView iconView = label(icon);
-        iconView.setTextColor(GREEN);
-        iconView.setTextSize(22);
+        iconView.setTextColor(WHITE);
+        iconView.setTextSize(26);
         iconView.setGravity(Gravity.CENTER);
-        iconView.setBackground(rounded(Color.rgb(18, 65, 61), 12));
-        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(42), dp(42));
+        iconView.setBackground(rounded(homeTileAccent(title), 14));
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(48), dp(48));
         iconParams.bottomMargin = dp(4);
         tile.addView(iconView, iconParams);
         TextView titleView = label(title);
@@ -1346,13 +1346,16 @@ public class MainActivity extends Activity {
         historyNote.setPadding(0, 0, 0, dp(10));
         historyCard.addView(historyNote);
         Button historyButton = new Button(this);
-        historyButton.setText("📊  PREDICTION HISTORY / UPDATE RESULTS");
+        historyButton.setText("📚  PREDICTION HISTORY\nUPDATE RESULTS");
         historyButton.setTextColor(WHITE);
-        historyButton.setTextSize(15);
+        historyButton.setTextSize(17);
+        historyButton.setTypeface(null, Typeface.BOLD);
+        historyButton.setGravity(Gravity.CENTER);
+        historyButton.setLineSpacing(dp(2), 1.0f);
         historyButton.setAllCaps(false);
-        historyButton.setBackground(rounded(CARD, 14));
+        historyButton.setBackground(rounded(Color.rgb(21, 105, 91), 14));
         LinearLayout.LayoutParams historyParams =
-        new LinearLayout.LayoutParams(-1, dp(50));
+        new LinearLayout.LayoutParams(-1, dp(68));
         historyParams.bottomMargin = dp(12);
         historyCard.addView(historyButton, historyParams);
         historyButton.setOnClickListener(v -> syncPredictionHistory());
@@ -1442,7 +1445,7 @@ public class MainActivity extends Activity {
 
         TextView detailsHeading = label("MATCH INTELLIGENCE & MODEL ANALYSIS");
         detailsHeading.setTextColor(GREEN);
-        detailsHeading.setTextSize(13);
+        detailsHeading.setTextSize(16);
         detailsHeading.setTypeface(null, Typeface.BOLD);
         detailsHeading.setPadding(0, dp(18), 0, dp(4));
         outputCard.addView(detailsHeading);
@@ -1603,10 +1606,10 @@ public class MainActivity extends Activity {
             }
             LinearLayout detailCard = new LinearLayout(this);
             detailCard.setOrientation(LinearLayout.VERTICAL);
-            detailCard.setPadding(dp(14), dp(13), dp(14), dp(14));
+            detailCard.setPadding(dp(14), dp(14), dp(14), dp(15));
             int accentColor = getAnalysisAccentColor(heading);
-            GradientDrawable cardBackground = rounded(Color.rgb(20, 31, 51), 14);
-            cardBackground.setStroke(dp(1), accentColor);
+            GradientDrawable cardBackground = rounded(blendAnalysisColor(Color.rgb(16, 27, 44), accentColor, 0.24f), 14);
+            cardBackground.setStroke(dp(2), accentColor);
             detailCard.setBackground(cardBackground);
             detailCard.setElevation(dp(2));
             LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
@@ -1620,23 +1623,22 @@ public class MainActivity extends Activity {
             iconView.setTextSize(23);
             iconView.setTypeface(null, Typeface.BOLD);
             iconView.setGravity(Gravity.CENTER);
-            iconView.setTextColor(accentColor);
-            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(44), dp(44));
+            iconView.setTextColor(Color.rgb(7, 20, 32));
+            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(48), dp(48));
             iconParams.rightMargin = dp(12);
-            GradientDrawable iconBackground = rounded(Color.rgb(12, 23, 39), 12);
-            iconBackground.setStroke(dp(1), accentColor);
+            GradientDrawable iconBackground = rounded(accentColor, 12);
             iconView.setBackground(iconBackground);
             headingRow.addView(iconView, iconParams);
             LinearLayout titleColumn = new LinearLayout(this);
             titleColumn.setOrientation(LinearLayout.VERTICAL);
             TextView eyebrow = label("MATCH INSIGHT  •  ANALYSIS");
-            eyebrow.setTextColor(accentColor);
+            eyebrow.setTextColor(Color.rgb(225, 239, 250));
             eyebrow.setTextSize(13);
             eyebrow.setTypeface(null, Typeface.BOLD);
             titleColumn.addView(eyebrow);
             TextView headingView = label(heading.isEmpty() ? "MATCH INSIGHT" : heading.toUpperCase(Locale.US));
-            headingView.setTextColor(accentColor);
-            headingView.setTextSize(15);
+            headingView.setTextColor(Color.WHITE);
+            headingView.setTextSize(17);
             headingView.setTypeface(null, Typeface.BOLD);
             headingView.setLetterSpacing(0.025f);
             titleColumn.addView(headingView);
@@ -1646,8 +1648,8 @@ public class MainActivity extends Activity {
             if (bodyText.length() > 0) {
                 TextView body = label(bodyText.toString());
                 body.setTextColor(WHITE);
-                body.setTextSize(15);
-                body.setLineSpacing(dp(5), 1.08f);
+                body.setTextSize(16);
+                body.setLineSpacing(dp(6), 1.10f);
                 body.setPadding(0, dp(10), 0, dp(2));
                 body.setGravity(Gravity.START);
                 detailCard.addView(body);
@@ -1832,6 +1834,24 @@ public class MainActivity extends Activity {
         TextView view = new TextView(this);
         view.setText(text);
         return view;
+    }
+
+    private int homeTileAccent(String title) {
+        if (title == null) return Color.rgb(27, 150, 115);
+        String value = title.toLowerCase(Locale.US);
+        if (value.contains("fixture")) return Color.rgb(0, 145, 185);
+        if (value.contains("prediction")) return Color.rgb(35, 125, 210);
+        if (value.contains("validation")) return Color.rgb(24, 150, 100);
+        if (value.contains("history")) return Color.rgb(130, 85, 205);
+        return Color.rgb(27, 150, 115);
+    }
+
+    private int blendAnalysisColor(int base, int accent, float amount) {
+        float ratio = Math.max(0f, Math.min(1f, amount));
+        int red = Math.round(Color.red(base) * (1f - ratio) + Color.red(accent) * ratio);
+        int green = Math.round(Color.green(base) * (1f - ratio) + Color.green(accent) * ratio);
+        int blue = Math.round(Color.blue(base) * (1f - ratio) + Color.blue(accent) * ratio);
+        return Color.rgb(red, green, blue);
     }
 
     private GradientDrawable glossyBackground() {
@@ -2268,11 +2288,11 @@ public class MainActivity extends Activity {
                 outcome + " is the most likely of the three " +
                 "outcomes in this simulation (" +
                 String.format(Locale.US, "%.1f", highest) +
-                "%). This is not a guarantee.\n\n" +
+                "%). This is the leading outcome in the current model.\n\n" +
 
                 "Confidence assessment\n" + confidence + "\n" +
                 confidenceReason + "\n" +
-                "This rating reflects simulation probabilities only; it is not a guarantee of accuracy.\n\n" +
+                "This rating reflects how strongly the current model favours the leading outcome.\n\n" +
                 "Upset watch\n" + upsetAssessment + "\n\n" +
 
                 "Match tempo and balance\n" + tempoProfile +
