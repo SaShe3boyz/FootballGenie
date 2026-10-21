@@ -3258,14 +3258,78 @@ public class MainActivity extends Activity {
             }
             updated.put(record);
             predictionPrefs().edit().putString("history", updated.toString()).apply();
+            syncPredictionToServer(record, selectedFixture);
             Toast.makeText(this,
-                "Prediction saved to your on-phone history.",
+                "Prediction saved on your phone. Syncing secure database history…",
                 Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             Toast.makeText(this,
                 "Could not save this prediction.",
                 Toast.LENGTH_SHORT).show();
         }
+    }
+
+    // Send the same upcoming-fixture prediction to the API in the background.
+    // Local history remains available even if the network is temporarily unavailable.
+    private void syncPredictionToServer(JSONObject record, JSONObject fixture) {
+        final JSONObject payload = new JSONObject();
+        try {
+            payload.put("matchExternalId", record.optString("fixtureId", ""));
+            payload.put("competition", fixture.optString("competition", fixture.optString("competitionName", "Unknown")));
+            payload.put("homeTeam", record.optString("home", ""));
+            payload.put("awayTeam", record.optString("away", ""));
+            payload.put("kickoffAt", record.optString("kickoff", ""));
+            payload.put("predictedHomeGoals", record.optDouble("predictedHome", 0));
+            payload.put("predictedAwayGoals", record.optDouble("predictedAway", 0));
+            payload.put("homeWinProbability", record.optDouble("homeP", 0));
+            payload.put("drawProbability", record.optDouble("drawP", 0));
+            payload.put("awayWinProbability", record.optDouble("awayP", 0));
+            payload.put("over25Probability", record.optDouble("overP", 0));
+            payload.put("under25Probability", Math.max(0, Math.min(100, 100 - record.optDouble("overP", 0))));
+            payload.put("bttsProbability", record.optDouble("bttsP", 0));
+            payload.put("notes", "10,000-run simulation; saved from Football Genie Android app.");
+        } catch (Exception ignored) {
+            return;
+        }
+
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            try {
+                URL url = new URL("https://football-genie-api.onrender.com/api/predictions");
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("POST");
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(15000);
+                connection.setDoOutput(true);
+                connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                byte[] bytes = payload.toString().getBytes("UTF-8");
+                java.io.OutputStream output = connection.getOutputStream();
+                output.write(bytes);
+                output.flush();
+                output.close();
+                int code = connection.getResponseCode();
+                java.io.InputStream stream = (code >= 200 && code < 300)
+                    ? connection.getInputStream() : connection.getErrorStream();
+                String responseText = "";
+                if (stream != null) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) response.append(line);
+                    reader.close();
+                    responseText = response.toString();
+                }
+                if (code >= 200 && code < 300) {
+                    android.util.Log.i("FootballGenie", "Prediction synced to database: " + responseText);
+                } else {
+                    android.util.Log.w("FootballGenie", "Prediction sync returned HTTP " + code + ": " + responseText);
+                }
+            } catch (Exception error) {
+                android.util.Log.w("FootballGenie", "Prediction history sync failed; local copy is retained.", error);
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }).start();
     }
 
     private void syncPredictionHistory() {
