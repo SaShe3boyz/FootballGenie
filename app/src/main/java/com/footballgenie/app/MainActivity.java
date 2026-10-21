@@ -3662,33 +3662,33 @@ public class MainActivity extends Activity {
 
         StringBuilder aiValidationEvidence = new StringBuilder();
         aiValidationEvidence.append("Saved validation report metrics (").append(finished)
-            .append(" completed matches):\\n")
+            .append(" completed matches):\n")
             .append("Outcome hit rate: ").append(outcomeCorrect).append("/").append(finished)
-            .append(" (").append(finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * outcomeCorrect / finished) : "n/a").append(").\\n")
+            .append(" (").append(finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * outcomeCorrect / finished) : "n/a").append(").\n")
             .append("Over/Under 2.5 hit rate: ").append(goalsCorrect).append("/").append(finished)
-            .append(" (").append(finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * goalsCorrect / finished) : "n/a").append(").\\n")
+            .append(" (").append(finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * goalsCorrect / finished) : "n/a").append(").\n")
             .append("BTTS hit rate: ").append(bttsCorrect).append("/").append(finished)
-            .append(" (").append(finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * bttsCorrect / finished) : "n/a").append(").\\n")
-            .append("Exact score hits: ").append(exactCorrect).append("/").append(finished).append(".\\n")
+            .append(" (").append(finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * bttsCorrect / finished) : "n/a").append(").\n")
+            .append("Exact score hits: ").append(exactCorrect).append("/").append(finished).append(".\n")
             .append("Mean absolute predicted-score errors: home ")
             .append(finished > 0 ? String.format(Locale.US, "%.2f", homeGoalAbsError / finished) : "n/a")
             .append(", away ").append(finished > 0 ? String.format(Locale.US, "%.2f", awayGoalAbsError / finished) : "n/a")
-            .append(", total ").append(finished > 0 ? String.format(Locale.US, "%.2f", totalGoalAbsError / finished) : "n/a").append(".\\n")
+            .append(", total ").append(finished > 0 ? String.format(Locale.US, "%.2f", totalGoalAbsError / finished) : "n/a").append(".\n")
             .append("Mean xG bias (actual goals minus expected goals): home ")
             .append(finished > 0 ? String.format(Locale.US, "%.2f", homeGoalBias / finished) : "n/a")
-            .append(", away ").append(finished > 0 ? String.format(Locale.US, "%.2f", awayGoalBias / finished) : "n/a").append(".\\n")
+            .append(", away ").append(finished > 0 ? String.format(Locale.US, "%.2f", awayGoalBias / finished) : "n/a").append(".\n")
             .append("Brier scores (lower is better): 1X2 ")
             .append(finished > 0 ? String.format(Locale.US, "%.3f", outcomeBrierTotal / finished) : "n/a")
             .append(", Over 2.5 ").append(finished > 0 ? String.format(Locale.US, "%.3f", goalsBrierTotal / finished) : "n/a")
-            .append(", BTTS ").append(finished > 0 ? String.format(Locale.US, "%.3f", bttsBrierTotal / finished) : "n/a").append(".\\n")
+            .append(", BTTS ").append(finished > 0 ? String.format(Locale.US, "%.3f", bttsBrierTotal / finished) : "n/a").append(".\n")
             .append("Confidence bins: 0-19% ").append(calibrationText(confidenceBinCount[0], confidenceBinCorrect[0], confidenceBinProbabilityTotal[0]))
             .append("; 20-39% ").append(calibrationText(confidenceBinCount[1], confidenceBinCorrect[1], confidenceBinProbabilityTotal[1]))
             .append("; 40-59% ").append(calibrationText(confidenceBinCount[2], confidenceBinCorrect[2], confidenceBinProbabilityTotal[2]))
             .append("; 60-79% ").append(calibrationText(confidenceBinCount[3], confidenceBinCorrect[3], confidenceBinProbabilityTotal[3]))
-            .append("; 80-100% ").append(calibrationText(confidenceBinCount[4], confidenceBinCorrect[4], confidenceBinProbabilityTotal[4])).append(".\\n")
-            .append("Invalid or non-normalized 1X2 probability records: ").append(invalidProbabilityRecords).append(".\\n")
+            .append("; 80-100% ").append(calibrationText(confidenceBinCount[4], confidenceBinCorrect[4], confidenceBinProbabilityTotal[4])).append(".\n")
+            .append("Invalid or non-normalized 1X2 probability records: ").append(invalidProbabilityRecords).append(".\n")
             .append("Actual outcome counts: home wins ").append(actualHomeWins).append(", draws ").append(actualDraws)
-            .append(", away wins ").append(actualAwayWins).append(".\\n")
+            .append(", away wins ").append(actualAwayWins).append(".\n")
             .append(finished < 30 ? "Sample warning: fewer than 30 completed matches; conclusions are highly uncertain. " :
                 (finished < 100 ? "Sample warning: 30-99 completed matches; patterns need more confirmation. " :
                     "Sample note: 100 or more completed matches, but competition and time-period bias may remain. "))
@@ -3863,7 +3863,7 @@ public class MainActivity extends Activity {
                     "(3) plausible explanations clearly labelled as hypotheses rather than facts, (4) three specific improvements or experiments ranked by priority, " +
                     "(5) what additional data or sample size is needed. Compare predicted and actual scores in the supplied history. " +
                     "Do not invent causes, injuries, team news, or match events. Do not claim to change or retrain the model. " +
-                    "Keep it readable on a phone.\\n\\n" + evidenceSummary);
+                    "Keep it readable on a phone.\n\n" + evidenceSummary);
                 payload.put("match", new JSONObject());
 
                 JSONArray completedEvidence = new JSONArray();
@@ -3924,14 +3924,14 @@ public class MainActivity extends Activity {
                         if (!provider.isEmpty()) {
                             display += " • " + provider.toUpperCase(Locale.US);
                         }
-                        display += "\\n\\n" + response.optString("answer");
+                        display += "\n\n" + response.optString("answer");
                     } else {
-                        display = "AI REVIEW UNAVAILABLE\\n\\n";
+                        display = "AI REVIEW UNAVAILABLE\n\n";
                         display += response.optString("error",
                             "Could not reach the AI service. Check your internet connection and try again.");
                     }
                 } catch (Exception error) {
-                    display = "AI REVIEW UNAVAILABLE\\n\\nThe server returned an unreadable response. Please try again.";
+                    display = "AI REVIEW UNAVAILABLE\n\nThe server returned an unreadable response. Please try again.";
                 }
                 answer.setText(display);
                 reviewButton.setEnabled(true);
