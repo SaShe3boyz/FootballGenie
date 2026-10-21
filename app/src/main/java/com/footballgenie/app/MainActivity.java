@@ -240,6 +240,10 @@ public class MainActivity extends Activity {
         LinearLayout inputRow = new LinearLayout(this);
         inputRow.setOrientation(LinearLayout.HORIZONTAL);
         aiQuestion = new EditText(this);
+        aiQuestion.setFocusable(true);
+        aiQuestion.setFocusableInTouchMode(true);
+        aiQuestion.setCursorVisible(true);
+        aiQuestion.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         aiQuestion.setSingleLine(false);
         aiQuestion.setMinLines(1);
         aiQuestion.setMaxLines(3);
@@ -331,7 +335,7 @@ public class MainActivity extends Activity {
         String ax = awayGoals == null ? "" : awayGoals.getText().toString().trim();
         addChatMessage("YOU", question, false);
         aiQuestion.setText("");
-        aiQuestion.setEnabled(false);
+        // Keep the input touchable so the user can prepare a follow-up while AI responds.
 
         TextView waiting = label("Football Genie AI is thinking...");
         waiting.setTextColor(GREEN);
