@@ -3586,7 +3586,7 @@ public class MainActivity extends Activity {
         historyResultsContainer.removeAllViews();
         historyResultsContainer.setVisibility(View.VISIBLE);
 
-        TextView reportTitle = label("RESULTS & MODEL PERFORMANCE");
+        TextView reportTitle = label("VALIDATION & PERFORMANCE • V2");
         reportTitle.setTextColor(GREEN);
         reportTitle.setTextSize(18);
         reportTitle.setTypeface(null, Typeface.BOLD);
@@ -3638,6 +3638,27 @@ public class MainActivity extends Activity {
             overview.addView(noResults);
         }
         historyResultsContainer.addView(overview);
+
+        // Dedicated validation metric cards requested for the V2 report.
+        double confidenceTotal = 0.0;
+        for (double binTotal : confidenceBinProbabilityTotal) confidenceTotal += binTotal;
+        addValidationMetricCard(historyResultsContainer, "AVERAGE PREDICTED CONFIDENCE",
+            finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * confidenceTotal / finished)
+                : "Waiting for completed matches");
+        addValidationMetricCard(historyResultsContainer, "ACTUAL HIT RATE",
+            finished > 0 ? String.format(Locale.US, "%d / %d matches • %.1f%% correct",
+                outcomeCorrect, finished, 100.0 * outcomeCorrect / finished)
+                : "Waiting for completed matches");
+        addValidationMetricCard(historyResultsContainer, "SAMPLE SIZE",
+            finished + " completed matches evaluated");
+
+        StringBuilder confidenceRanges = new StringBuilder();
+        confidenceRanges.append("0–19%: ").append(calibrationText(confidenceBinCount[0], confidenceBinCorrect[0], confidenceBinProbabilityTotal[0])).append("\\n");
+        confidenceRanges.append("20–39%: ").append(calibrationText(confidenceBinCount[1], confidenceBinCorrect[1], confidenceBinProbabilityTotal[1])).append("\\n");
+        confidenceRanges.append("40–59%: ").append(calibrationText(confidenceBinCount[2], confidenceBinCorrect[2], confidenceBinProbabilityTotal[2])).append("\\n");
+        confidenceRanges.append("60–79%: ").append(calibrationText(confidenceBinCount[3], confidenceBinCorrect[3], confidenceBinProbabilityTotal[3])).append("\\n");
+        confidenceRanges.append("80–100%: ").append(calibrationText(confidenceBinCount[4], confidenceBinCorrect[4], confidenceBinProbabilityTotal[4]));
+        addValidationMetricCard(historyResultsContainer, "CONFIDENCE RANGES", confidenceRanges.toString());
 
         TextView matchHeading = label("SAVED MATCHES");
         matchHeading.setTextColor(GREEN);
@@ -3737,6 +3758,27 @@ public class MainActivity extends Activity {
                 historyResultsContainer.requestFocus();
             }
         });
+    }
+
+    private void addValidationMetricCard(LinearLayout parent, String title, String value) {
+        LinearLayout metricCard = card();
+        metricCard.setOrientation(LinearLayout.VERTICAL);
+        TextView metricTitle = label(title);
+        metricTitle.setTextColor(GREEN);
+        metricTitle.setTextSize(13);
+        metricTitle.setTypeface(null, Typeface.BOLD);
+        metricTitle.setPadding(0, 0, 0, dp(6));
+        metricCard.addView(metricTitle);
+
+        TextView metricValue = label(value);
+        metricValue.setTextColor(WHITE);
+        metricValue.setTextSize(14);
+        metricValue.setLineSpacing(dp(3), 1f);
+        metricCard.addView(metricValue);
+
+        LinearLayout.LayoutParams metricParams = new LinearLayout.LayoutParams(-1, -2);
+        metricParams.bottomMargin = dp(8);
+        parent.addView(metricCard, metricParams);
     }
 
     private void addSavedMatchValidation(LinearLayout parent, JSONObject record) {
