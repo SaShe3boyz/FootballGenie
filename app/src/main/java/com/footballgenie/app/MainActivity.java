@@ -3660,6 +3660,41 @@ public class MainActivity extends Activity {
         confidenceRanges.append("80–100%: ").append(calibrationText(confidenceBinCount[4], confidenceBinCorrect[4], confidenceBinProbabilityTotal[4]));
         addValidationMetricCard(historyResultsContainer, "CONFIDENCE RANGES", confidenceRanges.toString());
 
+        StringBuilder aiValidationEvidence = new StringBuilder();
+        aiValidationEvidence.append("Saved validation report metrics (").append(finished)
+            .append(" completed matches):\\n")
+            .append("Outcome hit rate: ").append(outcomeCorrect).append("/").append(finished)
+            .append(" (").append(finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * outcomeCorrect / finished) : "n/a").append(").\\n")
+            .append("Over/Under 2.5 hit rate: ").append(goalsCorrect).append("/").append(finished)
+            .append(" (").append(finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * goalsCorrect / finished) : "n/a").append(").\\n")
+            .append("BTTS hit rate: ").append(bttsCorrect).append("/").append(finished)
+            .append(" (").append(finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * bttsCorrect / finished) : "n/a").append(").\\n")
+            .append("Exact score hits: ").append(exactCorrect).append("/").append(finished).append(".\\n")
+            .append("Mean absolute predicted-score errors: home ")
+            .append(finished > 0 ? String.format(Locale.US, "%.2f", homeGoalAbsError / finished) : "n/a")
+            .append(", away ").append(finished > 0 ? String.format(Locale.US, "%.2f", awayGoalAbsError / finished) : "n/a")
+            .append(", total ").append(finished > 0 ? String.format(Locale.US, "%.2f", totalGoalAbsError / finished) : "n/a").append(".\\n")
+            .append("Mean xG bias (actual goals minus expected goals): home ")
+            .append(finished > 0 ? String.format(Locale.US, "%.2f", homeGoalBias / finished) : "n/a")
+            .append(", away ").append(finished > 0 ? String.format(Locale.US, "%.2f", awayGoalBias / finished) : "n/a").append(".\\n")
+            .append("Brier scores (lower is better): 1X2 ")
+            .append(finished > 0 ? String.format(Locale.US, "%.3f", outcomeBrierTotal / finished) : "n/a")
+            .append(", Over 2.5 ").append(finished > 0 ? String.format(Locale.US, "%.3f", goalsBrierTotal / finished) : "n/a")
+            .append(", BTTS ").append(finished > 0 ? String.format(Locale.US, "%.3f", bttsBrierTotal / finished) : "n/a").append(".\\n")
+            .append("Confidence bins: 0-19% ").append(calibrationText(confidenceBinCount[0], confidenceBinCorrect[0], confidenceBinProbabilityTotal[0]))
+            .append("; 20-39% ").append(calibrationText(confidenceBinCount[1], confidenceBinCorrect[1], confidenceBinProbabilityTotal[1]))
+            .append("; 40-59% ").append(calibrationText(confidenceBinCount[2], confidenceBinCorrect[2], confidenceBinProbabilityTotal[2]))
+            .append("; 60-79% ").append(calibrationText(confidenceBinCount[3], confidenceBinCorrect[3], confidenceBinProbabilityTotal[3]))
+            .append("; 80-100% ").append(calibrationText(confidenceBinCount[4], confidenceBinCorrect[4], confidenceBinProbabilityTotal[4])).append(".\\n")
+            .append("Invalid or non-normalized 1X2 probability records: ").append(invalidProbabilityRecords).append(".\\n")
+            .append("Actual outcome counts: home wins ").append(actualHomeWins).append(", draws ").append(actualDraws)
+            .append(", away wins ").append(actualAwayWins).append(".\\n")
+            .append(finished < 30 ? "Sample warning: fewer than 30 completed matches; conclusions are highly uncertain. " :
+                (finished < 100 ? "Sample warning: 30-99 completed matches; patterns need more confirmation. " :
+                    "Sample note: 100 or more completed matches, but competition and time-period bias may remain. "))
+            .append("Review only these supplied metrics and saved match records. Distinguish evidence from hypotheses. Suggest practical, testable improvements; do not claim the model has been retrained.");
+        addValidationAiReview(historyResultsContainer, history, finished, aiValidationEvidence.toString());
+
         TextView matchHeading = label("SAVED MATCHES");
         matchHeading.setTextColor(GREEN);
         matchHeading.setTextSize(16);
@@ -3758,6 +3793,151 @@ public class MainActivity extends Activity {
                 historyResultsContainer.requestFocus();
             }
         });
+    }
+
+    private void addValidationAiReview(LinearLayout parent, JSONArray history, int finished, String evidenceSummary) {
+        LinearLayout reviewCard = card();
+        reviewCard.setOrientation(LinearLayout.VERTICAL);
+        TextView heading = label("FOOTBALL GENIE AI • VALIDATION REVIEW");
+        heading.setTextColor(GREEN);
+        heading.setTextSize(15);
+        heading.setTypeface(null, Typeface.BOLD);
+        reviewCard.addView(heading);
+
+        TextView explanation = label("Ask the AI to examine saved prediction misses, calibration and score errors, then recommend evidence-based tests. It will not silently change the prediction model.");
+        explanation.setTextColor(MUTED);
+        explanation.setTextSize(13);
+        explanation.setLineSpacing(dp(3), 1f);
+        explanation.setPadding(0, dp(6), 0, dp(8));
+        reviewCard.addView(explanation);
+
+        TextView answer = label(finished > 0
+            ? "AI review has not been run yet. Tap below to analyse your current validation evidence."
+            : "No completed saved predictions are available yet. Update history after matches finish, then run the AI review.");
+        answer.setTextColor(WHITE);
+        answer.setTextSize(14);
+        answer.setLineSpacing(dp(3), 1f);
+        answer.setPadding(0, dp(6), 0, dp(8));
+        reviewCard.addView(answer);
+
+        Button reviewButton = new Button(this);
+        reviewButton.setText("🧠  ANALYSE VALIDATION RESULTS");
+        reviewButton.setAllCaps(false);
+        reviewButton.setTextColor(Color.rgb(12, 24, 39));
+        reviewButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(GREEN));
+        reviewButton.setEnabled(finished > 0);
+        reviewButton.setOnClickListener(v -> requestValidationAiReview(
+            reviewButton, answer, history, finished, evidenceSummary));
+        reviewCard.addView(reviewButton);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+        params.bottomMargin = dp(8);
+        parent.addView(reviewCard, params);
+    }
+
+    private void requestValidationAiReview(Button reviewButton, TextView answer,
+            JSONArray history, int finished, String evidenceSummary) {
+        if (finished <= 0) return;
+        reviewButton.setEnabled(false);
+        reviewButton.setText("ANALYSING SAVED RESULTS...");
+        answer.setText("Football Genie AI is comparing the report metrics with recent completed predictions. This may take a few seconds.");
+
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            String responseText = "";
+            int responseCode = -1;
+            try {
+                URL url = new URL("https://football-genie-api.onrender.com/api/ai/analyze");
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("POST");
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(35000);
+                connection.setDoOutput(true);
+                connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                connection.setRequestProperty("Accept", "application/json");
+
+                JSONObject payload = new JSONObject();
+                payload.put("question",
+                    "Perform a validation and model-error review for Football Genie using the evidence below. " +
+                    "Structure your response as: (1) strongest evidence-based findings, (2) which types of predictions or goal estimates appear weakest, " +
+                    "(3) plausible explanations clearly labelled as hypotheses rather than facts, (4) three specific improvements or experiments ranked by priority, " +
+                    "(5) what additional data or sample size is needed. Compare predicted and actual scores in the supplied history. " +
+                    "Do not invent causes, injuries, team news, or match events. Do not claim to change or retrain the model. " +
+                    "Keep it readable on a phone.\\n\\n" + evidenceSummary);
+                payload.put("match", new JSONObject());
+
+                JSONArray completedEvidence = new JSONArray();
+                for (int i = history.length() - 1; i >= 0 && completedEvidence.length() < 15; i--) {
+                    JSONObject record = history.optJSONObject(i);
+                    if (record == null || !"FINISHED".equals(record.optString("predictionStatus", "PENDING"))
+                            || !record.has("actualHome") || !record.has("actualAway")) continue;
+                    JSONObject item = new JSONObject();
+                    item.put("home", record.optString("home", ""));
+                    item.put("away", record.optString("away", ""));
+                    item.put("predictedHome", record.optInt("predictedHome", -1));
+                    item.put("predictedAway", record.optInt("predictedAway", -1));
+                    item.put("actualHome", record.optInt("actualHome", -1));
+                    item.put("actualAway", record.optInt("actualAway", -1));
+                    item.put("homeXg", record.optDouble("homeXg", 0));
+                    item.put("awayXg", record.optDouble("awayXg", 0));
+                    item.put("homeP", record.optDouble("homeP", 0));
+                    item.put("drawP", record.optDouble("drawP", 0));
+                    item.put("awayP", record.optDouble("awayP", 0));
+                    item.put("overP", record.optDouble("overP", 0));
+                    item.put("bttsP", record.optDouble("bttsP", 0));
+                    completedEvidence.put(item);
+                }
+                payload.put("completedHistory", completedEvidence);
+
+                byte[] bytes = payload.toString().getBytes("UTF-8");
+                java.io.OutputStream output = connection.getOutputStream();
+                output.write(bytes);
+                output.flush();
+                output.close();
+                responseCode = connection.getResponseCode();
+                java.io.InputStream stream = responseCode >= 200 && responseCode < 300
+                    ? connection.getInputStream() : connection.getErrorStream();
+                if (stream != null) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+                    StringBuilder body = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) body.append(line);
+                    reader.close();
+                    responseText = body.toString();
+                }
+            } catch (Exception error) {
+                responseText = "";
+                responseCode = -1;
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+
+            final String body = responseText;
+            final int code = responseCode;
+            runOnUiThread(() -> {
+                String display;
+                try {
+                    JSONObject response = body.isEmpty() ? new JSONObject() : new JSONObject(body);
+                    if (code >= 200 && code < 300 && !response.optString("answer", "").trim().isEmpty()) {
+                        display = "☁️ FOOTBALL GENIE AI ANALYST";
+                        String provider = response.optString("provider", "");
+                        if (!provider.isEmpty()) {
+                            display += " • " + provider.toUpperCase(Locale.US);
+                        }
+                        display += "\\n\\n" + response.optString("answer");
+                    } else {
+                        display = "AI REVIEW UNAVAILABLE\\n\\n";
+                        display += response.optString("error",
+                            "Could not reach the AI service. Check your internet connection and try again.");
+                    }
+                } catch (Exception error) {
+                    display = "AI REVIEW UNAVAILABLE\\n\\nThe server returned an unreadable response. Please try again.";
+                }
+                answer.setText(display);
+                reviewButton.setEnabled(true);
+                reviewButton.setText("🧠  ANALYSE VALIDATION RESULTS");
+            });
+        }).start();
     }
 
     private void addValidationMetricCard(LinearLayout parent, String title, String value) {
