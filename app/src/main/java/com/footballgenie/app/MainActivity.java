@@ -3657,10 +3657,10 @@ public class MainActivity extends Activity {
             finished + " completed matches evaluated");
 
         StringBuilder confidenceRanges = new StringBuilder();
-        confidenceRanges.append("0–19%: ").append(calibrationText(confidenceBinCount[0], confidenceBinCorrect[0], confidenceBinProbabilityTotal[0])).append("\\n");
-        confidenceRanges.append("20–39%: ").append(calibrationText(confidenceBinCount[1], confidenceBinCorrect[1], confidenceBinProbabilityTotal[1])).append("\\n");
-        confidenceRanges.append("40–59%: ").append(calibrationText(confidenceBinCount[2], confidenceBinCorrect[2], confidenceBinProbabilityTotal[2])).append("\\n");
-        confidenceRanges.append("60–79%: ").append(calibrationText(confidenceBinCount[3], confidenceBinCorrect[3], confidenceBinProbabilityTotal[3])).append("\\n");
+        confidenceRanges.append("0–19%: ").append(calibrationText(confidenceBinCount[0], confidenceBinCorrect[0], confidenceBinProbabilityTotal[0])).append("\n");
+        confidenceRanges.append("20–39%: ").append(calibrationText(confidenceBinCount[1], confidenceBinCorrect[1], confidenceBinProbabilityTotal[1])).append("\n");
+        confidenceRanges.append("40–59%: ").append(calibrationText(confidenceBinCount[2], confidenceBinCorrect[2], confidenceBinProbabilityTotal[2])).append("\n");
+        confidenceRanges.append("60–79%: ").append(calibrationText(confidenceBinCount[3], confidenceBinCorrect[3], confidenceBinProbabilityTotal[3])).append("\n");
         confidenceRanges.append("80–100%: ").append(calibrationText(confidenceBinCount[4], confidenceBinCorrect[4], confidenceBinProbabilityTotal[4]));
         addValidationMetricCard(historyResultsContainer, "CONFIDENCE RANGES", confidenceRanges.toString());
 
@@ -3862,12 +3862,8 @@ public class MainActivity extends Activity {
 
                 JSONObject payload = new JSONObject();
                 payload.put("question",
-                    "Perform a validation and model-error review for Football Genie using the evidence below. " +
-                    "Structure your response as: (1) strongest evidence-based findings, (2) which types of predictions or goal estimates appear weakest, " +
-                    "(3) plausible explanations clearly labelled as hypotheses rather than facts, (4) three specific improvements or experiments ranked by priority, " +
-                    "(5) what additional data or sample size is needed. Compare predicted and actual scores in the supplied history. " +
-                    "Do not invent causes, injuries, team news, or match events. Do not claim to change or retrain the model. " +
-                    "Keep it readable on a phone.\n\n" + evidenceSummary);
+                    "Review my saved Football Genie validation results using the validation summary and completed match records included with this request. Identify evidence-based findings, weaknesses, clearly labelled hypotheses, three prioritized testable improvements, and any sample-size limitations. Do not invent facts or claim the model has retrained.");
+                payload.put("validationSummary", evidenceSummary);
                 payload.put("match", new JSONObject());
 
                 JSONArray completedEvidence = new JSONArray();
