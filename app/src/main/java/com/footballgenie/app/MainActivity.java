@@ -112,9 +112,8 @@ public class MainActivity extends Activity {
         root.addView(buildBottomNavigation(),
             new LinearLayout.LayoutParams(-1, dp(62)));
         setContentView(root);
-        applyPressFeedback(root);
+        // Keep the main navigation free of global touch listeners and modal startup dialogs.
         showScreen(0);
-        showBrandSplash();
         checkApiConnection();
     }
 
@@ -449,7 +448,7 @@ public class MainActivity extends Activity {
         if (screen < 0 || screen >= appScreens.length || appScreens[screen] == null) return;
         int previousScreen = activeScreen;
         activeScreen = screen;
-        applyPressFeedback(appScreens[screen]);
+        // Avoid recursively attaching touch listeners during navigation; keep screen swaps direct.
         screenHost.removeAllViews();
         screenHost.addView(appScreens[screen],
             new FrameLayout.LayoutParams(-1, -1));
