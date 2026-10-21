@@ -3209,6 +3209,17 @@ public class MainActivity extends Activity {
         }
     }
 
+    // Stable anonymous ID for this app installation. This prevents repeat submissions
+    // from the same installation; full cross-device identity requires user accounts.
+    private String predictionClientId() {
+        String clientId = predictionPrefs().getString("client_id", "");
+        if (clientId.isEmpty()) {
+            clientId = java.util.UUID.randomUUID().toString();
+            predictionPrefs().edit().putString("client_id", clientId).apply();
+        }
+        return clientId;
+    }
+
     private void savePredictionIfEligible(String home, String away,
             double homeXg, double awayXg, double homeP, double drawP,
             double awayP, double overP, double bttsP, int predictedHome,
@@ -3231,6 +3242,15 @@ public class MainActivity extends Activity {
 
         try {
             JSONArray oldHistory = readPredictionHistory();
+            for (int i = 0; i < oldHistory.length(); i++) {
+                JSONObject old = oldHistory.optJSONObject(i);
+                if (old != null && fixtureId.equals(old.optString("fixtureId", ""))) {
+                    Toast.makeText(this,
+                        "You have already saved a prediction for this match.",
+                        Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
             JSONArray updated = new JSONArray();
             JSONObject record = new JSONObject();
             record.put("fixtureId", fixtureId);
@@ -3275,6 +3295,7 @@ public class MainActivity extends Activity {
         final JSONObject payload = new JSONObject();
         try {
             payload.put("matchExternalId", record.optString("fixtureId", ""));
+            payload.put("clientId", predictionClientId());
             payload.put("competition", fixture.optString("competition", fixture.optString("competitionName", "Unknown")));
             payload.put("homeTeam", record.optString("home", ""));
             payload.put("awayTeam", record.optString("away", ""));
