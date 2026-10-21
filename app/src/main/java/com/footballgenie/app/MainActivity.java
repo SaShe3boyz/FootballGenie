@@ -3041,8 +3041,9 @@ public class MainActivity extends Activity {
             ).show();
         }
     }
-        private void checkApiConnection() {
-        showLoading("Checking server connection…");
+    private void checkApiConnection() {
+        // Check connectivity quietly. A startup network request must never place
+        // a blocking overlay over the app screens while the user navigates.
         new Thread(() -> {
             HttpURLConnection connection = null;
 
@@ -3061,7 +3062,6 @@ public class MainActivity extends Activity {
                 final boolean connected = responseCode >= 200 && responseCode < 300;
                 runOnUiThread(() -> {
                     updateConnectionStatus(connected);
-                    hideLoading();
                 });
 
             } catch (Exception e) {
