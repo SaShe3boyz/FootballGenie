@@ -2481,6 +2481,8 @@ public class MainActivity extends Activity {
     private TextView label(String text) {
         TextView view = new TextView(this);
         view.setText(text);
+        // Let users long-press app text to select and copy it, including AI answers and reports.
+        view.setTextIsSelectable(true);
         return view;
     }
 
