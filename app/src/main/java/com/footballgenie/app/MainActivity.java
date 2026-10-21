@@ -3067,7 +3067,7 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 runOnUiThread(() -> {
                     updateConnectionStatus(false);
-                    hideLoading();
+
                 });
             } finally {
                 if (connection != null) connection.disconnect();
