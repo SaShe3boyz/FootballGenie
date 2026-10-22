@@ -2437,7 +2437,14 @@ public class MainActivity extends Activity {
         if (container.getChildCount() == 0) addAiQuestionCard(container, "MATCH ANALYSIS", source.replace("**", "").replace("__", ""), accents[0]);
     }
 
-    private int tintAiQuestionCard(int accent) {\n        int r = Color.red(accent);\n        int g = Color.green(accent);\n        int b = Color.blue(accent);\n        return Color.rgb((int)(r * 0.20f + 10), (int)(g * 0.20f + 18), (int)(b * 0.20f + 30));\n    }\n\n    private void addAiQuestionCard(LinearLayout container, String title, String body, int accent) {
+    private int tintAiQuestionCard(int accent) {
+        int r = Color.red(accent);
+        int g = Color.green(accent);
+        int b = Color.blue(accent);
+        return Color.rgb((int)(r * 0.20f + 10), (int)(g * 0.20f + 18), (int)(b * 0.20f + 30));
+    }
+
+    private void addAiQuestionCard(LinearLayout container, String title, String body, int accent) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(13), dp(11), dp(13), dp(12));
