@@ -394,116 +394,159 @@ public class MainActivity extends Activity {
 
     private void addChatMessage(String sender, String message, boolean fromAi) {
         if (aiMessages == null) return;
-
-        LinearLayout bubble = new LinearLayout(this);
-        bubble.setOrientation(LinearLayout.VERTICAL);
-        bubble.setPadding(dp(14), dp(12), dp(14), dp(13));
-        bubble.setBackground(rounded(fromAi ? Color.rgb(20, 39, 55) : Color.rgb(29, 48, 42), 16));
-
-        TextView who = label((fromAi ? "✦  " : "●  ") + sender);
-        who.setTextColor(fromAi ? GREEN : Color.rgb(170, 255, 200));
-        who.setTextSize(13);
-        who.setTypeface(null, Typeface.BOLD);
-        who.setPadding(0, 0, 0, dp(8));
-        bubble.addView(who);
-
-        String[] lines = message == null ? new String[]{""} : message.split("\\n", -1);
-        for (String rawLine : lines) {
-            String line = rawLine.trim();
-            if (line.isEmpty()) {
-                TextView spacer = label("");
-                bubble.addView(spacer, new LinearLayout.LayoutParams(-1, dp(4)));
-                continue;
-            }
-
-            String lower = line.toLowerCase(java.util.Locale.ROOT);
-            boolean statistic = fromAi && (line.contains("%")
-                || lower.contains("probability") || lower.contains("confidence")
-                || lower.contains("home win") || lower.contains("draw")
-                || lower.contains("away win") || lower.contains("over 2.5")
-                || lower.contains("under 2.5") || lower.contains("expected goals")
-                || lower.contains("xg") || lower.contains("prediction"));
-            boolean heading = fromAi && !statistic && line.length() <= 64
-                && (line.endsWith(":") || (line.equals(line.toUpperCase(java.util.Locale.ROOT))
-                && line.matches(".*[A-Z].*")));
-
-            if (statistic) {
-                int accent = Color.rgb(42, 211, 151);
-                if (lower.contains("draw")) accent = Color.rgb(255, 193, 7);
-                else if (lower.contains("away")) accent = Color.rgb(80, 155, 255);
-                else if (lower.contains("over")) accent = Color.rgb(255, 135, 70);
-                else if (lower.contains("under")) accent = Color.rgb(65, 210, 220);
-                else if (lower.contains("confidence")) accent = Color.rgb(190, 125, 255);
-
-                LinearLayout statCard = new LinearLayout(this);
-                statCard.setOrientation(LinearLayout.VERTICAL);
-                statCard.setPadding(dp(11), dp(9), dp(11), dp(9));
-                statCard.setBackground(rounded(Color.rgb(25, 51, 66), 12));
-
-                TextView statText = label(line);
-                statText.setTextColor(WHITE);
-                statText.setTextSize(14);
-                statText.setTypeface(null, Typeface.BOLD);
-                statText.setLineSpacing(dp(2), 1.0f);
-                statText.setTextIsSelectable(true);
-                statCard.addView(statText, new LinearLayout.LayoutParams(-1, -2));
-
-                java.util.regex.Matcher percentMatcher = java.util.regex.Pattern
-                    .compile("(\\\\d+(?:[.,]\\\\d+)?)\\\\s*%").matcher(line);
-                if (percentMatcher.find()) {
-                    double rawPercent = 0;
-                    try {
-                        rawPercent = Double.parseDouble(percentMatcher.group(1).replace(',', '.'));
-                    } catch (Exception ignored) { }
-                    final int progressValue = (int) Math.max(0, Math.min(100, Math.round(rawPercent)));
-
-                    TextView value = label(String.format(java.util.Locale.ROOT, "%.1f%%", rawPercent));
-                    value.setTextColor(accent);
-                    value.setTextSize(12);
-                    value.setTypeface(null, Typeface.BOLD);
-                    value.setGravity(Gravity.RIGHT);
-                    LinearLayout.LayoutParams valueParams = new LinearLayout.LayoutParams(-1, -2);
-                    valueParams.topMargin = dp(3);
-                    statCard.addView(value, valueParams);
-
-                    ProgressBar bar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-                    bar.setMax(100);
-                    bar.setProgress(progressValue);
-                    if (android.os.Build.VERSION.SDK_INT >= 21) {
-                        bar.setProgressTintList(android.content.res.ColorStateList.valueOf(accent));
-                        bar.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.rgb(48, 68, 80)));
-                    }
-                    LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(-1, dp(7));
-                    barParams.topMargin = dp(5);
-                    statCard.addView(bar, barParams);
-                }
-
-                LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
-                cardParams.topMargin = dp(4);
-                cardParams.bottomMargin = dp(5);
-                bubble.addView(statCard, cardParams);
-                continue;
-            }
-
-            TextView row = label(line);
-            row.setTextColor(WHITE);
-            row.setTextSize(15);
-            row.setLineSpacing(dp(3), 1.0f);
-            row.setIncludeFontPadding(true);
-            row.setTextIsSelectable(true);
-            if (heading) {
-                row.setTextColor(GREEN);
-                row.setTypeface(null, Typeface.BOLD);
-                row.setPadding(0, dp(5), 0, dp(3));
-            } else {
-                row.setPadding(0, dp(2), 0, dp(4));
-            }
-            bubble.addView(row, new LinearLayout.LayoutParams(-1, -2));
+        if (!fromAi) {
+            LinearLayout userBubble = new LinearLayout(this);
+            userBubble.setOrientation(LinearLayout.VERTICAL);
+            userBubble.setPadding(dp(14), dp(12), dp(14), dp(13));
+            userBubble.setBackground(rounded(Color.rgb(29, 48, 42), 16));
+            TextView userTitle = label("●  " + sender);
+            userTitle.setTextColor(Color.rgb(170, 255, 200));
+            userTitle.setTextSize(13);
+            userTitle.setTypeface(null, Typeface.BOLD);
+            userBubble.addView(userTitle);
+            TextView userText = label(message == null ? "" : message);
+            userText.setTextColor(WHITE);
+            userText.setTextSize(15);
+            userText.setPadding(0, dp(6), 0, 0);
+            userText.setTextIsSelectable(true);
+            userBubble.addView(userText);
+            LinearLayout.LayoutParams userParams = new LinearLayout.LayoutParams(-1, -2);
+            userParams.bottomMargin = dp(11);
+            aiMessages.addView(userBubble, userParams);
+            return;
         }
 
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
-        params.bottomMargin = dp(11);
-        aiMessages.addView(bubble, params);
+        String source = message == null ? "" : message.replace("\\r", "").trim();
+        if (source.isEmpty()) return;
+
+        // Render markdown AI reports as colourful topic cards like DETAILED MATCH INTELLIGENCE.
+        java.util.ArrayList<String> headings = new java.util.ArrayList<>();
+        java.util.ArrayList<StringBuilder> bodies = new java.util.ArrayList<>();
+        String currentHeading = "FOOTBALL GENIE AI ANALYSIS";
+        StringBuilder currentBody = new StringBuilder();
+        String[] sourceLines = source.split("\\n", -1);
+        for (String raw : sourceLines) {
+            String line = raw.trim();
+            if (line.startsWith("### ")) {
+                if (currentBody.length() > 0 || headings.isEmpty()) {
+                    headings.add(currentHeading);
+                    bodies.add(currentBody);
+                }
+                currentHeading = line.replaceFirst("^#+\\s*", "").replaceAll("^\\*+|\\*+$", "").trim();
+                currentBody = new StringBuilder();
+            } else {
+                if (currentBody.length() > 0) currentBody.append("\\n");
+                currentBody.append(raw);
+            }
+        }
+        if (currentBody.length() > 0 || headings.isEmpty()) {
+            headings.add(currentHeading);
+            bodies.add(currentBody);
+        }
+
+        TextView who = label("✦  " + sender.toUpperCase(java.util.Locale.ROOT));
+        who.setTextColor(GREEN);
+        who.setTextSize(13);
+        who.setTypeface(null, Typeface.BOLD);
+        who.setPadding(dp(2), dp(2), 0, dp(7));
+        aiMessages.addView(who);
+
+        for (int sectionIndex = 0; sectionIndex < headings.size(); sectionIndex++) {
+            String heading = headings.get(sectionIndex).trim();
+            String bodySource = bodies.get(sectionIndex).toString().trim();
+            if (bodySource.isEmpty() && headings.size() > 1) continue;
+
+            int accentColor = getAnalysisAccentColor(heading);
+            LinearLayout sectionCard = new LinearLayout(this);
+            sectionCard.setOrientation(LinearLayout.VERTICAL);
+            sectionCard.setPadding(dp(14), dp(14), dp(14), dp(14));
+            GradientDrawable cardBg = rounded(blendAnalysisColor(Color.rgb(16, 27, 44), accentColor, 0.24f), 14);
+            cardBg.setStroke(dp(2), accentColor);
+            sectionCard.setBackground(cardBg);
+            sectionCard.setElevation(dp(2));
+
+            LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
+            cardParams.bottomMargin = dp(10);
+            aiMessages.addView(sectionCard, cardParams);
+
+            LinearLayout headingRow = new LinearLayout(this);
+            headingRow.setOrientation(LinearLayout.HORIZONTAL);
+            headingRow.setGravity(Gravity.CENTER_VERTICAL);
+            TextView icon = label(getAnalysisIcon(heading));
+            icon.setTextSize(22);
+            icon.setTypeface(null, Typeface.BOLD);
+            icon.setGravity(Gravity.CENTER);
+            icon.setTextColor(Color.rgb(7, 20, 32));
+            icon.setBackground(rounded(accentColor, 12));
+            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(44), dp(44));
+            iconParams.rightMargin = dp(11);
+            headingRow.addView(icon, iconParams);
+
+            LinearLayout titleColumn = new LinearLayout(this);
+            titleColumn.setOrientation(LinearLayout.VERTICAL);
+            TextView eyebrow = label("AI INSIGHT  •  STATISTICAL ANALYSIS");
+            eyebrow.setTextColor(Color.rgb(225, 239, 250));
+            eyebrow.setTextSize(11);
+            eyebrow.setTypeface(null, Typeface.BOLD);
+            titleColumn.addView(eyebrow);
+            TextView title = label(heading.replaceAll("^\\*+|\\*+$", "").toUpperCase(java.util.Locale.ROOT));
+            title.setTextColor(WHITE);
+            title.setTextSize(15);
+            title.setTypeface(null, Typeface.BOLD);
+            title.setLineSpacing(dp(2), 1.0f);
+            titleColumn.addView(title);
+            headingRow.addView(titleColumn, new LinearLayout.LayoutParams(0, -2, 1f));
+            sectionCard.addView(headingRow);
+
+            StringBuilder displayBody = new StringBuilder();
+            for (String raw : bodySource.split("\\n")) {
+                String line = raw.trim();
+                if (line.isEmpty() || line.matches("^[-—_]{3,}$")
+                    || line.matches("^\\|?\\s*:?-{2,}.*")) continue;
+                line = line.replaceAll("^[-*]\\s+", "• ")
+                    .replaceAll("^\\d+\\.\\s+", "• ")
+                    .replace("**", "").replace("__", "");
+                if (line.startsWith("|") && line.endsWith("|")) {
+                    String[] cells = line.substring(1, line.length() - 1).split("\\|");
+                    StringBuilder row = new StringBuilder();
+                    for (String cell : cells) {
+                        String value = cell.trim();
+                        if (value.isEmpty()) continue;
+                        if (row.length() > 0) row.append("   •   ");
+                        row.append(value);
+                    }
+                    line = row.toString();
+                }
+                if (line.isEmpty()) continue;
+                if (displayBody.length() > 0) displayBody.append("\\n");
+                displayBody.append(line);
+            }
+
+            if (displayBody.length() > 0) {
+                TextView body = label(displayBody.toString());
+                body.setTextColor(WHITE);
+                body.setTextSize(14);
+                body.setLineSpacing(dp(4), 1.06f);
+                body.setPadding(0, dp(10), 0, dp(2));
+                body.setGravity(Gravity.START);
+                body.setTextIsSelectable(true);
+                sectionCard.addView(body);
+
+                java.util.regex.Matcher matcher = java.util.regex.Pattern
+                    .compile("(\\\\d+(?:[.,]\\\\d+)?)\\\\s*%").matcher(displayBody.toString());
+                int meterCount = 0;
+                while (matcher.find() && meterCount < 3) {
+                    try {
+                        float pct = Math.max(0f, Math.min(100f,
+                            Float.parseFloat(matcher.group(1).replace(',', '.'))));
+                        int meterColor = meterCount == 0 ? accentColor
+                            : (meterCount == 1 ? Color.rgb(90, 165, 255) : Color.rgb(244, 190, 80));
+                        addAnalysisMeter(sectionCard, "MODEL PROBABILITY", pct, meterColor);
+                        meterCount++;
+                    } catch (Exception ignored) { }
+                }
+            }
+        }
     }
 
     private void sendAiQuestion() {
