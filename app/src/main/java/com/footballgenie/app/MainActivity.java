@@ -229,7 +229,7 @@ public class MainActivity extends Activity {
         FrameLayout pageFrame = new FrameLayout(this);
         pageFrame.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
         Button aiFab = new Button(this);
-        aiFab.setText("⚽ AI");
+        aiFab.setText("✦ AI");
         aiFab.setAllCaps(false);
         aiFab.setTextSize(13);
         aiFab.setTypeface(null, Typeface.BOLD);
@@ -245,7 +245,7 @@ public class MainActivity extends Activity {
     private void showAppMenu() {
         String[] options = {
             "🏠 Home / Predictions",
-            "⚽ FOOTBALL GENIE AI",
+            "✦ FOOTBALL GENIE AI",
             "🌐 Load Live Fixtures"
         };
         new AlertDialog.Builder(this)
@@ -267,7 +267,7 @@ public class MainActivity extends Activity {
         screen.setPadding(dp(14), dp(12), dp(14), dp(10));
         screen.setBackgroundColor(BG);
 
-        TextView title = label("⚽ FOOTBALL GENIE AI");
+        TextView title = label("✦ FOOTBALL GENIE AI");
         title.setTextColor(GREEN);
         title.setTextSize(22);
         title.setTypeface(null, Typeface.BOLD);
