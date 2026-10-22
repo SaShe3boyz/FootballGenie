@@ -416,7 +416,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-        String source = message == null ? "" : message.replace("\\r", "").trim();
+        String source = message == null ? "" : message.trim();
         if (source.isEmpty()) return;
 
         // Render markdown AI reports as colourful topic cards like DETAILED MATCH INTELLIGENCE.
@@ -435,7 +435,7 @@ public class MainActivity extends Activity {
                 currentHeading = line.replaceFirst("^#+\\s*", "").replaceAll("^\\*+|\\*+$", "").trim();
                 currentBody = new StringBuilder();
             } else {
-                if (currentBody.length() > 0) currentBody.append("\\n");
+                if (currentBody.length() > 0) currentBody.append("\n");
                 currentBody.append(raw);
             }
         }
@@ -518,7 +518,7 @@ public class MainActivity extends Activity {
                     line = row.toString();
                 }
                 if (line.isEmpty()) continue;
-                if (displayBody.length() > 0) displayBody.append("\\n");
+                if (displayBody.length() > 0) displayBody.append("\n");
                 displayBody.append(line);
             }
 
@@ -533,7 +533,7 @@ public class MainActivity extends Activity {
                 sectionCard.addView(body);
 
                 java.util.regex.Matcher matcher = java.util.regex.Pattern
-                    .compile("(\\\\d+(?:[.,]\\\\d+)?)\\\\s*%").matcher(displayBody.toString());
+                    .compile("(\\d+(?:[.,]\\d+)?)\\s*%").matcher(displayBody.toString());
                 int meterCount = 0;
                 while (matcher.find() && meterCount < 3) {
                     try {
