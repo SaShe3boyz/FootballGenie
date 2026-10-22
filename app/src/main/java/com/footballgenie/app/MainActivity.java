@@ -91,7 +91,7 @@ public class MainActivity extends Activity {
         // Start loading the artwork immediately while the first screen is being created.
         loadBrandArtwork(null);
 
-        LinearLayout root = new LinearLayout(this);
+        LinearLayout root = new NavigationRootLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackground(glossyBackground());
 
@@ -115,6 +115,46 @@ public class MainActivity extends Activity {
         // Keep the main navigation free of global touch listeners and modal startup dialogs.
         showScreen(0);
         checkApiConnection();
+    }
+
+    // Route touches in the bottom navigation strip at the root level. This bypasses
+    // nested child touch handling if it cancels click events on particular devices.
+    private class NavigationRootLayout extends LinearLayout {
+        private float downX;
+        private float downY;
+
+        NavigationRootLayout(Context context) { super(context); }
+
+        @Override
+        public boolean dispatchTouchEvent(android.view.MotionEvent event) {
+            float navTop = getHeight() - dp(62);
+            if (event.getY() >= navTop) {
+                switch (event.getActionMasked()) {
+                    case android.view.MotionEvent.ACTION_DOWN:
+                        downX = event.getX();
+                        downY = event.getY();
+                        return true;
+                    case android.view.MotionEvent.ACTION_MOVE:
+                        return true;
+                    case android.view.MotionEvent.ACTION_UP:
+                        float dx = Math.abs(event.getX() - downX);
+                        float dy = Math.abs(event.getY() - downY);
+                        if (dx < dp(35) && dy < dp(35)) {
+                            int target = Math.min(4, Math.max(0,
+                                (int) (event.getX() / Math.max(1f, getWidth()) * 5f)));
+                            showScreen(target);
+                            Toast.makeText(MainActivity.this,
+                                "Opening " + new String[]{"HOME", "PREDICT", "RESULTS", "SIMULATE", "HISTORY"}[target],
+                                Toast.LENGTH_SHORT).show();
+                        }
+                        return true;
+                    case android.view.MotionEvent.ACTION_CANCEL:
+                        return true;
+                }
+                return true;
+            }
+            return super.dispatchTouchEvent(event);
+        }
     }
 
     private View createAppPage(int screen) {
