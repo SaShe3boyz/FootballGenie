@@ -193,7 +193,7 @@ public class MainActivity extends Activity {
                 buildHeader();
                 buildHomeShortcuts();
                 Button aiHomeButton = new Button(this);
-                aiHomeButton.setText("💬 FOOTBALL GENIE AI");
+                aiHomeButton.setText("✦ FOOTBALL GENIE AI");
                 aiHomeButton.setAllCaps(false);
                 aiHomeButton.setTextColor(Color.rgb(8, 25, 22));
                 aiHomeButton.setTypeface(null, Typeface.BOLD);
