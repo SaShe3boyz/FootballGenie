@@ -1147,8 +1147,38 @@ public class MainActivity extends Activity {
         };
     }
 
-    // Load club crests off the UI thread. If a provider gives an SVG crest that Android
-    // cannot decode directly, retry the matching PNG endpoint before showing the placeholder.
+    // Team crests are stored on the phone so a previously seen crest can be shown offline.
+    private java.io.File getCrestCacheFile(String crestUrl) {
+        java.io.File directory = new java.io.File(getCacheDir(), "team_crests");
+        if (!directory.exists()) directory.mkdirs();
+        String key = Integer.toHexString(crestUrl.hashCode());
+        return new java.io.File(directory, "crest_" + key + ".png");
+    }
+
+    private Bitmap readCachedCrest(String crestUrl) {
+        try {
+            java.io.File file = getCrestCacheFile(crestUrl);
+            if (file.isFile() && file.length() > 0) {
+                return BitmapFactory.decodeFile(file.getAbsolutePath());
+            }
+        } catch (Exception ignored) { }
+        return null;
+    }
+
+    private void saveCachedCrest(String crestUrl, Bitmap bitmap) {
+        if (bitmap == null) return;
+        try {
+            java.io.File file = getCrestCacheFile(crestUrl);
+            try (java.io.FileOutputStream output = new java.io.FileOutputStream(file)) {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, output);
+                output.flush();
+            }
+        } catch (Exception ignored) { }
+    }
+
+    // Show a saved crest immediately when available, even with no network. If none is
+    // cached yet, download it in the background and save it for future offline use.
+    // SVG provider URLs are retried as PNG because Android BitmapFactory cannot decode SVG.
     private void loadTeamCrest(String crestUrl, ImageView target, TextView fallback) {
         if (target == null) return;
         target.setImageDrawable(null);
@@ -1163,13 +1193,26 @@ public class MainActivity extends Activity {
         final String requestedUrl = crestUrl.trim();
         target.setTag(requestedUrl);
         new Thread(() -> {
+            Bitmap cachedBitmap = readCachedCrest(requestedUrl);
+            if (cachedBitmap != null) {
+                final Bitmap saved = cachedBitmap;
+                runOnUiThread(() -> {
+                    if (!requestedUrl.equals(target.getTag())) return;
+                    target.setImageBitmap(saved);
+                    target.setVisibility(View.VISIBLE);
+                    if (fallback != null) fallback.setVisibility(View.GONE);
+                });
+                return;
+            }
+
             Bitmap bitmap = downloadCrestBitmap(requestedUrl);
             if (bitmap == null && requestedUrl.toLowerCase(java.util.Locale.ROOT).endsWith(".svg")) {
                 bitmap = downloadCrestBitmap(requestedUrl.substring(0, requestedUrl.length() - 4) + ".png");
             }
+            if (bitmap != null) saveCachedCrest(requestedUrl, bitmap);
             final Bitmap loadedBitmap = bitmap;
             runOnUiThread(() -> {
-                if (target.getTag() == null || !requestedUrl.equals(target.getTag())) return;
+                if (!requestedUrl.equals(target.getTag())) return;
                 if (loadedBitmap != null) {
                     target.setImageBitmap(loadedBitmap);
                     target.setVisibility(View.VISIBLE);
