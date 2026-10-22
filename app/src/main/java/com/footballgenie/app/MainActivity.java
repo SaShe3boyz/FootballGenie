@@ -396,20 +396,67 @@ public class MainActivity extends Activity {
         if (aiMessages == null) return;
         LinearLayout bubble = new LinearLayout(this);
         bubble.setOrientation(LinearLayout.VERTICAL);
-        bubble.setPadding(dp(12), dp(10), dp(12), dp(10));
-        bubble.setBackground(rounded(fromAi ? Color.rgb(25, 48, 62) : Color.rgb(37, 61, 49), 14));
-        TextView who = label(sender);
+        bubble.setPadding(dp(14), dp(12), dp(14), dp(13));
+        bubble.setBackground(rounded(fromAi ? Color.rgb(20, 39, 55) : Color.rgb(29, 48, 42), 16));
+
+        TextView who = label((fromAi ? "✦  " : "●  ") + sender);
         who.setTextColor(fromAi ? GREEN : Color.rgb(170, 255, 200));
-        who.setTextSize(12);
+        who.setTextSize(13);
         who.setTypeface(null, Typeface.BOLD);
+        who.setPadding(0, 0, 0, dp(7));
         bubble.addView(who);
-        TextView body = label(message);
-        body.setTextColor(WHITE);
-        body.setTextSize(14);
-        body.setPadding(0, dp(5), 0, 0);
-        bubble.addView(body);
+
+        String[] lines = message == null ? new String[]{""} : message.split("\\n", -1);
+        for (String rawLine : lines) {
+            String line = rawLine.trim();
+            if (line.isEmpty()) {
+                TextView spacer = label("");
+                spacer.setTextSize(4);
+                bubble.addView(spacer, new LinearLayout.LayoutParams(-1, dp(4)));
+                continue;
+            }
+
+            boolean statistic = fromAi && (line.contains("%")
+                || line.toLowerCase(java.util.Locale.ROOT).contains("probability")
+                || line.toLowerCase(java.util.Locale.ROOT).contains("confidence")
+                || line.toLowerCase(java.util.Locale.ROOT).contains("home win")
+                || line.toLowerCase(java.util.Locale.ROOT).contains("draw")
+                || line.toLowerCase(java.util.Locale.ROOT).contains("away win")
+                || line.toLowerCase(java.util.Locale.ROOT).contains("over 2.5")
+                || line.toLowerCase(java.util.Locale.ROOT).contains("under 2.5"));
+            boolean heading = fromAi && line.length() <= 64
+                && (line.endsWith(":") || line.equals(line.toUpperCase(java.util.Locale.ROOT))
+                && line.matches(".*[A-Z].*"));
+
+            TextView row = label(line);
+            row.setTextColor(WHITE);
+            row.setTextSize(15);
+            row.setLineSpacing(dp(3), 1.0f);
+            row.setIncludeFontPadding(true);
+            row.setTextIsSelectable(true);
+            if (heading) {
+                row.setTextColor(GREEN);
+                row.setTextSize(15);
+                row.setTypeface(null, Typeface.BOLD);
+                row.setPadding(0, dp(5), 0, dp(3));
+            } else if (statistic) {
+                row.setTextSize(15);
+                row.setTypeface(null, Typeface.BOLD);
+                row.setPadding(dp(10), dp(9), dp(10), dp(9));
+                row.setBackground(rounded(Color.rgb(29, 59, 69), 10));
+                LinearLayout.LayoutParams statParams = new LinearLayout.LayoutParams(-1, -2);
+                statParams.topMargin = dp(3);
+                statParams.bottomMargin = dp(4);
+                bubble.addView(row, statParams);
+                continue;
+            } else {
+                row.setPadding(0, dp(2), 0, dp(4));
+            }
+            bubble.addView(row, new LinearLayout.LayoutParams(-1, -2));
+        }
+
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
-        params.bottomMargin = dp(9);
+        params.bottomMargin = dp(11);
         aiMessages.addView(bubble, params);
     }
 
