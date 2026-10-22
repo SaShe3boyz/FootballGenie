@@ -2408,6 +2408,49 @@ public class MainActivity extends Activity {
     }
 
     // First phase of the interactive analyst: answers are grounded in this screen's actual model outputs.
+    private void renderAiQuestionCards(LinearLayout container, String source) {
+        container.removeAllViews();
+        if (source == null || source.trim().isEmpty()) source = "No analysis was returned. Please try again.";
+        int[] accents = new int[] { Color.rgb(66, 220, 164), Color.rgb(83, 171, 255), Color.rgb(255, 190, 82), Color.rgb(190, 137, 255), Color.rgb(255, 123, 143) };
+        String[] lines = source.replace("\\r", "").split("\\n", -1);
+        String title = "";
+        StringBuilder body = new StringBuilder();
+        int cardIndex = 0;
+        for (String raw : lines) {
+            String line = raw.trim();
+            if (line.isEmpty()) continue;
+            boolean headingLine = line.startsWith("### ") || line.startsWith("## ") || line.startsWith("# ") || (line.length() > 3 && line.equals(line.toUpperCase(Locale.US)) && line.matches(".*[A-Z].*") && !line.startsWith("|"));
+            if (headingLine && (body.length() > 0 || !title.isEmpty())) {
+                addAiQuestionCard(container, title.isEmpty() ? "MATCH ANALYSIS" : title, body.toString().trim(), accents[cardIndex % accents.length]);
+                cardIndex++; body.setLength(0);
+            }
+            if (headingLine) title = line.replace("### ", "").replace("## ", "").replace("# ", "").replace("**", "").replace("__", "").replace("*", "").trim();
+            else {
+                String clean = line.replace("**", "").replace("__", "").replace("|", "  •  ").trim();
+                if (clean.startsWith("- ") || clean.startsWith("* ")) clean = "• " + clean.substring(2).trim();
+                if (clean.matches("[-: ]+") || clean.matches("[• ]+")) continue;
+                if (body.length() > 0) body.append("\\n");
+                body.append(clean);
+            }
+        }
+        if (body.length() > 0 || !title.isEmpty()) addAiQuestionCard(container, title.isEmpty() ? "MATCH ANALYSIS" : title, body.toString().trim(), accents[cardIndex % accents.length]);
+        if (container.getChildCount() == 0) addAiQuestionCard(container, "MATCH ANALYSIS", source.replace("**", "").replace("__", ""), accents[0]);
+    }
+
+    private void addAiQuestionCard(LinearLayout container, String title, String body, int accent) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(13), dp(11), dp(13), dp(12));
+        card.setBackground(rounded(Color.rgb(13, 27, 44), 12));
+        LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(-1, -2); cp.bottomMargin = dp(9);
+        container.addView(card, cp);
+        TextView head = label("✦  " + title);
+        head.setTextColor(accent); head.setTextSize(14); head.setTypeface(null, Typeface.BOLD);
+        head.setPadding(0, 0, 0, dp(7)); card.addView(head);
+        TextView text = label(body == null || body.trim().isEmpty() ? "See the details above." : body.trim());
+        text.setTextColor(WHITE); text.setTextSize(14); text.setLineSpacing(dp(4), 1.04f); card.addView(text);
+    }
+
     private void buildInteractiveAiAnalyst(LinearLayout parent) {
         LinearLayout box = card();
         box.setOrientation(LinearLayout.VERTICAL);
@@ -2432,17 +2475,17 @@ public class MainActivity extends Activity {
         ask.setTextColor(Color.rgb(5, 25, 20)); ask.setTextSize(14); ask.setTypeface(null, Typeface.BOLD);
         ask.setAllCaps(false); ask.setBackground(rounded(GREEN, 10));
         LinearLayout.LayoutParams ap = new LinearLayout.LayoutParams(-1, dp(48)); ap.topMargin = dp(9); box.addView(ask, ap);
-        TextView answer = label("Your answer will appear here after a question is submitted.");
-        answer.setTextColor(WHITE); answer.setTextSize(14); answer.setLineSpacing(dp(4), 1.05f);
-        answer.setPadding(dp(12), dp(12), dp(12), dp(12)); answer.setBackground(rounded(Color.rgb(12, 24, 40), 10));
+        LinearLayout answer = new LinearLayout(this);
+        answer.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(-1, -2); rp.topMargin = dp(10); box.addView(answer, rp);
+        renderAiQuestionCards(answer, "Your answer will appear here after a question is submitted.");
         ask.setOnClickListener(v -> {
             String prompt = question.getText().toString().trim();
-            if (prompt.isEmpty()) { answer.setText("Type a question about this match first."); return; }
+            if (prompt.isEmpty()) { renderAiQuestionCards(answer, "Type a question about this match first."); return; }
             ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(question.getWindowToken(), 0);
             ask.setEnabled(false);
             ask.setText("⏳  ANALYSING…");
-            answer.setText("Football Genie is checking the question against this match's model evidence…");
+            renderAiQuestionCards(answer, "Football Genie is checking the question against this match's model evidence…");
             requestCloudMatchAnalysis(prompt, answer, () -> answerMatchQuestion(prompt), () -> {
                 ask.setEnabled(true);
                 ask.setText("🧠  ANALYSE MY QUESTION");
@@ -2452,7 +2495,7 @@ public class MainActivity extends Activity {
 
     // Ask the secure backend AI first; fall back to the transparent on-device analyst
     // if cloud AI is not configured or the connection is unavailable.
-    private void requestCloudMatchAnalysis(String prompt, TextView answer,
+    private void requestCloudMatchAnalysis(String prompt, LinearLayout answer,
             java.util.function.Supplier<String> fallback, Runnable onFinished) {
         new Thread(() -> {
             HttpURLConnection connection = null;
@@ -2534,18 +2577,18 @@ public class MainActivity extends Activity {
                 try {
                     JSONObject response = body.isEmpty() ? new JSONObject() : new JSONObject(body);
                     if (code >= 200 && code < 300 && !response.optString("answer", "").trim().isEmpty()) {
-                        answer.setText("☁️ FOOTBALL GENIE AI ANALYST\n\n" + response.optString("answer")
+                        renderAiQuestionCards(answer, "☁️ FOOTBALL GENIE AI ANALYST\n\n" + response.optString("answer")
                             + "\n\nEvidence: current model inputs and probabilities. This is an estimate, not a guarantee.");
                     } else {
                         String local = fallback.get();
                         if ("AI_NOT_CONFIGURED".equals(response.optString("code", ""))) {
-                            answer.setText(local + "\n\nCLOUD AI STATUS\nThe secure AI endpoint is ready, but its provider key has not been configured on the server yet. The app is using its on-device evidence-based fallback for now.");
+                            renderAiQuestionCards(answer, local + "\n\nCLOUD AI STATUS\nThe secure AI endpoint is ready, but its provider key has not been configured on the server yet. The app is using its on-device evidence-based fallback for now.");
                         } else {
-                            answer.setText(local + "\n\nCLOUD AI STATUS\nCloud analysis was unavailable this time, so this answer uses the on-device analyst.");
+                            renderAiQuestionCards(answer, local + "\n\nCLOUD AI STATUS\nCloud analysis was unavailable this time, so this answer uses the on-device analyst.");
                         }
                     }
                 } catch (Exception ignored) {
-                    answer.setText(fallback.get() + "\n\nCloud AI response could not be read; showing the on-device analyst instead.");
+                    renderAiQuestionCards(answer, fallback.get() + "\n\nCloud AI response could not be read; showing the on-device analyst instead.");
                 } finally {
                     onFinished.run();
                 }
