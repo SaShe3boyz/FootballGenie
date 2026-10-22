@@ -440,22 +440,16 @@ public class MainActivity extends Activity {
             params.setMargins(dp(2), 0, dp(2), 0);
             nav.addView(item, params);
 
-            // Route taps on the container, icon, and label directly to the same destination.
-            // This avoids missed taps on nested views on some Android devices.
-            View.OnClickListener navigationClick = v -> {
-                v.setPressed(false);
-                // Temporary diagnostic: confirm whether Android delivers the first tap.
+            // Let the navigation container own the touch target. Child labels must not
+            // compete for taps, which can cause missed clicks on some Android devices.
+            icon.setClickable(false);
+            icon.setFocusable(false);
+            title.setClickable(false);
+            title.setFocusable(false);
+            item.setOnClickListener(v -> {
                 Toast.makeText(MainActivity.this, "Opening " + labels[target] + "...", Toast.LENGTH_SHORT).show();
-                screenHost.post(() -> {
-                    showScreen(target);
-                    screenHost.invalidate();
-                });
-            };
-            item.setOnClickListener(navigationClick);
-            icon.setClickable(true);
-            title.setClickable(true);
-            icon.setOnClickListener(navigationClick);
-            title.setOnClickListener(navigationClick);
+                showScreen(target);
+            });
         }
         return nav;
     }
