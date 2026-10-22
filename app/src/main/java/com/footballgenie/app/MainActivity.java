@@ -444,7 +444,9 @@ public class MainActivity extends Activity {
             // This avoids missed taps on nested views on some Android devices.
             View.OnClickListener navigationClick = v -> {
                 v.setPressed(false);
-                showScreen(target);
+                // Queue the screen swap after Android finishes dispatching this tap.
+                // This avoids competing with touch handling on the navigation row.
+                screenHost.post(() -> showScreen(target));
             };
             item.setOnClickListener(navigationClick);
             icon.setClickable(true);
