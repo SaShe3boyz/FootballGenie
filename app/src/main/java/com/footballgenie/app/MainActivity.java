@@ -143,9 +143,6 @@ public class MainActivity extends Activity {
                             int target = Math.min(4, Math.max(0,
                                 (int) (event.getX() / Math.max(1f, getWidth()) * 5f)));
                             showScreen(target);
-                            Toast.makeText(MainActivity.this,
-                                "Opening " + new String[]{"HOME", "PREDICT", "RESULTS", "SIMULATE", "HISTORY"}[target],
-                                Toast.LENGTH_SHORT).show();
                         }
                         return true;
                     case android.view.MotionEvent.ACTION_CANCEL:
