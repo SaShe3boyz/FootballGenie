@@ -439,7 +439,18 @@ public class MainActivity extends Activity {
                 new LinearLayout.LayoutParams(0, dp(62), 1f);
             params.setMargins(dp(2), 0, dp(2), 0);
             nav.addView(item, params);
-            item.setOnClickListener(v -> showScreen(target));
+
+            // Route taps on the container, icon, and label directly to the same destination.
+            // This avoids missed taps on nested views on some Android devices.
+            View.OnClickListener navigationClick = v -> {
+                v.setPressed(false);
+                showScreen(target);
+            };
+            item.setOnClickListener(navigationClick);
+            icon.setClickable(true);
+            title.setClickable(true);
+            icon.setOnClickListener(navigationClick);
+            title.setOnClickListener(navigationClick);
         }
         return nav;
     }
