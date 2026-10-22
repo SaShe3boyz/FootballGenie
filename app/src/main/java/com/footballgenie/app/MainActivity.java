@@ -63,6 +63,7 @@ public class MainActivity extends Activity {
     private LinearLayout fixtureFiltersLayout;
     private TextView fixtureListStatus;
     private android.widget.EditText fixtureSearchInput;
+    private String selectedLanguageCode = "en";
     private final ArrayList<JSONObject> loadedFixtures = new ArrayList<>();
     private String activeFixtureFilter = "ALL";
     private View connectionStatusBar;
@@ -92,6 +93,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        selectedLanguageCode = getSharedPreferences("football_genie_settings", MODE_PRIVATE).getString("language_code", "en");
         // Start loading the artwork immediately while the first screen is being created.
         loadBrandArtwork(null);
 
@@ -187,6 +189,7 @@ public class MainActivity extends Activity {
         }
         switch (screen) {
             case 0:
+                addHomeLanguageSelector();
                 buildHeader();
                 buildHomeShortcuts();
                 Button aiHomeButton = new Button(this);
@@ -591,15 +594,15 @@ public class MainActivity extends Activity {
     }
 
     private void buildHomeShortcuts() {
-        addHeading("⚽", "MATCH CENTRE");
-        TextView subtitle = label("Select a match or load live fixtures");
+        addHeading("⚽", tr("MATCH CENTRE"));
+        TextView subtitle = label(tr("Select a match or load live fixtures"));
         subtitle.setTextColor(MUTED);
         subtitle.setTextSize(14);
         subtitle.setPadding(dp(2), 0, 0, dp(12));
         mainLayout.addView(subtitle);
 
         Button loadFixturesButton = new Button(this);
-        loadFixturesButton.setText("⚽  LOAD LIVE FIXTURES");
+        loadFixturesButton.setText("⚽  " + tr("LOAD LIVE FIXTURES"));
         loadFixturesButton.setTextColor(Color.rgb(4, 25, 20));
         loadFixturesButton.setTextSize(15);
         loadFixturesButton.setTypeface(null, Typeface.BOLD);
@@ -815,8 +818,8 @@ public class MainActivity extends Activity {
     }
 
     private void buildLiveFixturesScreen() {
-        addHeading("05", "LIVE FIXTURES");
-        TextView note = label("Browse matches by competition and kickoff. Tap any fixture card to select it for your prediction.");
+        addHeading("05", tr("LIVE FIXTURES"));
+        TextView note = label(tr("Browse matches by competition and kickoff. Tap any fixture card to select it for your prediction."));
         note.setTextColor(MUTED);
         note.setTextSize(15);
         note.setLineSpacing(dp(3), 1.0f);
@@ -830,13 +833,13 @@ public class MainActivity extends Activity {
         title.setTextSize(15);
         title.setTypeface(null, Typeface.BOLD);
         toolbar.addView(title);
-        fixtureListStatus = label("Load the latest fixtures to see the schedule here.");
+        fixtureListStatus = label(tr("Load the latest fixtures to see the schedule here."));
         fixtureListStatus.setTextColor(MUTED);
         fixtureListStatus.setTextSize(14);
         fixtureListStatus.setPadding(0, dp(5), 0, dp(10));
         toolbar.addView(fixtureListStatus);
         Button load = new Button(this);
-        load.setText("↻  REFRESH FIXTURES");
+        load.setText("↻  " + tr("REFRESH FIXTURES"));
         load.setTextColor(Color.rgb(8, 25, 22));
         load.setTextSize(15);
         load.setTypeface(null, Typeface.BOLD);
@@ -851,7 +854,7 @@ public class MainActivity extends Activity {
         fixtureSearchInput.setTextSize(15);
         fixtureSearchInput.setTextColor(WHITE);
         fixtureSearchInput.setHintTextColor(MUTED);
-        fixtureSearchInput.setHint("🔎  Search fixtures by team name");
+        fixtureSearchInput.setHint("🔎  " + tr("Search fixtures by team name"));
         fixtureSearchInput.setPadding(dp(14), 0, dp(14), 0);
         fixtureSearchInput.setBackground(rounded(CARD, 12));
         LinearLayout.LayoutParams searchParams = new LinearLayout.LayoutParams(-1, dp(50));
@@ -1316,8 +1319,161 @@ public class MainActivity extends Activity {
         mainLayout.addView(validationCard);
     }
 
+
+    // Flagged language picker and central translations for core navigation labels.
+    private static final String[][] LANGUAGE_OPTIONS = {
+        {"en","🇬🇧","English"},{"en-US","🇺🇸","English (US)"},{"sn","🇿🇼","Shona"},{"nd","🇿🇼","Ndebele"},
+        {"zu","🇿🇦","isiZulu"},{"sw","🇹🇿","Kiswahili"},{"fr","🇫🇷","Français"},{"es","🇪🇸","Español"},
+        {"pt","🇵🇹","Português"},{"pt-BR","🇧🇷","Português (Brasil)"},{"ar","🇸🇦","العربية"},{"hi","🇮🇳","हिन्दी"},
+        {"bn","🇧🇩","বাংলা"},{"ur","🇵🇰","اردو"},{"zh","🇨🇳","中文（简体）"},{"zh-TW","🇹🇼","繁體中文"},
+        {"de","🇩🇪","Deutsch"},{"it","🇮🇹","Italiano"},{"ru","🇷🇺","Русский"},{"ja","🇯🇵","日本語"},
+        {"ko","🇰🇷","한국어"},{"tr","🇹🇷","Türkçe"},{"id","🇮🇩","Bahasa Indonesia"},{"vi","🇻🇳","Tiếng Việt"},
+        {"th","🇹🇭","ไทย"},{"fa","🇮🇷","فارسی"},{"nl","🇳🇱","Nederlands"},{"pl","🇵🇱","Polski"},
+        {"uk","🇺🇦","Українська"},{"yo","🇳🇬","Yorùbá"},{"ha","🇳🇬","Hausa"},{"am","🇪🇹","አማርኛ"},
+        {"af","🇿🇦","Afrikaans"},{"el","🇬🇷","Ελληνικά"},{"he","🇮🇱","עברית"},{"fil","🇵🇭","Filipino"},{"ms","🇲🇾","Bahasa Melayu"}
+    };
+
+    private void addHomeLanguageSelector() {
+        LinearLayout row = new LinearLayout(this);
+        row.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+        row.setPadding(0, dp(2), 0, dp(6));
+        Button choose = new Button(this);
+        choose.setText(languageButtonLabel());
+        choose.setAllCaps(false);
+        choose.setTextSize(12);
+        choose.setTextColor(GREEN);
+        choose.setBackground(rounded(CARD, 10));
+        row.addView(choose, new LinearLayout.LayoutParams(-2, dp(42)));
+        choose.setOnClickListener(v -> showLanguagePicker());
+        mainLayout.addView(row, new LinearLayout.LayoutParams(-1, -2));
+    }
+
+    private String languageButtonLabel() {
+        for (String[] language : LANGUAGE_OPTIONS) {
+            if (language[0].equals(selectedLanguageCode)) return language[1] + " " + language[2] + " ▾";
+        }
+        return "🌐 English ▾";
+    }
+
+    private String languageDescription() {
+        return tr("Choose the language used for supported app labels.");
+    }
+
+    private void showLanguagePicker() {
+        String[] names = new String[LANGUAGE_OPTIONS.length];
+        int selected = 0;
+        for (int i = 0; i < LANGUAGE_OPTIONS.length; i++) {
+            names[i] = LANGUAGE_OPTIONS[i][1] + "  " + LANGUAGE_OPTIONS[i][2];
+            if (LANGUAGE_OPTIONS[i][0].equals(selectedLanguageCode)) selected = i;
+        }
+        new AlertDialog.Builder(this).setTitle(tr("Choose language"))
+            .setSingleChoiceItems(names, selected, (dialog, which) -> {
+                selectedLanguageCode = LANGUAGE_OPTIONS[which][0];
+                getSharedPreferences("football_genie_settings", MODE_PRIVATE).edit()
+                    .putString("language_code", selectedLanguageCode).apply();
+                dialog.dismiss();
+                // Rebuild the translated screens without adding navigation history.
+                appScreens[0] = createAppPage(0);
+                appScreens[5] = createAppPage(5);
+                appScreens[7] = createAppPage(7);
+                showScreen(activeScreen, false);
+            }).setNegativeButton(tr("Cancel"), null).show();
+    }
+
+    private String tr(String english) {
+        String lang = selectedLanguageCode == null ? "en" : selectedLanguageCode;
+        if (lang.equals("en") || lang.equals("en-US")) return english;
+        String[][] pairs = new String[0][0];
+        switch (lang) {
+            case "sn": pairs = new String[][] {
+                {"SETTINGS","ZVINHU ZVEKUGADZIRISA"},{"LANGUAGE","MUTAURO"},{"MATCH CENTRE","NZVIMBO YEMITAMBO"},
+                {"LIVE FIXTURES","MITAMBO IRIPO"},{"LOAD LIVE FIXTURES","TARISA MITAMBO IRIPO"},{"MATCH SCHEDULE","HURONGWA YEMITAMBO"},
+                {"REFRESH FIXTURES","GADZIRISA MITAMBO"},{"Search fixtures by team name","Tsvaga mitambo nezita rechikwata"},
+                {"Choose language","Sarudza mutauro"},{"Cancel","Kanzura"},{"Select a match or load live fixtures","Sarudza mutambo kana mitambo iripo"},
+                {"Choose the language used for supported app labels.","Sarudza mutauro wemashoko anotsigirwa muapp."},
+                {"Browse matches by competition and kickoff. Tap any fixture card to select it for your prediction.","Ongorora mitambo nemakwikwi nenguva. Dzvanya mutambo kuti usarudze."},
+                {"Load the latest fixtures to see the schedule here.","Tora mitambo mitsva kuti uone hurongwa pano."}
+            }; break;
+            case "nd": pairs = new String[][] {
+                {"SETTINGS","IZILUNGISELELO"},{"LANGUAGE","ULIMI"},{"MATCH CENTRE","INDAWO YEMIDLALO"},{"LIVE FIXTURES","IMIDLALO EKHONA"},
+                {"LOAD LIVE FIXTURES","LAYISHA IMIDLALO EKHONA"},{"MATCH SCHEDULE","UHLELO LWEMIDLALO"},{"REFRESH FIXTURES","VUSELELA IMIDLALO"},
+                {"Search fixtures by team name","Dinga imidlalo ngebizo leqembu"},{"Choose language","Khetha ulimi"},{"Cancel","Khansela"},
+                {"Select a match or load live fixtures","Khetha umdlalo kumbe ulayishe imidlalo ekhona"},
+                {"Choose the language used for supported app labels.","Khetha ulimi lwamagama asekelwayo kuhlelo."}
+            }; break;
+            case "sw": pairs = new String[][] {
+                {"SETTINGS","MIPANGILIO"},{"LANGUAGE","LUGHA"},{"MATCH CENTRE","KITUO CHA MECHI"},{"LIVE FIXTURES","MECHI ZA SASA"},
+                {"LOAD LIVE FIXTURES","PAKIA MECHI ZA SASA"},{"MATCH SCHEDULE","RATIBA YA MECHI"},{"REFRESH FIXTURES","ONYESHA MECHI UPYA"},
+                {"Search fixtures by team name","Tafuta mechi kwa jina la timu"},{"Choose language","Chagua lugha"},{"Cancel","Ghairi"},
+                {"Select a match or load live fixtures","Chagua mechi au pakia mechi za sasa"},
+                {"Choose the language used for supported app labels.","Chagua lugha ya maandishi yanayotumika kwenye programu."}
+            }; break;
+            case "fr": pairs = new String[][] {
+                {"SETTINGS","PARAMÈTRES"},{"LANGUAGE","LANGUE"},{"MATCH CENTRE","CENTRE DES MATCHS"},{"LIVE FIXTURES","MATCHS EN DIRECT"},
+                {"LOAD LIVE FIXTURES","CHARGER LES MATCHS"},{"MATCH SCHEDULE","CALENDRIER DES MATCHS"},{"REFRESH FIXTURES","ACTUALISER LES MATCHS"},
+                {"Search fixtures by team name","Rechercher un match par équipe"},{"Choose language","Choisir la langue"},{"Cancel","Annuler"},
+                {"Select a match or load live fixtures","Choisissez un match ou chargez les matchs en direct"},
+                {"Choose the language used for supported app labels.","Choisissez la langue des libellés pris en charge."},
+                {"Browse matches by competition and kickoff. Tap any fixture card to select it for your prediction.","Parcourez les matchs par compétition et horaire. Touchez un match pour le sélectionner."},
+                {"Load the latest fixtures to see the schedule here.","Chargez les derniers matchs pour afficher le calendrier ici."}
+            }; break;
+            case "es": pairs = new String[][] {
+                {"SETTINGS","AJUSTES"},{"LANGUAGE","IDIOMA"},{"MATCH CENTRE","CENTRO DE PARTIDOS"},{"LIVE FIXTURES","PARTIDOS EN DIRECTO"},
+                {"LOAD LIVE FIXTURES","CARGAR PARTIDOS"},{"MATCH SCHEDULE","CALENDARIO DE PARTIDOS"},{"REFRESH FIXTURES","ACTUALIZAR PARTIDOS"},
+                {"Search fixtures by team name","Buscar partidos por nombre del equipo"},{"Choose language","Elegir idioma"},{"Cancel","Cancelar"},
+                {"Select a match or load live fixtures","Selecciona un partido o carga los partidos en directo"},
+                {"Choose the language used for supported app labels.","Elige el idioma de las etiquetas compatibles."},
+                {"Browse matches by competition and kickoff. Tap any fixture card to select it for your prediction.","Explora partidos por competición y hora. Toca uno para seleccionarlo."},
+                {"Load the latest fixtures to see the schedule here.","Carga los últimos partidos para ver el calendario aquí."}
+            }; break;
+            case "pt": case "pt-BR": pairs = new String[][] {
+                {"SETTINGS","CONFIGURAÇÕES"},{"LANGUAGE","IDIOMA"},{"MATCH CENTRE","CENTRO DE JOGOS"},{"LIVE FIXTURES","JOGOS AO VIVO"},
+                {"LOAD LIVE FIXTURES","CARREGAR JOGOS"},{"MATCH SCHEDULE","CALENDÁRIO DE JOGOS"},{"REFRESH FIXTURES","ATUALIZAR JOGOS"},
+                {"Search fixtures by team name","Pesquisar jogos pelo nome da equipa"},{"Choose language","Escolher idioma"},{"Cancel","Cancelar"},
+                {"Select a match or load live fixtures","Escolha um jogo ou carregue os jogos ao vivo"},
+                {"Choose the language used for supported app labels.","Escolha o idioma dos textos compatíveis."}
+            }; break;
+            case "de": pairs = new String[][] {
+                {"SETTINGS","EINSTELLUNGEN"},{"LANGUAGE","SPRACHE"},{"MATCH CENTRE","SPIELZENTRUM"},{"LIVE FIXTURES","LIVE-SPIELE"},
+                {"LOAD LIVE FIXTURES","LIVE-SPIELE LADEN"},{"MATCH SCHEDULE","SPIELPLAN"},{"REFRESH FIXTURES","SPIELE AKTUALISIEREN"},
+                {"Search fixtures by team name","Spiele nach Teamnamen suchen"},{"Choose language","Sprache wählen"},{"Cancel","Abbrechen"},
+                {"Select a match or load live fixtures","Wähle ein Spiel oder lade Live-Spiele"},
+                {"Choose the language used for supported app labels.","Wähle die Sprache für unterstützte App-Texte."}
+            }; break;
+            case "it": pairs = new String[][] {
+                {"SETTINGS","IMPOSTAZIONI"},{"LANGUAGE","LINGUA"},{"MATCH CENTRE","CENTRO PARTITE"},{"LIVE FIXTURES","PARTITE IN DIRETTA"},
+                {"LOAD LIVE FIXTURES","CARICA PARTITE"},{"MATCH SCHEDULE","CALENDARIO PARTITE"},{"REFRESH FIXTURES","AGGIORNA PARTITE"},
+                {"Search fixtures by team name","Cerca partite per nome della squadra"},{"Choose language","Scegli lingua"},{"Cancel","Annulla"}
+            }; break;
+            case "ar": pairs = new String[][] {
+                {"SETTINGS","الإعدادات"},{"LANGUAGE","اللغة"},{"MATCH CENTRE","مركز المباريات"},{"LIVE FIXTURES","المباريات المباشرة"},
+                {"LOAD LIVE FIXTURES","تحميل المباريات"},{"MATCH SCHEDULE","جدول المباريات"},{"REFRESH FIXTURES","تحديث المباريات"},
+                {"Search fixtures by team name","ابحث عن المباريات باسم الفريق"},{"Choose language","اختر اللغة"},{"Cancel","إلغاء"}
+            }; break;
+            case "hi": pairs = new String[][] {
+                {"SETTINGS","सेटिंग्स"},{"LANGUAGE","भाषा"},{"MATCH CENTRE","मैच केंद्र"},{"LIVE FIXTURES","लाइव मैच"},
+                {"LOAD LIVE FIXTURES","लाइव मैच लोड करें"},{"MATCH SCHEDULE","मैच कार्यक्रम"},{"REFRESH FIXTURES","मैच रीफ्रेश करें"},
+                {"Search fixtures by team name","टीम के नाम से मैच खोजें"},{"Choose language","भाषा चुनें"},{"Cancel","रद्द करें"}
+            }; break;
+            case "zh": case "zh-TW": pairs = new String[][] {
+                {"SETTINGS","设置"},{"LANGUAGE","语言"},{"MATCH CENTRE","比赛中心"},{"LIVE FIXTURES","实时赛程"},
+                {"LOAD LIVE FIXTURES","加载实时赛程"},{"MATCH SCHEDULE","比赛日程"},{"REFRESH FIXTURES","刷新赛程"},
+                {"Search fixtures by team name","按球队名称搜索比赛"},{"Choose language","选择语言"},{"Cancel","取消"}
+            }; break;
+            case "ru": pairs = new String[][] {
+                {"SETTINGS","НАСТРОЙКИ"},{"LANGUAGE","ЯЗЫК"},{"MATCH CENTRE","ЦЕНТР МАТЧЕЙ"},{"LIVE FIXTURES","ТЕКУЩИЕ МАТЧИ"},
+                {"LOAD LIVE FIXTURES","ЗАГРУЗИТЬ МАТЧИ"},{"MATCH SCHEDULE","РАСПИСАНИЕ МАТЧЕЙ"},{"REFRESH FIXTURES","ОБНОВИТЬ МАТЧИ"},
+                {"Search fixtures by team name","Поиск матчей по названию команды"},{"Choose language","Выбрать язык"},{"Cancel","Отмена"}
+            }; break;
+            default: break;
+        }
+        for (String[] pair : pairs) if (pair.length > 1 && pair[0].equals(english)) return pair[1];
+        return english;
+    }
+
     private void buildSettingsScreen() {
-        addHeading("07", "SETTINGS");
+        addHeading("07", tr("SETTINGS"));
+        addSettingsItem("🌐  " + tr("LANGUAGE"), languageDescription(), () -> showLanguagePicker());
         TextView note = label("Manage data connection, app information and prediction history.");
         note.setTextColor(MUTED);
         note.setTextSize(15);
