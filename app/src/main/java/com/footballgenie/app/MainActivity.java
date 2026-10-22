@@ -394,6 +394,7 @@ public class MainActivity extends Activity {
 
     private void addChatMessage(String sender, String message, boolean fromAi) {
         if (aiMessages == null) return;
+
         LinearLayout bubble = new LinearLayout(this);
         bubble.setOrientation(LinearLayout.VERTICAL);
         bubble.setPadding(dp(14), dp(12), dp(14), dp(13));
@@ -403,7 +404,7 @@ public class MainActivity extends Activity {
         who.setTextColor(fromAi ? GREEN : Color.rgb(170, 255, 200));
         who.setTextSize(13);
         who.setTypeface(null, Typeface.BOLD);
-        who.setPadding(0, 0, 0, dp(7));
+        who.setPadding(0, 0, 0, dp(8));
         bubble.addView(who);
 
         String[] lines = message == null ? new String[]{""} : message.split("\\n", -1);
@@ -411,22 +412,78 @@ public class MainActivity extends Activity {
             String line = rawLine.trim();
             if (line.isEmpty()) {
                 TextView spacer = label("");
-                spacer.setTextSize(4);
                 bubble.addView(spacer, new LinearLayout.LayoutParams(-1, dp(4)));
                 continue;
             }
 
+            String lower = line.toLowerCase(java.util.Locale.ROOT);
             boolean statistic = fromAi && (line.contains("%")
-                || line.toLowerCase(java.util.Locale.ROOT).contains("probability")
-                || line.toLowerCase(java.util.Locale.ROOT).contains("confidence")
-                || line.toLowerCase(java.util.Locale.ROOT).contains("home win")
-                || line.toLowerCase(java.util.Locale.ROOT).contains("draw")
-                || line.toLowerCase(java.util.Locale.ROOT).contains("away win")
-                || line.toLowerCase(java.util.Locale.ROOT).contains("over 2.5")
-                || line.toLowerCase(java.util.Locale.ROOT).contains("under 2.5"));
-            boolean heading = fromAi && line.length() <= 64
-                && (line.endsWith(":") || line.equals(line.toUpperCase(java.util.Locale.ROOT))
-                && line.matches(".*[A-Z].*"));
+                || lower.contains("probability") || lower.contains("confidence")
+                || lower.contains("home win") || lower.contains("draw")
+                || lower.contains("away win") || lower.contains("over 2.5")
+                || lower.contains("under 2.5") || lower.contains("expected goals")
+                || lower.contains("xg") || lower.contains("prediction"));
+            boolean heading = fromAi && !statistic && line.length() <= 64
+                && (line.endsWith(":") || (line.equals(line.toUpperCase(java.util.Locale.ROOT))
+                && line.matches(".*[A-Z].*")));
+
+            if (statistic) {
+                int accent = Color.rgb(42, 211, 151);
+                if (lower.contains("draw")) accent = Color.rgb(255, 193, 7);
+                else if (lower.contains("away")) accent = Color.rgb(80, 155, 255);
+                else if (lower.contains("over")) accent = Color.rgb(255, 135, 70);
+                else if (lower.contains("under")) accent = Color.rgb(65, 210, 220);
+                else if (lower.contains("confidence")) accent = Color.rgb(190, 125, 255);
+
+                LinearLayout statCard = new LinearLayout(this);
+                statCard.setOrientation(LinearLayout.VERTICAL);
+                statCard.setPadding(dp(11), dp(9), dp(11), dp(9));
+                statCard.setBackground(rounded(Color.rgb(25, 51, 66), 12));
+
+                TextView statText = label(line);
+                statText.setTextColor(WHITE);
+                statText.setTextSize(14);
+                statText.setTypeface(null, Typeface.BOLD);
+                statText.setLineSpacing(dp(2), 1.0f);
+                statText.setTextIsSelectable(true);
+                statCard.addView(statText, new LinearLayout.LayoutParams(-1, -2));
+
+                java.util.regex.Matcher percentMatcher = java.util.regex.Pattern
+                    .compile("(\\\\d+(?:[.,]\\\\d+)?)\\\\s*%").matcher(line);
+                if (percentMatcher.find()) {
+                    double rawPercent = 0;
+                    try {
+                        rawPercent = Double.parseDouble(percentMatcher.group(1).replace(',', '.'));
+                    } catch (Exception ignored) { }
+                    final int progressValue = (int) Math.max(0, Math.min(100, Math.round(rawPercent)));
+
+                    TextView value = label(String.format(java.util.Locale.ROOT, "%.1f%%", rawPercent));
+                    value.setTextColor(accent);
+                    value.setTextSize(12);
+                    value.setTypeface(null, Typeface.BOLD);
+                    value.setGravity(Gravity.RIGHT);
+                    LinearLayout.LayoutParams valueParams = new LinearLayout.LayoutParams(-1, -2);
+                    valueParams.topMargin = dp(3);
+                    statCard.addView(value, valueParams);
+
+                    ProgressBar bar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+                    bar.setMax(100);
+                    bar.setProgress(progressValue);
+                    if (android.os.Build.VERSION.SDK_INT >= 21) {
+                        bar.setProgressTintList(android.content.res.ColorStateList.valueOf(accent));
+                        bar.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.rgb(48, 68, 80)));
+                    }
+                    LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(-1, dp(7));
+                    barParams.topMargin = dp(5);
+                    statCard.addView(bar, barParams);
+                }
+
+                LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
+                cardParams.topMargin = dp(4);
+                cardParams.bottomMargin = dp(5);
+                bubble.addView(statCard, cardParams);
+                continue;
+            }
 
             TextView row = label(line);
             row.setTextColor(WHITE);
@@ -436,19 +493,8 @@ public class MainActivity extends Activity {
             row.setTextIsSelectable(true);
             if (heading) {
                 row.setTextColor(GREEN);
-                row.setTextSize(15);
                 row.setTypeface(null, Typeface.BOLD);
                 row.setPadding(0, dp(5), 0, dp(3));
-            } else if (statistic) {
-                row.setTextSize(15);
-                row.setTypeface(null, Typeface.BOLD);
-                row.setPadding(dp(10), dp(9), dp(10), dp(9));
-                row.setBackground(rounded(Color.rgb(29, 59, 69), 10));
-                LinearLayout.LayoutParams statParams = new LinearLayout.LayoutParams(-1, -2);
-                statParams.topMargin = dp(3);
-                statParams.bottomMargin = dp(4);
-                bubble.addView(row, statParams);
-                continue;
             } else {
                 row.setPadding(0, dp(2), 0, dp(4));
             }
