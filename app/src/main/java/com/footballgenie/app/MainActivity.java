@@ -2412,7 +2412,7 @@ public class MainActivity extends Activity {
         container.removeAllViews();
         if (source == null || source.trim().isEmpty()) source = "No analysis was returned. Please try again.";
         int[] accents = new int[] { Color.rgb(66, 220, 164), Color.rgb(83, 171, 255), Color.rgb(255, 190, 82), Color.rgb(190, 137, 255), Color.rgb(255, 123, 143) };
-        String[] lines = source.replace("\\r", "").split("\\n", -1);
+        String[] lines = source.replace("\r", "").replace("\\n", "\n").split("\n", -1);
         String title = "";
         StringBuilder body = new StringBuilder();
         int cardIndex = 0;
@@ -2429,7 +2429,7 @@ public class MainActivity extends Activity {
                 String clean = line.replace("**", "").replace("__", "").replace("|", "  •  ").trim();
                 if (clean.startsWith("- ") || clean.startsWith("* ")) clean = "• " + clean.substring(2).trim();
                 if (clean.matches("[-: ]+") || clean.matches("[• ]+")) continue;
-                if (body.length() > 0) body.append("\\n");
+                if (body.length() > 0) body.append("\n");
                 body.append(clean);
             }
         }
@@ -2437,11 +2437,11 @@ public class MainActivity extends Activity {
         if (container.getChildCount() == 0) addAiQuestionCard(container, "MATCH ANALYSIS", source.replace("**", "").replace("__", ""), accents[0]);
     }
 
-    private void addAiQuestionCard(LinearLayout container, String title, String body, int accent) {
+    private int tintAiQuestionCard(int accent) {\n        int r = Color.red(accent);\n        int g = Color.green(accent);\n        int b = Color.blue(accent);\n        return Color.rgb((int)(r * 0.20f + 10), (int)(g * 0.20f + 18), (int)(b * 0.20f + 30));\n    }\n\n    private void addAiQuestionCard(LinearLayout container, String title, String body, int accent) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(13), dp(11), dp(13), dp(12));
-        card.setBackground(rounded(Color.rgb(13, 27, 44), 12));
+        card.setBackground(rounded(tintAiQuestionCard(accent), 12));
         LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(-1, -2); cp.bottomMargin = dp(9);
         container.addView(card, cp);
         TextView head = label("✦  " + title);
