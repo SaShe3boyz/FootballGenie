@@ -1027,6 +1027,10 @@ public class MainActivity extends Activity {
         String[] filters = {"FINISHED", "LIVE", "UPCOMING", "ALL"};
         for (String filter : filters) {
             TextView tab = label(filter);
+            // Filter tabs are controls, not selectable text: a single tap must activate them.
+            tab.setTextIsSelectable(false);
+            tab.setFocusable(false);
+            tab.setClickable(true);
             tab.setGravity(Gravity.CENTER);
             tab.setTextSize(13);
             tab.setSingleLine(true);
@@ -1150,6 +1154,10 @@ public class MainActivity extends Activity {
             }
 
             LinearLayout fixtureCard = card();
+            // Prevent selectable text inside the card from consuming the first tap.
+            fixtureCard.setDescendantFocusability(android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+            fixtureCard.setClickable(true);
+            fixtureCard.setFocusable(true);
             fixtureCard.setPadding(dp(12), dp(12), dp(12), dp(12));
             LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
             cardParams.bottomMargin = dp(10);
@@ -1159,11 +1167,13 @@ public class MainActivity extends Activity {
             top.setOrientation(LinearLayout.HORIZONTAL);
             top.setGravity(Gravity.CENTER_VERTICAL);
             TextView league = label(competitionName.isEmpty() ? "FOOTBALL FIXTURE" : competitionName.toUpperCase());
+            league.setTextIsSelectable(false);
             league.setTextColor(GREEN);
             league.setTextSize(13);
             league.setTypeface(null, Typeface.BOLD);
             top.addView(league, new LinearLayout.LayoutParams(0, -2, 1f));
             TextView statusView = label(fixtureStatusLabel(status));
+            statusView.setTextIsSelectable(false);
             statusView.setTextColor(("IN_PLAY".equals(status) || "PAUSED".equals(status)
                     || "EXTRA_TIME".equals(status) || "PENALTY_SHOOTOUT".equals(status)) ? GREEN : MUTED);
             statusView.setTextSize(13);
@@ -1173,6 +1183,7 @@ public class MainActivity extends Activity {
 
             if (kickoff.length() >= 16) {
                 TextView date = label(kickoff.substring(0, 10) + "  •  " + kickoff.substring(11, 16) + " UTC");
+                date.setTextIsSelectable(false);
                 date.setTextColor(MUTED);
                 date.setTextSize(13);
                 date.setPadding(0, dp(6), 0, dp(10));
@@ -1190,6 +1201,7 @@ public class MainActivity extends Activity {
             homeCrest.setLayoutParams(new LinearLayout.LayoutParams(dp(38), dp(38)));
             homeColumn.addView(homeCrest);
             TextView homeView = label(homeName);
+            homeView.setTextIsSelectable(false);
             homeView.setTextColor(WHITE);
             homeView.setTextSize(14);
             homeView.setTypeface(null, Typeface.BOLD);
@@ -1204,6 +1216,7 @@ public class MainActivity extends Activity {
             awayCrest.setLayoutParams(new LinearLayout.LayoutParams(dp(38), dp(38)));
             awayColumn.addView(awayCrest);
             TextView awayView = label(awayName);
+            awayView.setTextIsSelectable(false);
             awayView.setTextColor(WHITE);
             awayView.setTextSize(14);
             awayView.setTypeface(null, Typeface.BOLD);
@@ -1211,6 +1224,7 @@ public class MainActivity extends Activity {
             awayView.setMaxLines(2);
             awayColumn.addView(awayView);
             TextView vs = label(scoreText.isEmpty() ? "VS" : scoreText);
+            vs.setTextIsSelectable(false);
             vs.setTextColor(GREEN);
             vs.setTextSize(14);
             vs.setTypeface(null, Typeface.BOLD);
@@ -1223,6 +1237,7 @@ public class MainActivity extends Activity {
             fixtureCard.addView(teams);
 
             TextView choose = label("TAP TO SELECT  →");
+            choose.setTextIsSelectable(false);
             choose.setTextColor(MUTED);
             choose.setTextSize(13);
             choose.setGravity(Gravity.RIGHT);
