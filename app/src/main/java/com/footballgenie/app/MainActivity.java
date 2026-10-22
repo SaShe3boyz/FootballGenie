@@ -62,6 +62,7 @@ public class MainActivity extends Activity {
     private LinearLayout fixtureListLayout;
     private LinearLayout fixtureFiltersLayout;
     private TextView fixtureListStatus;
+    private android.widget.EditText fixtureSearchInput;
     private final ArrayList<JSONObject> loadedFixtures = new ArrayList<>();
     private String activeFixtureFilter = "ALL";
     private View connectionStatusBar;
@@ -845,6 +846,25 @@ public class MainActivity extends Activity {
         load.setOnClickListener(v -> loadFixtures());
         mainLayout.addView(toolbar);
 
+        fixtureSearchInput = new android.widget.EditText(this);
+        fixtureSearchInput.setSingleLine(true);
+        fixtureSearchInput.setTextSize(15);
+        fixtureSearchInput.setTextColor(WHITE);
+        fixtureSearchInput.setHintTextColor(MUTED);
+        fixtureSearchInput.setHint("🔎  Search fixtures by team name");
+        fixtureSearchInput.setPadding(dp(14), 0, dp(14), 0);
+        fixtureSearchInput.setBackground(rounded(CARD, 12));
+        LinearLayout.LayoutParams searchParams = new LinearLayout.LayoutParams(-1, dp(50));
+        searchParams.topMargin = dp(12);
+        mainLayout.addView(fixtureSearchInput, searchParams);
+        fixtureSearchInput.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                renderFixtureCards(loadedFixtures);
+            }
+            @Override public void afterTextChanged(android.text.Editable s) { }
+        });
+
         fixtureFiltersLayout = new LinearLayout(this);
         fixtureFiltersLayout.setOrientation(LinearLayout.HORIZONTAL);
         fixtureFiltersLayout.setGravity(Gravity.CENTER);
@@ -933,13 +953,29 @@ public class MainActivity extends Activity {
         if (fixtureListLayout == null) return;
         fixtureListLayout.removeAllViews();
         ArrayList<JSONObject> visibleFixtures = new ArrayList<>();
+        String searchQuery = fixtureSearchInput == null ? ""
+            : fixtureSearchInput.getText().toString().trim().toLowerCase(java.util.Locale.ROOT);
         for (JSONObject fixture : fixtures) {
-            if (fixtureMatchesFilter(fixture)) visibleFixtures.add(fixture);
+            if (!fixtureMatchesFilter(fixture)) continue;
+            JSONObject home = fixture.optJSONObject("homeTeam");
+            JSONObject away = fixture.optJSONObject("awayTeam");
+            String homeName = home == null ? "" : home.optString("name", "");
+            String awayName = away == null ? "" : away.optString("name", "");
+            if (searchQuery.isEmpty()
+                    || homeName.toLowerCase(java.util.Locale.ROOT).contains(searchQuery)
+                    || awayName.toLowerCase(java.util.Locale.ROOT).contains(searchQuery)) {
+                visibleFixtures.add(fixture);
+            }
         }
         if (visibleFixtures.isEmpty()) {
-            String message = fixtures.isEmpty()
-                ? "No fixtures are available for the current date range."
-                : "No " + activeFixtureFilter.toLowerCase() + " matches in the loaded fixtures.";
+            String message;
+            if (fixtures.isEmpty()) {
+                message = "No fixtures are available for the current date range.";
+            } else if (!searchQuery.isEmpty()) {
+                message = "No fixtures found for \"" + searchQuery + "\". Try another team name.";
+            } else {
+                message = "No " + activeFixtureFilter.toLowerCase() + " matches in the loaded fixtures.";
+            }
             addFixtureEmptyState(message);
             if (fixtureListStatus != null) {
                 fixtureListStatus.setText(fixtures.size() + " total fixtures  •  0 " + activeFixtureFilter.toLowerCase());
