@@ -51,6 +51,9 @@ public class MainActivity extends Activity {
     private EditText aiQuestion;
     private LinearLayout historyResultsContainer;
     private FrameLayout screenHost;
+    private View appRoot;
+    private boolean aiChatOpen = false;
+    private final ArrayList<Integer> navigationHistory = new ArrayList<>();
     private final View[] appScreens = new View[8];
     private TextView simulationSummary;
     private final LinearLayout[] navItems = new LinearLayout[5];
@@ -92,6 +95,7 @@ public class MainActivity extends Activity {
         loadBrandArtwork(null);
 
         LinearLayout root = new NavigationRootLayout(this);
+        appRoot = root;
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackground(glossyBackground());
 
@@ -166,6 +170,20 @@ public class MainActivity extends Activity {
 
         LinearLayout previousLayout = mainLayout;
         mainLayout = page;
+        if (screen != 0) {
+            Button backButton = new Button(this);
+            backButton.setText("← BACK");
+            backButton.setAllCaps(false);
+            backButton.setTextSize(14);
+            backButton.setTypeface(null, Typeface.BOLD);
+            backButton.setTextColor(GREEN);
+            backButton.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+            backButton.setBackground(rounded(Color.rgb(20, 31, 51), 10));
+            LinearLayout.LayoutParams backParams = new LinearLayout.LayoutParams(-1, dp(44));
+            backParams.bottomMargin = dp(10);
+            page.addView(backButton, backParams);
+            backButton.setOnClickListener(v -> navigateBack());
+        }
         switch (screen) {
             case 0:
                 buildHeader();
@@ -315,9 +333,7 @@ public class MainActivity extends Activity {
         home.setTextColor(WHITE);
         home.setBackground(rounded(Color.rgb(40, 55, 77), 12));
         nav.addView(home, new LinearLayout.LayoutParams(0, dp(48), 1));
-        home.setOnClickListener(v -> {
-            recreate();
-        });
+        home.setOnClickListener(v -> closeAiChat());
         Button menu = new Button(this);
         menu.setText("☰ MENU");
         menu.setAllCaps(false);
@@ -329,7 +345,47 @@ public class MainActivity extends Activity {
         menu.setOnClickListener(v -> showAppMenu());
         screen.addView(nav, new LinearLayout.LayoutParams(-1, dp(52)));
 
+        Button chatBack = new Button(this);
+        chatBack.setText("← BACK TO APP");
+        chatBack.setAllCaps(false);
+        chatBack.setTextColor(GREEN);
+        chatBack.setBackground(rounded(Color.rgb(40, 55, 77), 12));
+        LinearLayout.LayoutParams chatBackParams = new LinearLayout.LayoutParams(-1, dp(42));
+        chatBackParams.bottomMargin = dp(6);
+        screen.addView(chatBack, 0, chatBackParams);
+        chatBack.setOnClickListener(v -> closeAiChat());
+        aiChatOpen = true;
         setContentView(screen);
+    }
+
+    private void closeAiChat() {
+        if (!aiChatOpen) return;
+        aiChatOpen = false;
+        if (appRoot != null) setContentView(appRoot);
+        showScreen(activeScreen);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (aiChatOpen) {
+            closeAiChat();
+            return;
+        }
+        navigateBack();
+    }
+
+    private void navigateBack() {
+        while (!navigationHistory.isEmpty()) {
+            int lastIndex = navigationHistory.size() - 1;
+            int previous = navigationHistory.remove(lastIndex);
+            if (previous != activeScreen && previous >= 0 &&
+                    previous < appScreens.length && appScreens[previous] != null) {
+                showScreen(previous, false);
+                return;
+            }
+        }
+        // If there is no earlier tab, stay on Home rather than unexpectedly closing the app.
+        if (activeScreen != 0) showScreen(0, false);
     }
 
     private void addChatMessage(String sender, String message, boolean fromAi) {
@@ -492,8 +548,16 @@ public class MainActivity extends Activity {
     }
 
     private void showScreen(int screen) {
+        showScreen(screen, true);
+    }
+
+    private void showScreen(int screen, boolean rememberPrevious) {
         if (screen < 0 || screen >= appScreens.length || appScreens[screen] == null) return;
         int previousScreen = activeScreen;
+        if (rememberPrevious && screen != previousScreen) {
+            navigationHistory.add(previousScreen);
+            if (navigationHistory.size() > 40) navigationHistory.remove(0);
+        }
         activeScreen = screen;
         // Avoid recursively attaching touch listeners during navigation; keep screen swaps direct.
         screenHost.removeAllViews();
