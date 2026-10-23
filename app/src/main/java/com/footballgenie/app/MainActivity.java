@@ -34,6 +34,10 @@ public class MainActivity extends Activity {
     private String lastAiContext = "";
     private TextView absenteeStatus;
     private Button absenteeButton;
+    // The absentee check must follow the fixture the user selected from LOAD LIVE FIXTURES,
+    // not rely on manually typed or subsequently changed prediction fields.
+    private String selectedFixtureHome = "";
+    private String selectedFixtureAway = "";
 
     private final int BG = Color.rgb(9, 16, 31);
     private final int CARD = Color.rgb(20, 31, 51);
@@ -812,16 +816,18 @@ public class MainActivity extends Activity {
         }).start();
                 }
     private void loadAbsentees() {
-        String home = homeInput == null ? "" : homeInput.getText().toString().trim();
-        String away = awayInput == null ? "" : awayInput.getText().toString().trim();
+        // Absentee intelligence is fixture-specific: use the teams from the last
+        // fixture selected in LOAD LIVE FIXTURES, not free-text prediction inputs.
+        String home = selectedFixtureHome == null ? "" : selectedFixtureHome.trim();
+        String away = selectedFixtureAway == null ? "" : selectedFixtureAway.trim();
         if (home.length() < 2 || away.length() < 2 || home.equalsIgnoreCase(away)) {
-            Toast.makeText(this, "Enter two different team names first.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Please load live fixtures and select a fixture first.", Toast.LENGTH_LONG).show();
             return;
         }
 
         absenteeButton.setEnabled(false);
         absenteeStatus.setTextColor(GREEN);
-        absenteeStatus.setText("Checking selected football publications for player-availability reports...");
+        absenteeStatus.setText("Checking official club availability evidence for " + home + " vs " + away + "...");
         new Thread(() -> {
             HttpURLConnection connection = null;
             String reportText = null;
@@ -1075,10 +1081,15 @@ continue;
 
                                 homeInput.setText(homeName);
                                 awayInput.setText(awayName);
+                                selectedFixtureHome = homeName;
+                                selectedFixtureAway = awayName;
+                                absenteeStatus.setTextColor(MUTED);
+                                absenteeStatus.setText("Selected fixture: " + homeName + " vs " + awayName
+                                    + ". Player-availability checks will use these teams automatically.");
 
                                 Toast.makeText(
                                     MainActivity.this,
-                                    "Fixture selected. Enter expected goals to simulate.",
+                                    "Fixture selected. Teams are ready for predictions and absentee checks.",
                                     Toast.LENGTH_LONG
                                 ).show();
 
