@@ -32,6 +32,8 @@ public class MainActivity extends Activity {
     private LinearLayout aiMessages;
     private EditText aiQuestion;
     private String lastAiContext = "";
+    private TextView absenteeStatus;
+    private Button absenteeButton;
 
     private final int BG = Color.rgb(9, 16, 31);
     private final int CARD = Color.rgb(20, 31, 51);
@@ -183,6 +185,24 @@ public class MainActivity extends Activity {
         form.addView(fixturesButton, fixturesParams);
 
         fixturesButton.setOnClickListener(v -> loadFixtures());
+
+        absenteeButton = new Button(this);
+        absenteeButton.setText("🩺  CHECK PLAYER ABSENTEES");
+        absenteeButton.setTextColor(WHITE);
+        absenteeButton.setTextSize(14);
+        absenteeButton.setTypeface(null, Typeface.BOLD);
+        absenteeButton.setAllCaps(false);
+        absenteeButton.setBackground(rounded(Color.rgb(40, 55, 77), 14));
+        LinearLayout.LayoutParams absenteeParams = new LinearLayout.LayoutParams(-1, dp(52));
+        absenteeParams.bottomMargin = dp(8);
+        form.addView(absenteeButton, absenteeParams);
+        absenteeButton.setOnClickListener(v -> loadAbsentees());
+
+        absenteeStatus = label("Player availability has not been checked yet.");
+        absenteeStatus.setTextColor(MUTED);
+        absenteeStatus.setTextSize(12);
+        absenteeStatus.setPadding(dp(8), dp(6), dp(8), dp(12));
+        form.addView(absenteeStatus);
 
         Button simulateButton = new Button(this);
         simulateButton.setText("⚽  SIMULATE 10,000 MATCHES");
@@ -789,6 +809,91 @@ public class MainActivity extends Activity {
             }
         }).start();
                 }
+    private void loadAbsentees() {
+        String home = homeInput == null ? "" : homeInput.getText().toString().trim();
+        String away = awayInput == null ? "" : awayInput.getText().toString().trim();
+        if (home.length() < 2 || away.length() < 2 || home.equalsIgnoreCase(away)) {
+            Toast.makeText(this, "Enter two different team names first.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        absenteeButton.setEnabled(false);
+        absenteeStatus.setTextColor(GREEN);
+        absenteeStatus.setText("Checking selected football publications for player-availability reports...");
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            String reportText = null;
+            String errorText = null;
+            try {
+                String query = "homeTeam=" + java.net.URLEncoder.encode(home, "UTF-8")
+                    + "&awayTeam=" + java.net.URLEncoder.encode(away, "UTF-8");
+                URL url = new URL("https://football-genie-api.onrender.com/api/match-intelligence/absentees?" + query);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(35000);
+                connection.setRequestProperty("Accept", "application/json");
+                int code = connection.getResponseCode();
+                java.io.InputStream stream = code >= 200 && code < 400
+                    ? connection.getInputStream() : connection.getErrorStream();
+                if (stream == null) throw new java.io.IOException("No response body from absentee service.");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+                StringBuilder body = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) body.append(line);
+                reader.close();
+                JSONObject data = new JSONObject(body.toString());
+                if (code < 200 || code >= 300) {
+                    errorText = data.optString("error", "Absentee request failed (HTTP " + code + ").");
+                } else {
+                    JSONArray reports = data.optJSONArray("reports");
+                    StringBuilder display = new StringBuilder();
+                    display.append("ABSENTEE INTELLIGENCE • ")
+                        .append(data.optInt("articleCount", 0)).append(" reports/evidence items reviewed.\n\n");
+                    if (reports == null || reports.length() == 0) {
+                        display.append("No named absentees could be established from the current publication evidence. ")
+                            .append("This does NOT mean both teams have no injuries or suspensions.\n\n");
+                    } else {
+                        for (int i = 0; i < reports.length() && i < 8; i++) {
+                            JSONObject item = reports.optJSONObject(i);
+                            if (item == null) continue;
+                            String status = item.optString("reportedStatus", "availability_not_established");
+                            String readableStatus = status.equals("reported_unavailable") ? "REPORTED UNAVAILABLE — VERIFY"
+                                : status.equals("doubtful_or_test_pending") ? "DOUBTFUL / TEST PENDING"
+                                : "AVAILABILITY NOT ESTABLISHED";
+                            display.append("• ").append(item.optString("player", "Unnamed player"))
+                                .append(" — ").append(item.optString("team", "Team")).append("\n")
+                                .append(readableStatus).append("\n")
+                                .append(item.optString("title", "Publication report")).append("\n")
+                                .append(item.optString("source", "Source not identified")).append(" • ")
+                                .append(item.optString("publishedAt", "Date unavailable")).append("\n")
+                                .append(item.optString("url", "")).append("\n\n");
+                        }
+                    }
+                    display.append(data.optString("importantNotice",
+                        "Publication reports are leads, not official confirmation. Verify the original source before kickoff."));
+                    reportText = display.toString();
+                }
+            } catch (Exception ex) {
+                errorText = "Could not retrieve absentee intelligence. Please retry when the API is available.";
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+            final String finalReport = reportText;
+            final String finalError = errorText;
+            runOnUiThread(() -> {
+                absenteeButton.setEnabled(true);
+                if (finalReport != null) {
+                    absenteeStatus.setTextColor(WHITE);
+                    absenteeStatus.setText(finalReport);
+                } else {
+                    absenteeStatus.setTextColor(Color.rgb(255, 170, 150));
+                    absenteeStatus.setText(finalError == null ? "Absentee report unavailable." : finalError);
+                }
+            });
+        }).start();
+    }
+
         private void loadFixtures() {
         Toast.makeText(
             MainActivity.this,
