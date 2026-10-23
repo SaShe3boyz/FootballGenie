@@ -849,11 +849,37 @@ public class MainActivity extends Activity {
                     errorText = data.optString("error", "Absentee request failed (HTTP " + code + ").");
                 } else {
                     JSONArray reports = data.optJSONArray("reports");
+                    ArrayList<JSONObject> eligibleReports = new ArrayList<>();
+                    if (reports != null) {
+                        String[] contextMarkers = {" vs ", " v ", " versus ", " against ", " ahead of ", " before ", " after ",
+                            " following ", " trip to ", " clash with ", " meeting with ", " showdown with ", " tie with ",
+                            " game against ", " match against ", " game with ", " match with "};
+                        for (int i = 0; i < reports.length(); i++) {
+                            JSONObject item = reports.optJSONObject(i);
+                            if (item == null) continue;
+                            String status = item.optString("reportedStatus", "availability_not_established");
+                            if (!status.equals("reported_unavailable") && !status.equals("doubtful_or_test_pending")) continue;
+                            String team = item.optString("team", "").trim();
+                            if (!team.equalsIgnoreCase(home) && !team.equalsIgnoreCase(away)) continue;
+                            String title = item.optString("title", "");
+                            String lowerTitle = title.toLowerCase(java.util.Locale.US);
+                            int contextIndex = -1;
+                            for (String marker : contextMarkers) {
+                                int found = lowerTitle.indexOf(marker);
+                                if (found >= 0 && (contextIndex < 0 || found < contextIndex)) contextIndex = found;
+                            }
+                            String subject = (contextIndex >= 0 ? title.substring(0, contextIndex) : title)
+                                .toLowerCase(java.util.Locale.US);
+                            if (!subject.contains(team.toLowerCase(java.util.Locale.US))) continue;
+                            eligibleReports.add(item);
+                        }
+                    }
+
                     StringBuilder display = new StringBuilder();
                     display.append("ABSENTEE INTELLIGENCE • ")
-                        .append(data.optInt("articleCount", 0)).append(" reports/evidence items reviewed.\n\n");
-                    if (reports == null || reports.length() == 0) {
-                        display.append("No named absentees could be established from the current publication evidence. ")
+                        .append(data.optInt("articleCount", 0)).append(" publication items reviewed.\n\n");
+                    if (eligibleReports.isEmpty()) {
+                        display.append("No confirmed-unavailable or doubtful player could be safely established from the current evidence. ")
                             .append("This does NOT mean both teams have no injuries or suspensions.\n\n");
                         JSONArray evidence = data.optJSONArray("evidence");
                         if (evidence != null && evidence.length() > 0) {
@@ -868,13 +894,11 @@ public class MainActivity extends Activity {
                             }
                         }
                     } else {
-                        for (int i = 0; i < reports.length() && i < 8; i++) {
-                            JSONObject item = reports.optJSONObject(i);
-                            if (item == null) continue;
+                        for (int i = 0; i < eligibleReports.size() && i < 8; i++) {
+                            JSONObject item = eligibleReports.get(i);
                             String status = item.optString("reportedStatus", "availability_not_established");
                             String readableStatus = status.equals("reported_unavailable") ? "REPORTED UNAVAILABLE — VERIFY"
-                                : status.equals("doubtful_or_test_pending") ? "DOUBTFUL / TEST PENDING"
-                                : "AVAILABILITY NOT ESTABLISHED";
+                                : "DOUBTFUL / TEST PENDING — VERIFY";
                             display.append("• ").append(item.optString("player", "Unnamed player"))
                                 .append(" — ").append(item.optString("team", "Team")).append("\n")
                                 .append(readableStatus).append("\n")
