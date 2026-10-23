@@ -1,5 +1,10 @@
 name: Build Football Genie APK
 
+# Prevent overlapping APK builds when several commits arrive close together.
+concurrency:
+  group: football-genie-apk-build
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
