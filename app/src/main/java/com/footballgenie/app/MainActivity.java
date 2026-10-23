@@ -57,24 +57,10 @@ public class MainActivity extends Activity {
         buildMatchForm();
         buildResults();
 
-        FrameLayout root = new FrameLayout(this);
-        root.addView(scroll, new FrameLayout.LayoutParams(-1, -1));
-
-        Button aiFab = new Button(this);
-        aiFab.setText("🤖 AI");
-        aiFab.setTextColor(Color.rgb(8, 25, 22));
-        aiFab.setTextSize(14);
-        aiFab.setTypeface(null, Typeface.BOLD);
-        aiFab.setAllCaps(false);
-        aiFab.setBackground(rounded(GREEN, 28));
-        FrameLayout.LayoutParams fabParams = new FrameLayout.LayoutParams(
-            dp(82), dp(58), Gravity.BOTTOM | Gravity.END
-        );
-        fabParams.setMargins(dp(12), dp(12), dp(18), dp(22));
-        root.addView(aiFab, fabParams);
-        aiFab.setOnClickListener(v -> openAiChat());
-
-        setContentView(root);
+        // Keep the home content as the only full-screen touch layer.
+        // AI remains reachable from the header button and menu, avoiding a
+        // floating control intercepting taps near the bottom of the screen.
+        setContentView(scroll);
         checkApiConnection();
     }
 
