@@ -36,6 +36,9 @@ public class MainActivity extends Activity {
     private EditText homeInput, awayInput, homeGoals, awayGoals;
     private TextView absenteeStatus;
     private Button absenteeButton;
+    // Always bind availability checks to the fixture selected from live fixtures.
+    private String selectedFixtureHome = "";
+    private String selectedFixtureAway = "";
     private TextView result, status;
     private LinearLayout statsSummary;
     private LinearLayout detailedAnalysisContainer;
@@ -1276,6 +1279,13 @@ public class MainActivity extends Activity {
             selectedFixture = selected;
             homeInput.setText(homeName);
             awayInput.setText(awayName);
+            selectedFixtureHome = homeName;
+            selectedFixtureAway = awayName;
+            if (absenteeStatus != null) {
+                absenteeStatus.setTextColor(MUTED);
+                absenteeStatus.setText("Selected fixture: " + homeName + " vs " + awayName
+                    + ". Player-availability checks will use these teams automatically.");
+            }
             loadTeamCrest(homeTeamObject == null ? "" : homeTeamObject.optString("crest", ""), homeCrestImage, homeBadgeFallback);
             loadTeamCrest(awayTeamObject == null ? "" : awayTeamObject.optString("crest", ""), awayCrestImage, awayBadgeFallback);
             loadTeamCrest(homeTeamObject == null ? "" : homeTeamObject.optString("crest", ""), setupHomeCrest, setupHomeFallback);
@@ -4792,16 +4802,17 @@ public class MainActivity extends Activity {
     }
 
     private void loadAbsentees() {
-        String home = homeInput == null ? "" : homeInput.getText().toString().trim();
-        String away = awayInput == null ? "" : awayInput.getText().toString().trim();
+        // Use the selected live fixture, not free-text prediction fields.
+        String home = selectedFixtureHome == null ? "" : selectedFixtureHome.trim();
+        String away = selectedFixtureAway == null ? "" : selectedFixtureAway.trim();
         if (home.length() < 2 || away.length() < 2 || home.equalsIgnoreCase(away)) {
-            Toast.makeText(this, "Choose two different teams first.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Please load live fixtures and select a fixture first.", Toast.LENGTH_LONG).show();
             return;
         }
 
         absenteeButton.setEnabled(false);
         absenteeStatus.setTextColor(GREEN);
-        absenteeStatus.setText("Checking selected publication sources for player-availability evidence…");
+        absenteeStatus.setText("Checking official club availability evidence for " + home + " vs " + away + "…");
         new Thread(() -> {
             HttpURLConnection connection = null;
             String reportText = null;
