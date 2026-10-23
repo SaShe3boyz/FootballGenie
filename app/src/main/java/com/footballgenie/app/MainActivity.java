@@ -201,6 +201,8 @@ public class MainActivity extends Activity {
         absenteeStatus = label("Player availability has not been checked yet.");
         absenteeStatus.setTextColor(MUTED);
         absenteeStatus.setTextSize(12);
+        absenteeStatus.setAutoLinkMask(android.text.util.Linkify.WEB_URLS);
+        absenteeStatus.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
         absenteeStatus.setPadding(dp(8), dp(6), dp(8), dp(12));
         form.addView(absenteeStatus);
 
@@ -852,7 +854,19 @@ public class MainActivity extends Activity {
                         .append(data.optInt("articleCount", 0)).append(" reports/evidence items reviewed.\n\n");
                     if (reports == null || reports.length() == 0) {
                         display.append("No named absentees could be established from the current publication evidence. ")
-                            .append("This does NOT mean both teams have no injuries or suspensions.\n\n");
+                            .append("This does NOT mean both teams have no injuries or suspensions.\\n\\n");
+                        JSONArray evidence = data.optJSONArray("evidence");
+                        if (evidence != null && evidence.length() > 0) {
+                            display.append("RECENT TEAM-NEWS LEADS — CHECK THE ORIGINAL REPORTS\\n");
+                            for (int i = 0; i < evidence.length() && i < 8; i++) {
+                                JSONObject item = evidence.optJSONObject(i);
+                                if (item == null) continue;
+                                display.append("• ").append(item.optString("title", "Publication report")).append("\\n")
+                                    .append(item.optString("source", "Source not identified")).append(" • ")
+                                    .append(item.optString("publishedAt", "Date unavailable")).append("\\n")
+                                    .append(item.optString("url", "")).append("\\n\\n");
+                            }
+                        }
                     } else {
                         for (int i = 0; i < reports.length() && i < 8; i++) {
                             JSONObject item = reports.optJSONObject(i);
