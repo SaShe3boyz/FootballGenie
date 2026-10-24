@@ -4835,6 +4835,7 @@ public class MainActivity extends Activity {
         absenteeButton.setEnabled(false);
         absenteeStatus.setTextColor(GREEN);
         absenteeStatus.setText("Checking BIG BALLS Data for " + home + " vs " + away + "...");
+        final String competitionForRequest = competition;
         new Thread(() -> {
             HttpURLConnection connection = null;
             String reportText = null;
@@ -4842,7 +4843,7 @@ public class MainActivity extends Activity {
             try {
                 String query = "homeTeam=" + java.net.URLEncoder.encode(home, "UTF-8")
                     + "&awayTeam=" + java.net.URLEncoder.encode(away, "UTF-8")
-                    + "&competition=" + java.net.URLEncoder.encode(competition, "UTF-8")
+                    + "&competition=" + java.net.URLEncoder.encode(competitionForRequest, "UTF-8")
                     + "&forceRefresh=true";
                 URL url = new URL("https://football-genie-api.onrender.com/api/match-intelligence/absentees?" + query);
                 connection = (HttpURLConnection) url.openConnection();
