@@ -6,11 +6,27 @@ android {
     namespace 'com.footballgenie.app'
     compileSdk 35
 
+    signingConfigs {
+        release {
+            storeFile file(System.getenv('SIGNING_KEYSTORE_PATH') ?: 'missing-signing-key.jks')
+            storePassword System.getenv('SIGNING_STORE_PASSWORD')
+            keyAlias System.getenv('SIGNING_KEY_ALIAS')
+            keyPassword System.getenv('SIGNING_KEY_PASSWORD')
+        }
+    }
+
     defaultConfig {
         applicationId 'com.footballgenie.app'
         minSdk 23
         targetSdk 35
-        versionCode 1
-        versionName '1.0'
+        versionCode 3
+        versionName '1.2'
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+        }
     }
 }
