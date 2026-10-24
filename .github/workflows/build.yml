@@ -1,8 +1,8 @@
 name: Build Football Genie APK
 
-# Prevent overlapping APK builds when several commits arrive close together.
+# Keep only one signed release build running at a time.
 concurrency:
-  group: football-genie-apk-build
+  group: football-genie-release-apk
   cancel-in-progress: true
 
 on:
@@ -39,12 +39,36 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build Football Genie
-        run: gradle --stacktrace assembleDebug
+      - name: Prepare permanent signing key
+        env:
+          SIGNING_KEY_BASE64: ${{ secrets.SIGNING_KEY_BASE64 }}
+        run: |
+          test -n "$SIGNING_KEY_BASE64"
+          echo "$SIGNING_KEY_BASE64" | base64 --decode > "$RUNNER_TEMP/football-genie-release.jks"
+          echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/football-genie-release.jks" >> "$GITHUB_ENV"
 
-      - name: Upload APK
+      - name: Build signed Football Genie APK
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: gradle --stacktrace assembleRelease
+
+      - name: Verify APK is a real release build
+        run: |
+          APK=$(find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -type f | head -n 1)
+          test -n "$APK"
+          SIZE=$(stat -c%s "$APK")
+          echo "APK path: $APK"
+          echo "APK size: $SIZE bytes"
+          # Reject suspiciously tiny or incomplete APKs.
+          test "$SIZE" -gt 80000
+          file "$APK"
+          unzip -t "$APK"
+
+      - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
           name: Football-Genie-APK
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
