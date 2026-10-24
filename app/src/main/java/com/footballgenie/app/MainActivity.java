@@ -2189,7 +2189,7 @@ public class MainActivity extends Activity {
         });
 
         absenteeButton = new Button(this);
-        absenteeButton.setText("🩺  CHECK PLAYER ABSENTEES");
+        absenteeButton.setText("📰  CHECK TEAMS’ NEWS");
         absenteeButton.setTextColor(WHITE);
         absenteeButton.setTextSize(14);
         absenteeButton.setTypeface(null, Typeface.BOLD);
@@ -2198,9 +2198,9 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams absenteeParams = new LinearLayout.LayoutParams(-1, dp(50));
         absenteeParams.topMargin = dp(8);
         teamsCard.addView(absenteeButton, absenteeParams);
-        absenteeButton.setOnClickListener(v -> loadAbsentees());
+        absenteeButton.setOnClickListener(v -> loadTeamsNews());
 
-        absenteeStatus = label("Player availability has not been checked yet.");
+        absenteeStatus = label("Team news has not been checked yet.");
         absenteeStatus.setTextColor(MUTED);
         absenteeStatus.setTextSize(13);
         absenteeStatus.setLineSpacing(dp(2), 1.0f);
@@ -4801,8 +4801,10 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void loadAbsentees() {
-        // Use the selected live fixture, not free-text prediction fields.
+    private void loadTeamsNews() {
+        // Always use the teams from the selected live fixture.
+        // This reuses Football Genie's existing news endpoint instead of calling
+        // a separate player-absence provider, helping conserve provider quotas.
         String home = selectedFixtureHome == null ? "" : selectedFixtureHome.trim();
         String away = selectedFixtureAway == null ? "" : selectedFixtureAway.trim();
         if (home.length() < 2 || away.length() < 2 || home.equalsIgnoreCase(away)) {
@@ -4812,7 +4814,7 @@ public class MainActivity extends Activity {
 
         absenteeButton.setEnabled(false);
         absenteeStatus.setTextColor(GREEN);
-        absenteeStatus.setText("Checking official club availability evidence for " + home + " vs " + away + "…");
+        absenteeStatus.setText("Checking recent team news for " + home + " vs " + away + "...");
         new Thread(() -> {
             HttpURLConnection connection = null;
             String reportText = null;
@@ -4820,7 +4822,7 @@ public class MainActivity extends Activity {
             try {
                 String query = "homeTeam=" + java.net.URLEncoder.encode(home, "UTF-8")
                     + "&awayTeam=" + java.net.URLEncoder.encode(away, "UTF-8");
-                URL url = new URL("https://football-genie-api.onrender.com/api/match-intelligence/absentees?" + query);
+                URL url = new URL("https://football-genie-api.onrender.com/api/match-intelligence/news?" + query);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 connection.setConnectTimeout(15000);
@@ -4829,7 +4831,7 @@ public class MainActivity extends Activity {
                 int code = connection.getResponseCode();
                 java.io.InputStream stream = code >= 200 && code < 400
                     ? connection.getInputStream() : connection.getErrorStream();
-                if (stream == null) throw new java.io.IOException("No response body from absentee service.");
+                if (stream == null) throw new java.io.IOException("No response body from team-news service.");
                 BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
                 StringBuilder body = new StringBuilder();
                 String line;
@@ -4837,76 +4839,67 @@ public class MainActivity extends Activity {
                 reader.close();
                 JSONObject data = new JSONObject(body.toString());
                 if (code < 200 || code >= 300) {
-                    errorText = data.optString("error", "Absentee request failed (HTTP " + code + ").");
+                    errorText = data.optString("error", "Team-news request failed (HTTP " + code + ").");
                 } else {
-                    JSONArray reports = data.optJSONArray("reports");
-                    ArrayList<JSONObject> eligibleReports = new ArrayList<>();
-                    if (reports != null) {
-                        String[] markers = {" vs ", " v ", " versus ", " against ", " ahead of ", " before ", " after ",
-                            " following ", " trip to ", " clash with ", " meeting with ", " showdown with ", " tie with ",
-                            " game against ", " match against ", " game with ", " match with "};
-                        for (int i = 0; i < reports.length(); i++) {
-                            JSONObject item = reports.optJSONObject(i);
-                            if (item == null) continue;
-                            String team = item.optString("team", "").trim();
-                            String playerStatus = item.optString("reportedStatus", "availability_not_established");
-                            if (!team.equalsIgnoreCase(home) && !team.equalsIgnoreCase(away)) continue;
-                            if (!playerStatus.equals("reported_unavailable")
-                                    && !playerStatus.equals("doubtful_or_test_pending")) continue;
-                            String title = item.optString("title", "");
-                            String lowerTitle = title.toLowerCase(Locale.US);
-                            int contextIndex = -1;
-                            for (String marker : markers) {
-                                int found = lowerTitle.indexOf(marker);
-                                if (found >= 0 && (contextIndex < 0 || found < contextIndex)) contextIndex = found;
-                            }
-                            String subject = (contextIndex >= 0 ? title.substring(0, contextIndex) : title)
-                                .toLowerCase(Locale.US);
-                            if (!subject.contains(team.toLowerCase(Locale.US))) continue;
-                            eligibleReports.add(item);
-                        }
-                    }
-
+                    JSONArray articles = data.optJSONArray("articles");
                     StringBuilder display = new StringBuilder();
-                    display.append("ABSENTEE INTELLIGENCE • ")
-                        .append(data.optInt("articleCount", 0)).append(" publication items reviewed.\n\n");
-                    if (eligibleReports.isEmpty()) {
-                        display.append("No named player could safely be confirmed unavailable or doubtful from the current evidence. ")
-                            .append("This does NOT mean the teams have no injuries or suspensions.\n\n");
-                        JSONArray evidence = data.optJSONArray("evidence");
-                        if (evidence != null && evidence.length() > 0) {
-                            display.append("RECENT TEAM-NEWS LEADS — OPEN THE ORIGINAL REPORTS\n");
-                            for (int i = 0; i < evidence.length() && i < 6; i++) {
-                                JSONObject item = evidence.optJSONObject(i);
-                                if (item == null) continue;
-                                display.append("• ").append(item.optString("title", "Publication report")).append("\n")
-                                    .append(item.optString("source", "Source not identified")).append(" • ")
-                                    .append(item.optString("publishedAt", "Date unavailable")).append("\n")
-                                    .append(item.optString("url", "")).append("\n\n");
+                    display.append("TEAM NEWS • ").append(home).append(" vs ").append(away).append("\n");
+                    display.append(data.optInt("count", articles == null ? 0 : articles.length()))
+                        .append(" relevant article(s) found.\n");
+                    display.append("Official club sources are prioritised; supporting football publications may also appear.\n\n");
+
+                    if (articles == null || articles.length() == 0) {
+                        display.append("No recent relevant team-news articles were found by the available news providers. ")
+                            .append("This does not mean there are no injuries, suspensions, or squad updates.\n\n");
+                        JSONArray attempted = data.optJSONArray("providersAttempted");
+                        if (attempted != null && attempted.length() > 0) {
+                            display.append("News sources checked: ");
+                            for (int i = 0; i < attempted.length(); i++) {
+                                if (i > 0) display.append(", ");
+                                display.append(attempted.optString(i, "News provider"));
                             }
+                            display.append(".\n\n");
                         }
                     } else {
-                        for (int i = 0; i < eligibleReports.size() && i < 8; i++) {
-                            JSONObject item = eligibleReports.get(i);
-                            String playerStatus = item.optString("reportedStatus", "");
-                            String readableStatus = playerStatus.equals("reported_unavailable")
-                                ? "REPORTED UNAVAILABLE — VERIFY ORIGINAL SOURCE"
-                                : "DOUBTFUL / TEST PENDING — VERIFY ORIGINAL SOURCE";
-                            display.append("• ").append(item.optString("player", "Unnamed player"))
-                                .append(" — ").append(item.optString("team", "Team")).append("\n")
-                                .append(readableStatus).append("\n")
-                                .append(item.optString("title", "Publication report")).append("\n")
-                                .append(item.optString("source", "Source not identified")).append(" • ")
-                                .append(item.optString("publishedAt", "Date unavailable")).append("\n")
-                                .append(item.optString("url", "")).append("\n\n");
+                        for (int i = 0; i < articles.length() && i < 12; i++) {
+                            JSONObject item = articles.optJSONObject(i);
+                            if (item == null) continue;
+                            display.append("• ").append(item.optString("title", "Team-news report")).append("\n");
+                            String source = item.optString("sourceLabel",
+                                item.optString("source", "Football publication"));
+                            display.append(source);
+                            String publishedAt = item.optString("publishedAt", "");
+                            if (!publishedAt.isEmpty() && !publishedAt.equals("null")) {
+                                display.append(" • ").append(publishedAt);
+                            }
+                            display.append("\n");
+                            String description = item.optString("description", "");
+                            if (!description.isEmpty() && !description.equals("null")) {
+                                display.append(description).append("\n");
+                            }
+                            JSONArray categories = item.optJSONArray("categories");
+                            if (categories != null && categories.length() > 0) {
+                                display.append("Topic: ");
+                                for (int j = 0; j < categories.length(); j++) {
+                                    if (j > 0) display.append(", ");
+                                    display.append(categories.optString(j));
+                                }
+                                display.append("\n");
+                            }
+                            String trustTier = item.optString("sourceTrustTier", "");
+                            if (!trustTier.isEmpty() && !trustTier.equals("null")) {
+                                display.append("Source type: ").append(trustTier.replace('_', ' ')).append("\n");
+                            }
+                            display.append("\n");
                         }
                     }
                     display.append(data.optString("importantNotice",
-                        "Publication reports are leads, not official confirmation. Check the original report before kickoff."));
+                        "Team-news articles are leads. Verify the original report and exact match context before using them in a prediction."));
+                    display.append("\n\nChecked: ").append(data.optString("searchedAt", "time unavailable"));
                     reportText = display.toString();
                 }
             } catch (Exception ex) {
-                errorText = "Absentee intelligence is temporarily unavailable. Please retry shortly.";
+                errorText = "Could not retrieve team news. Please retry when the API is available.";
             } finally {
                 if (connection != null) connection.disconnect();
             }
@@ -4919,7 +4912,7 @@ public class MainActivity extends Activity {
                     absenteeStatus.setText(finalReport);
                 } else {
                     absenteeStatus.setTextColor(Color.rgb(255, 170, 150));
-                    absenteeStatus.setText(finalError == null ? "Absentee report unavailable." : finalError);
+                    absenteeStatus.setText(finalError == null ? "Team-news report unavailable." : finalError);
                 }
             });
         }).start();
