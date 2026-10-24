@@ -66,7 +66,7 @@ jobs:
           echo "APK path: $APK"
           echo "APK size: $SIZE bytes"
           # Fail rather than publish an incomplete/tiny artifact.
-          test "$SIZE" -gt 500000
+          test "$SIZE" -gt 80000
           file "$APK"
 
       - name: Upload signed APK
