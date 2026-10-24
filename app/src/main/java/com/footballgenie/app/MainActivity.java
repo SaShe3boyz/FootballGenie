@@ -842,7 +842,7 @@ public class MainActivity extends Activity {
             String errorText = null;
             try {
                 String query = "homeTeam=" + java.net.URLEncoder.encode(home, "UTF-8")
-                    + "&awayTeam=" + java.net.URLEncoder.encode(away, "UTF-8") + "&forceRefresh=true";
+                    + "&awayTeam=" + java.net.URLEncoder.encode(away, "UTF-8");
                 URL url = new URL("https://football-genie-api.onrender.com/api/match-intelligence/news?" + query);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
