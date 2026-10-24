@@ -39,6 +39,7 @@ public class MainActivity extends Activity {
     // not rely on manually typed or subsequently changed prediction fields.
     private String selectedFixtureHome = "";
     private String selectedFixtureAway = "";
+    private String selectedFixtureCompetition = "";
 
     private final int BG = Color.rgb(9, 16, 31);
     private final int CARD = Color.rgb(20, 31, 51);
@@ -831,9 +832,10 @@ public class MainActivity extends Activity {
             return;
         }
 
+        String competition = selectedFixtureCompetition == null ? "" : selectedFixtureCompetition.trim();
         absenteeButton.setEnabled(false);
         absenteeStatus.setTextColor(GREEN);
-        absenteeStatus.setText("Checking team news published in the last 7 days for " + home + " vs " + away + "...");
+        absenteeStatus.setText("Checking BIG BALLS Data absence records for " + home + " vs " + away + "...");
         teamNewsCards.removeAllViews();
         teamNewsCards.setVisibility(View.GONE);
         new Thread(() -> {
@@ -843,16 +845,19 @@ public class MainActivity extends Activity {
             try {
                 String query = "homeTeam=" + java.net.URLEncoder.encode(home, "UTF-8")
                     + "&awayTeam=" + java.net.URLEncoder.encode(away, "UTF-8");
-                URL url = new URL("https://football-genie-api.onrender.com/api/match-intelligence/news?" + query);
+                if (!competition.isEmpty()) {
+                    query += "&competition=" + java.net.URLEncoder.encode(competition, "UTF-8");
+                }
+                URL url = new URL("https://football-genie-api.onrender.com/api/match-intelligence/absentees?" + query);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 connection.setConnectTimeout(15000);
-                connection.setReadTimeout(35000);
+                connection.setReadTimeout(25000);
                 connection.setRequestProperty("Accept", "application/json");
                 int code = connection.getResponseCode();
                 java.io.InputStream stream = code >= 200 && code < 400
                     ? connection.getInputStream() : connection.getErrorStream();
-                if (stream == null) throw new java.io.IOException("No response body from team-news service.");
+                if (stream == null) throw new java.io.IOException("No response body from BIG BALLS Data service.");
                 BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
                 StringBuilder body = new StringBuilder();
                 String line;
@@ -860,12 +865,12 @@ public class MainActivity extends Activity {
                 reader.close();
                 JSONObject data = new JSONObject(body.toString());
                 if (code < 200 || code >= 300) {
-                    errorText = data.optString("error", "Team-news request failed (HTTP " + code + ").");
+                    errorText = data.optString("error", "BIG BALLS Data request failed (HTTP " + code + ").");
                 } else {
                     responseData = data;
                 }
             } catch (Exception ex) {
-                errorText = "Could not retrieve team news. Please retry when the API is available.";
+                errorText = "Could not retrieve BIG BALLS Data. Please retry when the API is available.";
             } finally {
                 if (connection != null) connection.disconnect();
             }
@@ -875,29 +880,107 @@ public class MainActivity extends Activity {
                 absenteeButton.setEnabled(true);
                 if (finalData == null) {
                     absenteeStatus.setTextColor(Color.rgb(255, 170, 150));
-                    absenteeStatus.setText(finalError == null ? "Team-news report unavailable." : finalError);
+                    absenteeStatus.setText("BIG BALLS DATA UNAVAILABLE\n" +
+                        (finalError == null ? "Absence report unavailable." : finalError));
                     return;
                 }
-                JSONArray articles = finalData.optJSONArray("articles");
+
+                JSONArray reports = finalData.optJSONArray("reports");
                 int shown = 0;
-                if (articles != null) {
-                    for (int i = 0; i < articles.length(); i++) {
-                        JSONObject article = articles.optJSONObject(i);
-                        if (article == null || !isFreshDatedNewsArticle(article)) continue;
-                        addTeamNewsCard(article, shown++);
+                if (reports != null) {
+                    for (int i = 0; i < reports.length(); i++) {
+                        JSONObject report = reports.optJSONObject(i);
+                        if (report == null) continue;
+                        addBigBallsAbsenceCard(report, shown++);
                     }
                 }
+
+                String providerAsOf = finalData.optString("providerAsOf", "").trim();
+                boolean providerStale = finalData.optBoolean("providerStale", false);
                 absenteeStatus.setTextColor(GREEN);
-                absenteeStatus.setText("TEAM NEWS  •  " + home + " vs " + away + "\n"
-                    + shown + " relevant article(s) published in the last 7 days.");
+                absenteeStatus.setText("BIG BALLS DATA • TEAM AVAILABILITY\n" + home + " vs " + away
+                    + "\n" + shown + " provider-reported absence record(s)."
+                    + (providerAsOf.isEmpty() || "null".equalsIgnoreCase(providerAsOf) ? "" : "\nProvider data as of: " + providerAsOf)
+                    + (providerStale ? "\n⚠ Provider marks this dataset as stale." : "")
+                    + "\nRecords are not proof that a player will miss this fixture.");
                 if (shown == 0) {
-                    absenteeStatus.append("\nNo articles with a valid publication date from the last 7 days were found.");
+                    absenteeStatus.append("\nBIG BALLS Data returned no matching absence records for these teams. This does not confirm that both squads are fully available.");
                     teamNewsCards.setVisibility(View.GONE);
                 } else {
                     teamNewsCards.setVisibility(View.VISIBLE);
                 }
             });
         }).start();
+    }
+
+    private void addBigBallsAbsenceCard(JSONObject report, int index) {
+        int[] cardColors = {
+            Color.rgb(20, 43, 54), Color.rgb(26, 40, 59), Color.rgb(24, 48, 43),
+            Color.rgb(40, 36, 58), Color.rgb(42, 42, 48), Color.rgb(20, 48, 58)
+        };
+        int[] accentColors = {
+            Color.rgb(80, 230, 150), Color.rgb(91, 190, 245), Color.rgb(116, 225, 170),
+            Color.rgb(183, 153, 255), Color.rgb(255, 194, 102), Color.rgb(90, 220, 205)
+        };
+        int accent = accentColors[index % accentColors.length];
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(14), dp(13), dp(14), dp(14));
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(cardColors[index % cardColors.length]);
+        background.setCornerRadius(dp(15));
+        background.setStroke(dp(1), accent);
+        card.setBackground(background);
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
+        cardParams.bottomMargin = dp(10);
+        teamNewsCards.addView(card, cardParams);
+
+        TextView heading = label(report.optString("player", "Player not identified"));
+        heading.setTextColor(WHITE);
+        heading.setTextSize(16);
+        heading.setTypeface(null, Typeface.BOLD);
+        card.addView(heading);
+
+        TextView team = label(report.optString("team", "Team not identified"));
+        team.setTextColor(accent);
+        team.setTextSize(13);
+        team.setTypeface(null, Typeface.BOLD);
+        team.setPadding(0, dp(5), 0, dp(7));
+        card.addView(team);
+
+        String reason = report.optString("reason", "").trim();
+        if (reason.isEmpty() || "null".equalsIgnoreCase(reason)) reason = "No reason was supplied by BIG BALLS Data.";
+        TextView detail = label("Reported reason: " + reason);
+        detail.setTextColor(WHITE);
+        detail.setTextSize(13);
+        detail.setLineSpacing(dp(2), 1.0f);
+        card.addView(detail);
+
+        String status = report.optString("providerStatus", "").trim();
+        if (!status.isEmpty() && !"null".equalsIgnoreCase(status)) {
+            TextView statusView = label("Provider status: " + status);
+            statusView.setTextColor(accent);
+            statusView.setTextSize(12);
+            statusView.setPadding(0, dp(7), 0, 0);
+            card.addView(statusView);
+        }
+
+        String fixture = report.optString("fixture", "").trim();
+        String fixtureDate = report.optString("fixtureDate", "").trim();
+        if (!fixture.isEmpty() && !"null".equalsIgnoreCase(fixture)) {
+            TextView fixtureView = label("Related fixture: " + fixture
+                + (fixtureDate.isEmpty() || "null".equalsIgnoreCase(fixtureDate) ? "" : " • " + fixtureDate));
+            fixtureView.setTextColor(MUTED);
+            fixtureView.setTextSize(11);
+            fixtureView.setPadding(0, dp(7), 0, 0);
+            card.addView(fixtureView);
+        }
+
+        TextView notice = label("BIG BALLS Data record. Current availability for this specific upcoming match has not been independently established.");
+        notice.setTextColor(MUTED);
+        notice.setTextSize(11);
+        notice.setPadding(0, dp(9), 0, 0);
+        card.addView(notice);
     }
 
     private boolean isFreshDatedNewsArticle(JSONObject article) {
@@ -1166,6 +1249,8 @@ continue;
                                 awayInput.setText(awayName);
                                 selectedFixtureHome = homeName;
                                 selectedFixtureAway = awayName;
+                                JSONObject selectedCompetition = selected.optJSONObject("competition");
+                                selectedFixtureCompetition = selectedCompetition == null ? "" : selectedCompetition.optString("name", "");
                                 absenteeStatus.setTextColor(MUTED);
                                 absenteeStatus.setText("Selected fixture: " + homeName + " vs " + awayName
                                     + ". Player-availability checks will use these teams automatically.");
