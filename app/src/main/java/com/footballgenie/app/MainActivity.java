@@ -4823,7 +4823,8 @@ public class MainActivity extends Activity {
             try {
                 String query = "homeTeam=" + java.net.URLEncoder.encode(home, "UTF-8")
                     + "&awayTeam=" + java.net.URLEncoder.encode(away, "UTF-8")
-                    + "&competition=" + java.net.URLEncoder.encode(competition, "UTF-8");
+                    + "&competition=" + java.net.URLEncoder.encode(competition, "UTF-8")
+                    + "&forceRefresh=true";
                 URL url = new URL("https://football-genie-api.onrender.com/api/match-intelligence/absentees?" + query);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
@@ -4845,9 +4846,9 @@ public class MainActivity extends Activity {
                 } else {
                     JSONArray reports = data.optJSONArray("reports");
                     StringBuilder display = new StringBuilder();
-                    display.append("BIG BALLS DATA • TEAM AVAILABILITY\n");
+                    display.append("TEAM NEWS • BIG BALLS DATA\n");
                     display.append(home).append(" vs ").append(away).append("\n");
-                    display.append(reports == null ? 0 : reports.length()).append(" matching absence record(s).\n");
+                    display.append(reports == null ? 0 : reports.length()).append(" BIG BALLS record(s) returned for the selected teams.\n");
                     String asOf = data.optString("providerAsOf", "");
                     if (!asOf.isEmpty() && !asOf.equals("null")) display.append("Provider data as of: ").append(asOf).append("\n");
                     if (data.has("providerStale") && !data.isNull("providerStale")) {
@@ -4857,7 +4858,7 @@ public class MainActivity extends Activity {
                     if (reports == null || reports.length() == 0) {
                         display.append("BIG BALLS Data returned no matching absence records for these teams. This does not confirm that both squads are fully available.\n\n");
                     } else {
-                        for (int i = 0; i < reports.length() && i < 20; i++) {
+                        for (int i = 0; i < reports.length(); i++) {
                             JSONObject item = reports.optJSONObject(i);
                             if (item == null) continue;
                             display.append("• ").append(item.optString("playerName", item.optString("player", "Player not specified"))).append("\n");
@@ -4865,14 +4866,16 @@ public class MainActivity extends Activity {
                             if (!team.isEmpty() && !team.equals("null")) display.append("Team: ").append(team).append("\n");
                             String reason = item.optString("reason", item.optString("type", ""));
                             if (!reason.isEmpty() && !reason.equals("null")) display.append("Reported reason: ").append(reason).append("\n");
-                            String providerStatus = item.optString("status", "");
+                            String providerStatus = item.optString("providerStatus", item.optString("status", ""));
                             if (!providerStatus.isEmpty() && !providerStatus.equals("null")) display.append("Provider status: ").append(providerStatus).append("\n");
                             String fixtureDate = item.optString("fixtureDate", "");
                             if (!fixtureDate.isEmpty() && !fixtureDate.equals("null")) display.append("Related fixture date: ").append(fixtureDate).append("\n");
+                            String relatedFixture = item.optString("fixture", "");
+                            if (!relatedFixture.isEmpty() && !relatedFixture.equals("null")) display.append("Related fixture: ").append(relatedFixture).append("\n");
                             display.append("\n");
                         }
                     }
-                    display.append("These are BIG BALLS Data absence records, not independent confirmation of availability for this specific upcoming match. No prediction probabilities are changed by this screen.");
+                    display.append("This screen shows all matching records returned by BIG BALLS Data for the selected teams. The soccer availability feed may include historical absences; a record does not by itself confirm current unavailability for this upcoming match. No prediction probabilities are changed by this screen.");
                     reportText = display.toString();
                 }
             } catch (Exception ex) {
