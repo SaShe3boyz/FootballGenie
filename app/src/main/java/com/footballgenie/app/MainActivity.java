@@ -33,6 +33,7 @@ public class MainActivity extends Activity {
     private EditText aiQuestion;
     private String lastAiContext = "";
     private TextView absenteeStatus;
+    private LinearLayout teamNewsCards;
     private Button absenteeButton;
     // The absentee check must follow the fixture the user selected from LOAD LIVE FIXTURES,
     // not rely on manually typed or subsequently changed prediction fields.
@@ -209,6 +210,13 @@ public class MainActivity extends Activity {
         absenteeStatus.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
         absenteeStatus.setPadding(dp(8), dp(6), dp(8), dp(12));
         form.addView(absenteeStatus);
+
+        teamNewsCards = new LinearLayout(this);
+        teamNewsCards.setOrientation(LinearLayout.VERTICAL);
+        teamNewsCards.setVisibility(View.GONE);
+        LinearLayout.LayoutParams newsCardsParams = new LinearLayout.LayoutParams(-1, -2);
+        newsCardsParams.bottomMargin = dp(10);
+        form.addView(teamNewsCards, newsCardsParams);
 
         Button simulateButton = new Button(this);
         simulateButton.setText("⚽  SIMULATE 10,000 MATCHES");
@@ -816,9 +824,6 @@ public class MainActivity extends Activity {
         }).start();
                 }
     private void loadTeamsNews() {
-        // Always use the teams from the selected live fixture.
-        // This reuses Football Genie's existing news endpoint instead of calling
-        // a separate player-absence provider, helping conserve provider quotas.
         String home = selectedFixtureHome == null ? "" : selectedFixtureHome.trim();
         String away = selectedFixtureAway == null ? "" : selectedFixtureAway.trim();
         if (home.length() < 2 || away.length() < 2 || home.equalsIgnoreCase(away)) {
@@ -828,14 +833,16 @@ public class MainActivity extends Activity {
 
         absenteeButton.setEnabled(false);
         absenteeStatus.setTextColor(GREEN);
-        absenteeStatus.setText("Checking recent team news for " + home + " vs " + away + "...");
+        absenteeStatus.setText("Checking team news published in the last 7 days for " + home + " vs " + away + "...");
+        teamNewsCards.removeAllViews();
+        teamNewsCards.setVisibility(View.GONE);
         new Thread(() -> {
             HttpURLConnection connection = null;
-            String reportText = null;
+            JSONObject responseData = null;
             String errorText = null;
             try {
                 String query = "homeTeam=" + java.net.URLEncoder.encode(home, "UTF-8")
-                    + "&awayTeam=" + java.net.URLEncoder.encode(away, "UTF-8");
+                    + "&awayTeam=" + java.net.URLEncoder.encode(away, "UTF-8") + "&forceRefresh=true";
                 URL url = new URL("https://football-genie-api.onrender.com/api/match-intelligence/news?" + query);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
@@ -855,81 +862,163 @@ public class MainActivity extends Activity {
                 if (code < 200 || code >= 300) {
                     errorText = data.optString("error", "Team-news request failed (HTTP " + code + ").");
                 } else {
-                    JSONArray articles = data.optJSONArray("articles");
-                    StringBuilder display = new StringBuilder();
-                    display.append("TEAM NEWS • ").append(home).append(" vs ").append(away).append("\n");
-                    display.append(data.optInt("count", articles == null ? 0 : articles.length()))
-                        .append(" relevant article(s) found.\n");
-                    display.append("Official club sources are prioritised; supporting football publications may also appear.\n\n");
-
-                    if (articles == null || articles.length() == 0) {
-                        display.append("No recent relevant team-news articles were found by the available news providers. ")
-                            .append("This does not mean there are no injuries, suspensions, or squad updates.\n\n");
-                        JSONArray attempted = data.optJSONArray("providersAttempted");
-                        if (attempted != null && attempted.length() > 0) {
-                            display.append("News sources checked: ");
-                            for (int i = 0; i < attempted.length(); i++) {
-                                if (i > 0) display.append(", ");
-                                display.append(attempted.optString(i, "News provider"));
-                            }
-                            display.append(".\n\n");
-                        }
-                    } else {
-                        for (int i = 0; i < articles.length() && i < 12; i++) {
-                            JSONObject item = articles.optJSONObject(i);
-                            if (item == null) continue;
-                            display.append("• ").append(item.optString("title", "Team-news report")).append("\n");
-                            String source = item.optString("sourceLabel",
-                                item.optString("source", "Football publication"));
-                            display.append(source);
-                            String publishedAt = item.optString("publishedAt", "");
-                            if (!publishedAt.isEmpty() && !publishedAt.equals("null")) {
-                                display.append(" • ").append(publishedAt);
-                            }
-                            display.append("\n");
-                            String description = item.optString("description", "");
-                            if (!description.isEmpty() && !description.equals("null")) {
-                                display.append(description).append("\n");
-                            }
-                            JSONArray categories = item.optJSONArray("categories");
-                            if (categories != null && categories.length() > 0) {
-                                display.append("Topic: ");
-                                for (int j = 0; j < categories.length(); j++) {
-                                    if (j > 0) display.append(", ");
-                                    display.append(categories.optString(j));
-                                }
-                                display.append("\n");
-                            }
-                            String trustTier = item.optString("sourceTrustTier", "");
-                            if (!trustTier.isEmpty() && !trustTier.equals("null")) {
-                                display.append("Source type: ").append(trustTier.replace('_', ' ')).append("\n");
-                            }
-                            display.append("\n");
-                        }
-                    }
-                    display.append(data.optString("importantNotice",
-                        "Team-news articles are leads. Verify the original report and exact match context before using them in a prediction."));
-                    display.append("\n\nChecked: ").append(data.optString("searchedAt", "time unavailable"));
-                    reportText = display.toString();
+                    responseData = data;
                 }
             } catch (Exception ex) {
                 errorText = "Could not retrieve team news. Please retry when the API is available.";
             } finally {
                 if (connection != null) connection.disconnect();
             }
-            final String finalReport = reportText;
+            final JSONObject finalData = responseData;
             final String finalError = errorText;
             runOnUiThread(() -> {
                 absenteeButton.setEnabled(true);
-                if (finalReport != null) {
-                    absenteeStatus.setTextColor(WHITE);
-                    absenteeStatus.setText(finalReport);
-                } else {
+                if (finalData == null) {
                     absenteeStatus.setTextColor(Color.rgb(255, 170, 150));
                     absenteeStatus.setText(finalError == null ? "Team-news report unavailable." : finalError);
+                    return;
+                }
+                JSONArray articles = finalData.optJSONArray("articles");
+                int shown = 0;
+                if (articles != null) {
+                    for (int i = 0; i < articles.length(); i++) {
+                        JSONObject article = articles.optJSONObject(i);
+                        if (article == null || !isFreshDatedNewsArticle(article)) continue;
+                        addTeamNewsCard(article, shown++);
+                    }
+                }
+                absenteeStatus.setTextColor(GREEN);
+                absenteeStatus.setText("TEAM NEWS  •  " + home + " vs " + away + "\n"
+                    + shown + " relevant article(s) published in the last 7 days.");
+                if (shown == 0) {
+                    absenteeStatus.append("\nNo articles with a valid publication date from the last 7 days were found.");
+                    teamNewsCards.setVisibility(View.GONE);
+                } else {
+                    teamNewsCards.setVisibility(View.VISIBLE);
                 }
             });
         }).start();
+    }
+
+    private boolean isFreshDatedNewsArticle(JSONObject article) {
+        String publishedAt = article.optString("publishedAt", "").trim();
+        if (publishedAt.isEmpty() || "null".equalsIgnoreCase(publishedAt)) return false;
+        try {
+            String iso = publishedAt.length() >= 19 ? publishedAt.substring(0, 19) : publishedAt;
+            java.text.SimpleDateFormat parser = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+            parser.setLenient(false);
+            parser.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            java.util.Date published = parser.parse(iso);
+            if (published == null) return false;
+            long age = System.currentTimeMillis() - published.getTime();
+            return age >= 0 && age <= 7L * 24L * 60L * 60L * 1000L;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private void addTeamNewsCard(JSONObject article, int index) {
+        int[] cardColors = {
+            Color.rgb(20, 43, 54), Color.rgb(26, 40, 59), Color.rgb(24, 48, 43),
+            Color.rgb(40, 36, 58), Color.rgb(42, 42, 48), Color.rgb(20, 48, 58)
+        };
+        int[] accentColors = {
+            Color.rgb(80, 230, 150), Color.rgb(91, 190, 245), Color.rgb(116, 225, 170),
+            Color.rgb(183, 153, 255), Color.rgb(255, 194, 102), Color.rgb(90, 220, 205)
+        };
+        int accent = accentColors[index % accentColors.length];
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(14), dp(13), dp(14), dp(14));
+        GradientDrawable background = new GradientDrawable();
+        background.setColor(cardColors[index % cardColors.length]);
+        background.setCornerRadius(dp(15));
+        background.setStroke(dp(1), accent);
+        card.setBackground(background);
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
+        cardParams.bottomMargin = dp(10);
+        teamNewsCards.addView(card, cardParams);
+
+        TextView title = label(article.optString("title", "Team-news article"));
+        title.setTextColor(WHITE);
+        title.setTextSize(16);
+        title.setTypeface(null, Typeface.BOLD);
+        card.addView(title);
+
+        String publisher = article.optString("publisherLabel", "").trim();
+        if (publisher.isEmpty() || "null".equalsIgnoreCase(publisher)) {
+            publisher = article.optString("source", "Publication not identified").trim();
+        }
+        TextView source = label(publisher);
+        source.setTextColor(accent);
+        source.setTextSize(12);
+        source.setTypeface(null, Typeface.BOLD);
+        source.setPadding(0, dp(7), 0, dp(3));
+        card.addView(source);
+
+        String publishedAt = article.optString("publishedAt", "");
+        TextView date = label("Published • " + formatNewsPublishedDate(publishedAt));
+        date.setTextColor(MUTED);
+        date.setTextSize(11);
+        date.setPadding(0, 0, 0, dp(9));
+        card.addView(date);
+
+        String fullText = article.optString("fullInformation", "").trim();
+        String snippet = article.optString("snippet", "").trim();
+        if (snippet.isEmpty() || "null".equalsIgnoreCase(snippet)) snippet = article.optString("description", "").trim();
+        if (fullText.isEmpty() || "null".equalsIgnoreCase(fullText)) {
+            fullText = snippet.isEmpty() || "null".equalsIgnoreCase(snippet)
+                ? "The API returned a headline and publication date, but no article text or summary was available."
+                : article.optString("title", "") + "\n\n" + snippet;
+        }
+        String preview = snippet.isEmpty() || "null".equalsIgnoreCase(snippet)
+            ? "No article summary was supplied by the news provider. Expand to view all information currently available."
+            : snippet;
+        if (preview.length() > 360) preview = preview.substring(0, 357).trim() + "...";
+        TextView previewView = label(preview);
+        previewView.setTextColor(WHITE);
+        previewView.setTextSize(13);
+        previewView.setLineSpacing(dp(2), 1.0f);
+        card.addView(previewView);
+
+        TextView expanded = label(fullText);
+        expanded.setTextColor(Color.rgb(220, 231, 241));
+        expanded.setTextSize(13);
+        expanded.setLineSpacing(dp(3), 1.0f);
+        expanded.setPadding(0, dp(9), 0, dp(4));
+        expanded.setVisibility(View.GONE);
+        card.addView(expanded);
+
+        Button readMore = new Button(this);
+        readMore.setText("READ FULL STORY  ↓");
+        readMore.setTextColor(Color.rgb(8, 25, 22));
+        readMore.setTextSize(12);
+        readMore.setTypeface(null, Typeface.BOLD);
+        readMore.setAllCaps(false);
+        readMore.setBackground(rounded(accent, 11));
+        LinearLayout.LayoutParams readParams = new LinearLayout.LayoutParams(-1, dp(44));
+        readParams.topMargin = dp(10);
+        card.addView(readMore, readParams);
+        readMore.setOnClickListener(v -> {
+            boolean opening = expanded.getVisibility() != View.VISIBLE;
+            expanded.setVisibility(opening ? View.VISIBLE : View.GONE);
+            readMore.setText(opening ? "SHOW LESS  ↑" : "READ FULL STORY  ↓");
+        });
+    }
+
+    private String formatNewsPublishedDate(String value) {
+        try {
+            String iso = value.length() >= 19 ? value.substring(0, 19) : value;
+            java.text.SimpleDateFormat parser = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+            parser.setLenient(false);
+            parser.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            java.util.Date parsed = parser.parse(iso);
+            java.text.SimpleDateFormat output = new java.text.SimpleDateFormat("dd MMM yyyy, HH:mm 'UTC'", Locale.US);
+            output.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            return parsed == null ? value : output.format(parsed);
+        } catch (Exception ignored) {
+            return value;
+        }
     }
 
         private void loadFixtures() {
