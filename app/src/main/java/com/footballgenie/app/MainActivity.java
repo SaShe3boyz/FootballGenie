@@ -4906,7 +4906,7 @@ public class MainActivity extends Activity {
 
             try {
                 URL url = new URL(
-                    "https://football-genie-api.onrender.com/api/matches"
+                    "https://football-genie-api.onrender.com/api/matches?refresh=1"
                 );
 
                 connection = (HttpURLConnection) url.openConnection();
