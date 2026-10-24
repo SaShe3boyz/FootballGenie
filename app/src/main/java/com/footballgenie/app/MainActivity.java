@@ -4808,6 +4808,25 @@ public class MainActivity extends Activity {
         String home = selectedFixtureHome == null ? "" : selectedFixtureHome.trim();
         String away = selectedFixtureAway == null ? "" : selectedFixtureAway.trim();
         String competition = selectedFixtureCompetition == null ? "" : selectedFixtureCompetition.trim();
+        // Recover the competition directly from the selected fixture if the
+        // cached label was not populated, so BIG BALLS receives the league.
+        if (competition.isEmpty() && selectedFixture != null) {
+            JSONObject competitionObject = selectedFixture.optJSONObject("competition");
+            if (competitionObject != null) {
+                competition = competitionObject.optString("name", "").trim();
+            }
+            if (competition.isEmpty()) {
+                JSONObject leagueObject = selectedFixture.optJSONObject("league");
+                if (leagueObject != null) {
+                    competition = leagueObject.optString("name", "").trim();
+                }
+            }
+            if (competition.isEmpty()) {
+                competition = selectedFixture.optString("competitionName",
+                    selectedFixture.optString("leagueName", "")).trim();
+            }
+            if (!competition.isEmpty()) selectedFixtureCompetition = competition;
+        }
         if (home.length() < 2 || away.length() < 2 || home.equalsIgnoreCase(away)) {
             Toast.makeText(this, "Please load live fixtures and select a fixture first.", Toast.LENGTH_LONG).show();
             return;
