@@ -1,5 +1,10 @@
 name: Build Football Genie APK
 
+# Keep only one release build running at a time.
+concurrency:
+  group: football-genie-release-apk
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
   push:
@@ -52,6 +57,17 @@ jobs:
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
         run: gradle --stacktrace assembleRelease
+
+      - name: Verify APK is a real release build
+        run: |
+          APK=$(find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -type f | head -n 1)
+          test -n "$APK"
+          SIZE=$(stat -c%s "$APK")
+          echo "APK path: $APK"
+          echo "APK size: $SIZE bytes"
+          # Fail rather than publish an incomplete/tiny artifact.
+          test "$SIZE" -gt 500000
+          file "$APK"
 
       - name: Upload signed APK
         uses: actions/upload-artifact@v4
