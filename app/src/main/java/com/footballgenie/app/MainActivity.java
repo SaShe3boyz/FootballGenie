@@ -4865,12 +4865,21 @@ public class MainActivity extends Activity {
                                 StringBuilder categoryText = new StringBuilder();
                                 for (int c = 0; c < categories.length(); c++) {
                                     if (categoryText.length() > 0) categoryText.append(", ");
-                                    categoryText.append(categories.optString(c));
+                                    categoryText.append(categories.optString(c).replace('_', ' '));
                                 }
-                                display.append("Topic: ").append(categoryText).append("\n");
+                                display.append("Category: ").append(categoryText).append("\n");
                             }
-                            String snippet = item.optString("snippet", "");
-                            if (!snippet.isEmpty() && !snippet.equals("null")) display.append(snippet).append("\n");
+                            String details = item.optString("articleDetails", "");
+                            if (details.isEmpty() || details.equals("null")) details = item.optString("snippet", "");
+                            if (!details.isEmpty() && !details.equals("null")) {
+                                display.append("ARTICLE DETAILS\n").append(details).append("\n");
+                            }
+                            String detailAvailability = item.optString("detailAvailability", "");
+                            if ("headline_or_short_excerpt_only".equals(detailAvailability)) {
+                                display.append("More detail: The publisher feed supplied only a headline or short excerpt, so Football Genie will not invent the missing story.\n");
+                            } else if ("article_text_extracted".equals(detailAvailability)) {
+                                display.append("Detail level: Article text extracted from the available publisher page.\n");
+                            }
                             String relevance = item.optString("fixtureRelevance", "");
                             if ("team_background_news".equals(relevance) || "team_news_other_fixture_or_opponent_context".equals(relevance)) {
                                 display.append("Context: general club news; this item does not by itself confirm details for this exact fixture.\n");
