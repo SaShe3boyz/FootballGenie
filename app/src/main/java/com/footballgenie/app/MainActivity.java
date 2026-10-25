@@ -4684,13 +4684,35 @@ public class MainActivity extends Activity {
                     java.util.ArrayList<String> sections = new java.util.ArrayList<>();
                     for (String reportLine : reportLines) {
                         String clean = reportLine.trim().replaceAll("^\\*{1,2}|\\*{1,2}$", "").trim();
-                        java.util.regex.Matcher sectionMatcher = java.util.regex.Pattern.compile("^(?:#{1,3}\\s*)?(?:[1-6][.)]\\s*)?(?:[📊🔍💡🧪🛡️🎯]\\s*)?(MEASURED FINDINGS|WEAKNESSES TO INVESTIGATE|PRIORITY RECOMMENDATIONS|HOW TO TEST EACH RECOMMENDATION|ADOPTION GATE|CONFIDENCE IN THIS REVIEW)\\s*:?.*$", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(clean);
-                        if (sectionMatcher.matches()) {
-                            if (currentText.length() > 0) {
-                                titles.add(currentTitle);
-                                sections.add(currentText.toString().trim());
+                        // Normalise common heading formats: Markdown, numbered lists, keycap emoji, and bold text.
+                        String headingCandidate = clean.replaceFirst("^#{1,3}\\s*", "")
+                            .replaceFirst("^\\*{1,2}\\s*", "")
+                            .replaceFirst("^[1-6](?:[.)]|️⃣)\\s*", "")
+                            .replaceFirst("^[📊🔍💡🧪🛡️🎯⚽]\\s*", "")
+                            .replaceFirst("^\\*{1,2}\\s*", "")
+                            .trim().toUpperCase(Locale.US);
+                        String[] knownTopics = {
+                            "MEASURED FINDINGS", "WEAKNESSES TO INVESTIGATE",
+                            "PRIORITY RECOMMENDATIONS", "HOW TO TEST EACH RECOMMENDATION",
+                            "ADOPTION GATE", "CONFIDENCE IN THIS REVIEW"
+                        };
+                        String matchedTopic = null;
+                        for (String topic : knownTopics) {
+                            if (headingCandidate.equals(topic) || headingCandidate.equals(topic + ":")
+                                || headingCandidate.startsWith(topic + " ")) {
+                                matchedTopic = topic;
+                                break;
                             }
-                            currentTitle = sectionMatcher.group(1).toUpperCase(Locale.US);
+                        }
+                        if (matchedTopic != null) {
+                            if (currentText.length() > 0) {
+                                String previous = currentText.toString().trim();
+                                if (!previous.isEmpty()) {
+                                    titles.add(currentTitle);
+                                    sections.add(previous);
+                                }
+                            }
+                            currentTitle = matchedTopic;
                             currentText = new StringBuilder();
                         } else {
                             if (currentText.length() > 0) currentText.append("\\n");
