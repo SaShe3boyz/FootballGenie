@@ -432,17 +432,28 @@ public class MainActivity extends Activity {
         String[] sourceLines = source.split("\\n", -1);
         for (String raw : sourceLines) {
             String line = raw.trim();
-            // Turn each Markdown topic heading (H1, H2, or H3) into its own colourful card.
-            // Performance reports commonly use ## headings, while normal AI replies may use ###.
+            // Accept Markdown headings and bold/plain numbered topic headings.
+            // Some AI responses omit # markers, so explicitly recognise report section names.
+            String detectedHeading = null;
             if (line.matches("^#{1,3}\\s+.*")) {
+                detectedHeading = line.replaceFirst("^#+\\s*", "").replaceAll("^\\*+|\\*+$", "").trim();
+            } else {
+                String unwrapped = line.replaceAll("^\\*{1,2}", "").replaceAll("\\*{1,2}$", "").trim();
+                String sectionNames = "(MEASURED FINDINGS|WEAKNESSES TO INVESTIGATE|PRIORITY RECOMMENDATIONS|HOW TO TEST EACH RECOMMENDATION|ADOPTION GATE|CONFIDENCE IN THIS REVIEW)";
+                if (unwrapped.matches("^(?:[1-6][.)]\\s*)?(?:[📊🔍💡🧪🛡️🎯]\\s*)?" + sectionNames + "\\s*:?.*$")
+                    || unwrapped.matches("^[1-6]️⃣\\s*" + sectionNames + "\\s*:?.*$")) {
+                    detectedHeading = unwrapped.replaceFirst("^(?:[1-6][.)]\\s*)?(?:[1-6]️⃣\\s*)?(?:[📊🔍💡🧪🛡️🎯]\\s*)?", "").replaceFirst(":?$", "").trim();
+                }
+            }
+            if (detectedHeading != null) {
                 if (currentBody.length() > 0 || headings.isEmpty()) {
                     headings.add(currentHeading);
                     bodies.add(currentBody);
                 }
-                currentHeading = line.replaceFirst("^#+\\s*", "").replaceAll("^\\*+|\\*+$", "").trim();
+                currentHeading = detectedHeading;
                 currentBody = new StringBuilder();
             } else {
-                if (currentBody.length() > 0) currentBody.append("\n");
+                if (currentBody.length() > 0) currentBody.append("\\n");
                 currentBody.append(raw);
             }
         }
