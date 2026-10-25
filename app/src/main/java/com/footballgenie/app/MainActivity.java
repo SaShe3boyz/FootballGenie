@@ -4858,6 +4858,11 @@ public class MainActivity extends Activity {
                             display.append("• ").append(item.optString("title", "Team update")).append("\n");
                             String source = item.optString("source", "");
                             if (!source.isEmpty() && !source.equals("null")) display.append("Source: ").append(source).append("\n");
+                            String articleUrl = item.optString("articleSourceUrl", "");
+                            if (articleUrl.isEmpty() || articleUrl.equals("null")) articleUrl = item.optString("url", "");
+                            if (articleUrl.startsWith("https://") || articleUrl.startsWith("http://")) {
+                                display.append("OPEN ARTICLE: ").append(articleUrl).append("\n");
+                            }
                             String date = item.optString("publishedAt", "");
                             if (!date.isEmpty() && !date.equals("null")) display.append("Date: ").append(date).append("\n");
                             JSONArray categories = item.optJSONArray("categories");
