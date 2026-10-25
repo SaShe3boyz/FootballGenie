@@ -2961,7 +2961,14 @@ public class MainActivity extends Activity {
 
     private int getAnalysisAccentColor(String heading) {
         String h = heading == null ? "" : heading.toLowerCase(Locale.US);
-        if (h.contains("confidence") || h.contains("outcome")) return Color.rgb(80, 190, 255);
+        // Dedicated colours for the six Performance Analyst report topics.
+        if (h.contains("measured") || h.contains("finding") || h.contains("metric")) return Color.rgb(90, 165, 255);
+        if (h.contains("weakness") || h.contains("investigate") || h.contains("risk")) return Color.rgb(255, 170, 75);
+        if (h.contains("recommend") || h.contains("priority") || h.contains("improvement")) return Color.rgb(190, 135, 255);
+        if (h.contains("test") || h.contains("back-test") || h.contains("backtest")) return Color.rgb(75, 220, 155);
+        if (h.contains("adoption") || h.contains("gate") || h.contains("rollout")) return Color.rgb(255, 205, 75);
+        if (h.contains("review") || h.contains("confidence") || h.contains("sample size")) return Color.rgb(75, 215, 220);
+        if (h.contains("outcome") || h.contains("probability")) return Color.rgb(80, 190, 255);
         if (h.contains("upset") || h.contains("red card")) return Color.rgb(255, 105, 105);
         if (h.contains("goal") || h.contains("expected")) return Color.rgb(75, 220, 155);
         if (h.contains("tempo") || h.contains("balance")) return Color.rgb(180, 135, 255);
