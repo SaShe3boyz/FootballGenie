@@ -4807,26 +4807,6 @@ public class MainActivity extends Activity {
     private void loadTeamsNews() {
         String home = selectedFixtureHome == null ? "" : selectedFixtureHome.trim();
         String away = selectedFixtureAway == null ? "" : selectedFixtureAway.trim();
-        String competition = selectedFixtureCompetition == null ? "" : selectedFixtureCompetition.trim();
-        // Recover the competition directly from the selected fixture if the
-        // cached label was not populated, so BIG BALLS receives the league.
-        if (competition.isEmpty() && selectedFixture != null) {
-            JSONObject competitionObject = selectedFixture.optJSONObject("competition");
-            if (competitionObject != null) {
-                competition = competitionObject.optString("name", "").trim();
-            }
-            if (competition.isEmpty()) {
-                JSONObject leagueObject = selectedFixture.optJSONObject("league");
-                if (leagueObject != null) {
-                    competition = leagueObject.optString("name", "").trim();
-                }
-            }
-            if (competition.isEmpty()) {
-                competition = selectedFixture.optString("competitionName",
-                    selectedFixture.optString("leagueName", "")).trim();
-            }
-            if (!competition.isEmpty()) selectedFixtureCompetition = competition;
-        }
         if (home.length() < 2 || away.length() < 2 || home.equalsIgnoreCase(away)) {
             Toast.makeText(this, "Please load live fixtures and select a fixture first.", Toast.LENGTH_LONG).show();
             return;
@@ -4834,27 +4814,24 @@ public class MainActivity extends Activity {
 
         absenteeButton.setEnabled(false);
         absenteeStatus.setTextColor(GREEN);
-        absenteeStatus.setText("Checking BIG BALLS Data for " + home + " vs " + away + "...");
-        final String competitionForRequest = competition;
+        absenteeStatus.setText("Loading general team news for " + home + " vs " + away + "...");
         new Thread(() -> {
             HttpURLConnection connection = null;
             String reportText = null;
             String errorText = null;
             try {
                 String query = "homeTeam=" + java.net.URLEncoder.encode(home, "UTF-8")
-                    + "&awayTeam=" + java.net.URLEncoder.encode(away, "UTF-8")
-                    + "&competition=" + java.net.URLEncoder.encode(competitionForRequest, "UTF-8")
-                    + "&forceRefresh=true";
-                URL url = new URL("https://football-genie-api.onrender.com/api/match-intelligence/absentees?" + query);
+                    + "&awayTeam=" + java.net.URLEncoder.encode(away, "UTF-8");
+                URL url = new URL("https://football-genie-api.onrender.com/api/match-intelligence/news?" + query);
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 connection.setConnectTimeout(15000);
-                connection.setReadTimeout(35000);
+                connection.setReadTimeout(30000);
                 connection.setRequestProperty("Accept", "application/json");
                 int code = connection.getResponseCode();
                 java.io.InputStream stream = code >= 200 && code < 400
                     ? connection.getInputStream() : connection.getErrorStream();
-                if (stream == null) throw new java.io.IOException("No response body from BIG BALLS Data.");
+                if (stream == null) throw new java.io.IOException("No response body from the Team News service.");
                 BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
                 StringBuilder body = new StringBuilder();
                 String line;
@@ -4862,44 +4839,50 @@ public class MainActivity extends Activity {
                 reader.close();
                 JSONObject data = new JSONObject(body.toString());
                 if (code < 200 || code >= 300) {
-                    errorText = data.optString("error", "BIG BALLS Data request failed (HTTP " + code + ").");
+                    errorText = data.optString("error", "Team News service request failed (HTTP " + code + ").");
                 } else {
-                    JSONArray reports = data.optJSONArray("reports");
+                    JSONArray articles = data.optJSONArray("articles");
                     StringBuilder display = new StringBuilder();
-                    display.append("TEAM NEWS • BIG BALLS DATA\n");
+                    display.append("TEAM NEWS • FOOTBALL GENIE\n");
                     display.append(home).append(" vs ").append(away).append("\n");
-                    display.append(reports == null ? 0 : reports.length()).append(" BIG BALLS record(s) returned for the selected teams.\n");
-                    String asOf = data.optString("providerAsOf", "");
-                    if (!asOf.isEmpty() && !asOf.equals("null")) display.append("Provider data as of: ").append(asOf).append("\n");
-                    if (data.has("providerStale") && !data.isNull("providerStale")) {
-                        display.append("Provider reports stale: ").append(data.optString("providerStale")).append("\n");
-                    }
+                    display.append(articles == null ? 0 : articles.length()).append(" relevant team-news item(s) found.\n");
+                    String searchedAt = data.optString("searchedAt", "");
+                    if (!searchedAt.isEmpty() && !searchedAt.equals("null")) display.append("Updated: ").append(searchedAt).append("\n");
                     display.append("\n");
-                    if (reports == null || reports.length() == 0) {
-                        display.append("BIG BALLS Data returned no matching absence records for these teams. This does not confirm that both squads are fully available.\n\n");
+                    if (articles == null || articles.length() == 0) {
+                        display.append("No relevant, recent team-news articles passed the current filters. This does not mean there is no team news; try again later.\n");
                     } else {
-                        for (int i = 0; i < reports.length(); i++) {
-                            JSONObject item = reports.optJSONObject(i);
+                        for (int i = 0; i < articles.length(); i++) {
+                            JSONObject item = articles.optJSONObject(i);
                             if (item == null) continue;
-                            display.append("• ").append(item.optString("playerName", item.optString("player", "Player not specified"))).append("\n");
-                            String team = item.optString("teamName", item.optString("team", ""));
-                            if (!team.isEmpty() && !team.equals("null")) display.append("Team: ").append(team).append("\n");
-                            String reason = item.optString("reason", item.optString("type", ""));
-                            if (!reason.isEmpty() && !reason.equals("null")) display.append("Reported reason: ").append(reason).append("\n");
-                            String providerStatus = item.optString("providerStatus", item.optString("status", ""));
-                            if (!providerStatus.isEmpty() && !providerStatus.equals("null")) display.append("Provider status: ").append(providerStatus).append("\n");
-                            String fixtureDate = item.optString("fixtureDate", "");
-                            if (!fixtureDate.isEmpty() && !fixtureDate.equals("null")) display.append("Related fixture date: ").append(fixtureDate).append("\n");
-                            String relatedFixture = item.optString("fixture", "");
-                            if (!relatedFixture.isEmpty() && !relatedFixture.equals("null")) display.append("Related fixture: ").append(relatedFixture).append("\n");
+                            display.append("• ").append(item.optString("title", "Team update")).append("\n");
+                            String source = item.optString("source", "");
+                            if (!source.isEmpty() && !source.equals("null")) display.append("Source: ").append(source).append("\n");
+                            String date = item.optString("publishedAt", "");
+                            if (!date.isEmpty() && !date.equals("null")) display.append("Date: ").append(date).append("\n");
+                            JSONArray categories = item.optJSONArray("categories");
+                            if (categories != null && categories.length() > 0) {
+                                StringBuilder categoryText = new StringBuilder();
+                                for (int c = 0; c < categories.length(); c++) {
+                                    if (categoryText.length() > 0) categoryText.append(", ");
+                                    categoryText.append(categories.optString(c));
+                                }
+                                display.append("Topic: ").append(categoryText).append("\n");
+                            }
+                            String snippet = item.optString("snippet", "");
+                            if (!snippet.isEmpty() && !snippet.equals("null")) display.append(snippet).append("\n");
+                            String relevance = item.optString("fixtureRelevance", "");
+                            if ("team_background_news".equals(relevance) || "team_news_other_fixture_or_opponent_context".equals(relevance)) {
+                                display.append("Context: general club news; this item does not by itself confirm details for this exact fixture.\n");
+                            }
                             display.append("\n");
                         }
                     }
-                    display.append("This screen shows all matching records returned by BIG BALLS Data for the selected teams. The soccer availability feed may include historical absences; a record does not by itself confirm current unavailability for this upcoming match. No prediction probabilities are changed by this screen.");
+                    display.append("Official club sources are prioritised where available. Headlines and summaries are reports, not independent confirmation. Conflicting, outdated, or irrelevant items are filtered where possible. No prediction probabilities are changed by Team News.");
                     reportText = display.toString();
                 }
             } catch (Exception ex) {
-                errorText = "BIG BALLS Data could not be reached. Please try again when the provider service is available.";
+                errorText = "Team News could not be loaded right now. Please try again shortly.";
             } finally {
                 if (connection != null) connection.disconnect();
             }
@@ -4912,7 +4895,7 @@ public class MainActivity extends Activity {
                     absenteeStatus.setText(finalReport);
                 } else {
                     absenteeStatus.setTextColor(Color.rgb(255, 135, 135));
-                    absenteeStatus.setText(finalError == null ? "BIG BALLS Data is currently unavailable." : finalError);
+                    absenteeStatus.setText(finalError == null ? "Team News is currently unavailable." : finalError);
                 }
             });
         }).start();
