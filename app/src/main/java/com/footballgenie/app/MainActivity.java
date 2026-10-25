@@ -4303,7 +4303,7 @@ public class MainActivity extends Activity {
         historyResultsContainer.removeAllViews();
         historyResultsContainer.setVisibility(View.VISIBLE);
 
-        TextView reportTitle = label("VALIDATION & PERFORMANCE • V2");
+        TextView reportTitle = label("VALIDATION & PERFORMANCE");
         reportTitle.setTextColor(GREEN);
         reportTitle.setTextSize(18);
         reportTitle.setTypeface(null, Typeface.BOLD);
@@ -4515,13 +4515,13 @@ public class MainActivity extends Activity {
     private void addValidationAiReview(LinearLayout parent, JSONArray history, int finished, String evidenceSummary) {
         LinearLayout reviewCard = card();
         reviewCard.setOrientation(LinearLayout.VERTICAL);
-        TextView heading = label("FOOTBALL GENIE AI • VALIDATION REVIEW");
+        TextView heading = label("FOOTBALL GENIE AI — PERFORMANCE ANALYST");
         heading.setTextColor(GREEN);
         heading.setTextSize(15);
         heading.setTypeface(null, Typeface.BOLD);
         reviewCard.addView(heading);
 
-        TextView explanation = label("Ask the AI to examine saved prediction misses, calibration and score errors, then recommend evidence-based tests. It will not silently change the prediction model.");
+        TextView explanation = label("The Performance Analyst studies measured results, finds recurring weaknesses and recommends practical improvements. Each recommendation must be tested against historical results before it can be adopted.");
         explanation.setTextColor(MUTED);
         explanation.setTextSize(13);
         explanation.setLineSpacing(dp(3), 1f);
@@ -4529,8 +4529,8 @@ public class MainActivity extends Activity {
         reviewCard.addView(explanation);
 
         TextView answer = label(finished > 0
-            ? "AI review has not been run yet. Tap below to analyse your current validation evidence."
-            : "No completed saved predictions are available yet. Update history after matches finish, then run the AI review.");
+            ? "READY FOR ANALYSIS\\nThe analyst will separate measured findings from hypotheses and propose testable improvements."
+            : "WAITING FOR EVIDENCE\\nRecord final results for saved predictions before running a reliable performance analysis.");
         answer.setTextColor(WHITE);
         answer.setTextSize(14);
         answer.setLineSpacing(dp(3), 1f);
@@ -4538,7 +4538,7 @@ public class MainActivity extends Activity {
         reviewCard.addView(answer);
 
         Button reviewButton = new Button(this);
-        reviewButton.setText("🧠  ANALYSE VALIDATION RESULTS");
+        reviewButton.setText("🧠  RUN PERFORMANCE ANALYSIS");
         reviewButton.setAllCaps(false);
         reviewButton.setTextColor(Color.rgb(12, 24, 39));
         reviewButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(GREEN));
@@ -4575,7 +4575,7 @@ public class MainActivity extends Activity {
 
                 JSONObject payload = new JSONObject();
                 payload.put("question",
-                    "Review my saved Football Genie validation results using the validation summary and completed match records included with this request. Identify evidence-based findings, weaknesses, clearly labelled hypotheses, three prioritized testable improvements, and any sample-size limitations. Do not invent facts or claim the model has retrained.");
+                    "Act as FOOTBALL GENIE AI — PERFORMANCE ANALYST. Review the supplied validation summary and completed match records. Return mobile-friendly sections titled: 1) MEASURED FINDINGS, 2) WEAKNESSES TO INVESTIGATE, 3) PRIORITY RECOMMENDATIONS, 4) HOW TO TEST EACH RECOMMENDATION, 5) ADOPTION GATE, and 6) CONFIDENCE IN THIS REVIEW. Give up to three prioritized, specific and testable recommendations. For each, state the observed evidence, the proposed parameter or calculation to investigate, the test needed, and a measurable success criterion. Never invent model parameters that are not supplied. Do not claim that you changed, retrained, or implemented anything. State clearly that recommendations are not applied and must pass a historical/held-out backtest before adoption. Explain sample-size limits; if evidence is insufficient, say so and recommend collecting more completed matches.");
                 payload.put("validationSummary", evidenceSummary);
                 payload.put("match", new JSONObject());
 
@@ -4632,7 +4632,7 @@ public class MainActivity extends Activity {
                 try {
                     JSONObject response = body.isEmpty() ? new JSONObject() : new JSONObject(body);
                     if (code >= 200 && code < 300 && !response.optString("answer", "").trim().isEmpty()) {
-                        display = "☁️ FOOTBALL GENIE AI ANALYST";
+                        display = "⚽ FOOTBALL GENIE AI — PERFORMANCE ANALYST";
                         String provider = response.optString("provider", "");
                         if (!provider.isEmpty()) {
                             display += " • " + provider.toUpperCase(Locale.US);
@@ -4648,7 +4648,7 @@ public class MainActivity extends Activity {
                 }
                 answer.setText(display);
                 reviewButton.setEnabled(true);
-                reviewButton.setText("🧠  ANALYSE VALIDATION RESULTS");
+                reviewButton.setText("🧠  RUN PERFORMANCE ANALYSIS");
             });
         }).start();
     }
