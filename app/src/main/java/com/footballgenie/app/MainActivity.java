@@ -174,7 +174,7 @@ public class MainActivity extends Activity {
 
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
-        page.setPadding(dp(16), dp(12), dp(16), dp(24));
+        page.setPadding(dp(16), screen == 0 ? 0 : dp(12), dp(16), dp(24));
         scroll.addView(page);
 
         LinearLayout previousLayout = mainLayout;
@@ -195,7 +195,6 @@ public class MainActivity extends Activity {
         }
         switch (screen) {
             case 0:
-                addHomeLanguageSelector();
                 buildHeader();
                 buildHomeShortcuts();
                 Button aiHomeButton = new Button(this);
@@ -1056,13 +1055,46 @@ public class MainActivity extends Activity {
         }
     }
 
-    private boolean fixtureMatchesFilter(JSONObject match) {
-        String status = match.optString("status", "SCHEDULED");
-        boolean live = "IN_PLAY".equals(status) || "PAUSED".equals(status)
+    private String normalizedFixtureStatus(JSONObject match) {
+        // Accept provider status variants but never classify a completed match as live.
+        String status = match.optString("status", "").trim().toUpperCase(java.util.Locale.ROOT)
+            .replace('-', '_').replace(' ', '_');
+        String shortStatus = match.optString("statusShort", "").trim().toUpperCase(java.util.Locale.ROOT);
+        if (status.isEmpty() || "UNKNOWN".equals(status)) status = shortStatus;
+        if (status.equals("FT") || status.equals("AET") || status.equals("PEN")
+                || status.equals("FULL_TIME") || status.equals("AFTER_EXTRA_TIME")
+                || status.equals("AFTER_PENALTIES") || status.equals("COMPLETED")
+                || status.equals("ENDED")) return "FINISHED";
+        if (status.equals("1H") || status.equals("2H") || status.equals("HT")
+                || status.equals("ET") || status.equals("LIVE") || status.equals("INPROGRESS")
+                || status.equals("IN_PROGRESS")) {
+            // Standard football-data statuses are handled below; aliases map to live states.
+            if (status.equals("HT")) return "PAUSED";
+            if (status.equals("ET")) return "EXTRA_TIME";
+            return "IN_PLAY";
+        }
+        if (status.equals("CANC") || status.equals("ABANDONED")) return "CANCELLED";
+        if (status.equals("PST")) return "POSTPONED";
+        return status.isEmpty() ? "SCHEDULED" : status;
+    }
+
+    private boolean fixtureIsLive(JSONObject match) {
+        String status = normalizedFixtureStatus(match);
+        return "IN_PLAY".equals(status) || "PAUSED".equals(status)
             || "EXTRA_TIME".equals(status) || "PENALTY_SHOOTOUT".equals(status);
-        boolean finished = "FINISHED".equals(status) || "AWARDED".equals(status);
+    }
+
+    private boolean fixtureIsFinished(JSONObject match) {
+        String status = normalizedFixtureStatus(match);
+        return "FINISHED".equals(status) || "AWARDED".equals(status);
+    }
+
+    private boolean fixtureMatchesFilter(JSONObject match) {
+        String status = normalizedFixtureStatus(match);
+        boolean live = fixtureIsLive(match);
+        boolean finished = fixtureIsFinished(match);
         if ("FINISHED".equals(activeFixtureFilter)) return finished;
-        if ("LIVE".equals(activeFixtureFilter)) return live;
+        if ("LIVE".equals(activeFixtureFilter)) return live && !finished;
         if ("UPCOMING".equals(activeFixtureFilter)) {
             return !live && !finished && !"POSTPONED".equals(status)
                 && !"SUSPENDED".equals(status) && !"CANCELLED".equals(status);
@@ -1140,7 +1172,7 @@ public class MainActivity extends Activity {
 
             String homeName = home.optString("name", "Home team");
             String awayName = away.optString("name", "Away team");
-            String status = match.optString("status", "SCHEDULED");
+            String status = normalizedFixtureStatus(match);
             String kickoff = match.optString("utcDate", "");
             JSONObject competition = match.optJSONObject("competition");
             String competitionName = competition == null ? "" : competition.optString("name", "");
@@ -1180,8 +1212,7 @@ public class MainActivity extends Activity {
             top.addView(league, new LinearLayout.LayoutParams(0, -2, 1f));
             TextView statusView = label(fixtureStatusLabel(status));
             statusView.setTextIsSelectable(false);
-            statusView.setTextColor(("IN_PLAY".equals(status) || "PAUSED".equals(status)
-                    || "EXTRA_TIME".equals(status) || "PENALTY_SHOOTOUT".equals(status)) ? GREEN : MUTED);
+            statusView.setTextColor(fixtureIsLive(match) ? GREEN : MUTED);
             statusView.setTextSize(13);
             statusView.setTypeface(null, Typeface.BOLD);
             top.addView(statusView);
@@ -1869,17 +1900,17 @@ public class MainActivity extends Activity {
         FrameLayout header = new FrameLayout(this);
         ImageView brandArtwork = new ImageView(this);
         brandArtwork.setContentDescription("Football Genie stadium branding");
-        brandArtwork.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        brandArtwork.setScaleType(ImageView.ScaleType.CENTER_CROP);
         brandArtwork.setBackground(rounded(Color.rgb(9, 16, 31), 16));
         FrameLayout.LayoutParams artworkParams = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, dp(204),
+                FrameLayout.LayoutParams.MATCH_PARENT, dp(240),
                 Gravity.TOP | Gravity.CENTER_HORIZONTAL);
         header.addView(brandArtwork, artworkParams);
         // Gradient overlays soften all four artwork edges into the Home background.
         View leftFade = edgeFade(Gravity.LEFT, true);
-        header.addView(leftFade, new FrameLayout.LayoutParams(dp(22), dp(204), Gravity.LEFT | Gravity.TOP));
+        header.addView(leftFade, new FrameLayout.LayoutParams(dp(22), dp(240), Gravity.LEFT | Gravity.TOP));
         View rightFade = edgeFade(Gravity.RIGHT, true);
-        header.addView(rightFade, new FrameLayout.LayoutParams(dp(22), dp(204), Gravity.RIGHT | Gravity.TOP));
+        header.addView(rightFade, new FrameLayout.LayoutParams(dp(22), dp(240), Gravity.RIGHT | Gravity.TOP));
         View topFade = edgeFade(Gravity.TOP, false);
         header.addView(topFade, new FrameLayout.LayoutParams(-1, dp(12), Gravity.TOP));
         View bottomFade = edgeFade(Gravity.BOTTOM, false);
@@ -1894,11 +1925,23 @@ public class MainActivity extends Activity {
         menuButton.setContentDescription("Open navigation menu");
         FrameLayout.LayoutParams menuParams = new FrameLayout.LayoutParams(dp(44), dp(44),
                 Gravity.TOP | Gravity.LEFT);
-        menuParams.setMargins(dp(2), dp(6), 0, 0);
+        menuParams.setMargins(dp(2), dp(16), 0, 0);
         header.addView(menuButton, menuParams);
         menuButton.setOnClickListener(v -> showNavigationMenu(menuButton));
 
-        LinearLayout.LayoutParams fullBleedHeader = new LinearLayout.LayoutParams(-1, dp(204));
+        // Overlay language control on the artwork so the branding begins at the very top.
+        Button languageButton = new Button(this);
+        languageButton.setText(languageButtonLabel());
+        languageButton.setAllCaps(false);
+        languageButton.setTextSize(12);
+        languageButton.setTextColor(GREEN);
+        languageButton.setBackground(rounded(CARD, 10));
+        FrameLayout.LayoutParams languageParams = new FrameLayout.LayoutParams(-2, dp(42), Gravity.TOP | Gravity.RIGHT);
+        languageParams.setMargins(0, dp(16), dp(2), 0);
+        header.addView(languageButton, languageParams);
+        languageButton.setOnClickListener(v -> showLanguagePicker());
+
+        LinearLayout.LayoutParams fullBleedHeader = new LinearLayout.LayoutParams(-1, dp(240));
         fullBleedHeader.setMargins(-dp(16), 0, -dp(16), 0);
         mainLayout.addView(header, fullBleedHeader);
 
