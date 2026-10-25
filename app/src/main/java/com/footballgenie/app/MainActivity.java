@@ -4529,8 +4529,8 @@ public class MainActivity extends Activity {
         reviewCard.addView(explanation);
 
         TextView answer = label(finished > 0
-            ? "READY FOR ANALYSIS\\nThe analyst will separate measured findings from hypotheses and propose testable improvements."
-            : "WAITING FOR EVIDENCE\\nRecord final results for saved predictions before running a reliable performance analysis.");
+            ? "READY FOR ANALYSIS\nThe analyst will separate measured findings from hypotheses and propose testable improvements."
+            : "WAITING FOR EVIDENCE\nRecord final results for saved predictions before running a reliable performance analysis.");
         answer.setTextColor(WHITE);
         answer.setTextSize(14);
         answer.setLineSpacing(dp(3), 1f);
