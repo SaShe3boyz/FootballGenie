@@ -432,7 +432,9 @@ public class MainActivity extends Activity {
         String[] sourceLines = source.split("\\n", -1);
         for (String raw : sourceLines) {
             String line = raw.trim();
-            if (line.startsWith("### ")) {
+            // Turn each Markdown topic heading (H1, H2, or H3) into its own colourful card.
+            // Performance reports commonly use ## headings, while normal AI replies may use ###.
+            if (line.matches("^#{1,3}\\s+.*")) {
                 if (currentBody.length() > 0 || headings.isEmpty()) {
                     headings.add(currentHeading);
                     bodies.add(currentBody);
