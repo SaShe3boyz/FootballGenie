@@ -4669,11 +4669,17 @@ public class MainActivity extends Activity {
                 // Render the analyst report inside the Validation & Performance screen itself.
                 // This screen uses a TextView rather than the chat renderer, so card styling must be applied here.
                 if (display.startsWith("⚽ FOOTBALL GENIE AI — PERFORMANCE ANALYST")) {
-                    // Some AI responses contain escaped newline characters (the literal text \\n)
-                    // instead of real line breaks. Convert them before splitting the report into cards.
-                    String report = display.replace("\\\\r\\\\n", "\n")
-                        .replace("\\\\n", "\n")
-                        .replace("\\\\t", "    ");
+                    // AI output may contain line breaks escaped once or multiple times.
+                    // Normalize literal escape sequences before parsing the report into cards.
+                    String report = display;
+                    for (int pass = 0; pass < 3; pass++) {
+                        report = report.replace("\\\\r\\\\n", "\n")
+                            .replace("\\\\n", "\n")
+                            .replace("\\\\t", "    ")
+                            .replace("\\r\\n", "\n")
+                            .replace("\\n", "\n")
+                            .replace("\\t", "    ");
+                    }
                     int splitAt = report.indexOf("\n\n");
                     if (splitAt >= 0) report = report.substring(splitAt + 2);
                     LinearLayout reviewParent = (LinearLayout) answer.getParent();
