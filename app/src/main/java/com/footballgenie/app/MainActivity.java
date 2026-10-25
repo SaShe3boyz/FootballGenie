@@ -924,7 +924,7 @@ public class MainActivity extends Activity {
 
     private void buildSimulationScreen() {
         addHeading("", "MATCH SIMULATION");
-        TextView note = label("This screen presents the latest match simulation and its modelled match-flow analysis. Run a prediction from Match Centre first.");
+        TextView note = label("Here you can review the latest test of a match. Football Genie checks 10,000 possible scorelines to estimate which results are more likely. Run a prediction from Match Centre first.");
         note.setTextColor(MUTED);
         note.setTextSize(15);
         note.setLineSpacing(dp(3), 1.0f);
@@ -933,13 +933,13 @@ public class MainActivity extends Activity {
 
         LinearLayout simulationCard = card();
         simulationCard.setOrientation(LinearLayout.VERTICAL);
-        TextView title = label("LATEST SIMULATED MATCH");
+        TextView title = label("LATEST MATCH TEST");
         title.setTextColor(GREEN);
         title.setTextSize(15);
         title.setTypeface(null, Typeface.BOLD);
         simulationCard.addView(title);
 
-        simulationSummary = label("No simulation yet. Open MATCH CENTRE, enter both teams and expected goals, then run 10,000 simulations.");
+        simulationSummary = label("No match has been tested yet. Open Match Centre, choose both teams, and run the 10,000-result test.");
         simulationSummary.setTextColor(WHITE);
         simulationSummary.setTextSize(15);
         simulationSummary.setLineSpacing(dp(4), 1.0f);
@@ -1486,7 +1486,7 @@ public class MainActivity extends Activity {
 
     private void buildValidationScreen() {
         addHeading("06", "VALIDATION & PERFORMANCE");
-        TextView note = label("Use finished matches to evaluate the model. Accuracy and calibration metrics should be based on saved predictions with known final scores—not on predictions that are still pending.");
+        TextView note = label("Football Genie learns from checking its predictions against real final scores. Only matches with recorded results count in this report; upcoming matches do not count yet.");
         note.setTextColor(MUTED);
         note.setTextSize(15);
         note.setLineSpacing(dp(3), 1.0f);
@@ -1494,19 +1494,19 @@ public class MainActivity extends Activity {
         mainLayout.addView(note);
 
         LinearLayout validationCard = card();
-        TextView title = label("MODEL PERFORMANCE REPORT");
+        TextView title = label("HOW WELL IS FOOTBALL GENIE PERFORMING?");
         title.setTextColor(GREEN);
         title.setTextSize(15);
         title.setTypeface(null, Typeface.BOLD);
         validationCard.addView(title);
-        TextView detail = label("Open prediction history to update actual scores and inspect evaluated predictions, goal prediction error, probability calibration and baseline comparisons.");
+        TextView detail = label("Update finished match scores in Prediction History, then check how often we were right, how close our goal predictions were, and where we need to improve.");
         detail.setTextColor(MUTED);
         detail.setTextSize(14);
         detail.setLineSpacing(dp(3), 1.0f);
         detail.setPadding(0, dp(6), 0, dp(12));
         validationCard.addView(detail);
         Button open = new Button(this);
-        open.setText("📈  OPEN VALIDATION REPORT");
+        open.setText("📈  VIEW PERFORMANCE REPORT");
         open.setTextColor(WHITE);
         open.setTextSize(15);
         open.setAllCaps(false);
@@ -2144,7 +2144,7 @@ public class MainActivity extends Activity {
         introTitle.setPadding(0, dp(7), 0, dp(5));
         introCard.addView(introTitle);
 
-        TextView introNote = label("Choose a fixture or enter both teams and their expected goals (xG). Football Genie will model 10,000 possible scorelines.");
+        TextView introNote = label("Choose a match or enter how many goals you expect each team to score. Football Genie will test 10,000 possible scorelines. These are estimates, not promises.");
         introNote.setTextColor(MUTED);
         introNote.setTextSize(15);
         introNote.setLineSpacing(dp(3), 1.0f);
@@ -2258,7 +2258,7 @@ public class MainActivity extends Activity {
         mainLayout.addView(teamsCard);
 
         LinearLayout xgCard = card();
-        TextView xgTitle = label("EXPECTED GOALS (xG)");
+        TextView xgTitle = label("GOALS WE EXPECT (xG)");
         xgTitle.setTextColor(GREEN);
         xgTitle.setTextSize(15);
         xgTitle.setTypeface(null, Typeface.BOLD);
@@ -2322,10 +2322,10 @@ public class MainActivity extends Activity {
     }
 
     private void buildHistoryTools() {
-        addHeading("", "PREDICTION HISTORY & TESTING");
+        addHeading("", "SAVED PREDICTIONS & RESULTS");
         LinearLayout historyCard = card();
         historyCard.setOrientation(LinearLayout.VERTICAL);
-        TextView historyNote = label("Review saved predictions, update finished match results, or remove records you no longer need.");
+        TextView historyNote = label("See your saved predictions, enter the final scores after matches finish, and check how well Football Genie did.");
         historyNote.setTextColor(MUTED);
         historyNote.setTextSize(14);
         historyNote.setLineSpacing(dp(3), 1.0f);
@@ -2392,7 +2392,7 @@ public class MainActivity extends Activity {
         status.setBackground(rounded(Color.rgb(17, 49, 52), 10));
         outputCard.addView(status);
 
-        TextView outcomeHeading = label("1X2 WIN PROBABILITIES");
+        TextView outcomeHeading = label("CHANCE OF EACH RESULT");
         outcomeHeading.setTextColor(MUTED);
         outcomeHeading.setTextSize(13);
         outcomeHeading.setTypeface(null, Typeface.BOLD);
@@ -2406,7 +2406,7 @@ public class MainActivity extends Activity {
         awayWinValue = addMetricCard(outcomeRow, "AWAY WIN", "--", GREEN);
         outputCard.addView(outcomeRow);
 
-        TextView goalsHeading = label("GOALS MARKETS");
+        TextView goalsHeading = label("GOAL PREDICTIONS");
         goalsHeading.setTextColor(MUTED);
         goalsHeading.setTextSize(13);
         goalsHeading.setTypeface(null, Typeface.BOLD);
@@ -2415,12 +2415,12 @@ public class MainActivity extends Activity {
 
         LinearLayout goalsRow = new LinearLayout(this);
         goalsRow.setOrientation(LinearLayout.HORIZONTAL);
-        overValue = addMetricCard(goalsRow, "OVER 2.5", "--", GREEN);
-        underValue = addMetricCard(goalsRow, "UNDER 2.5", "--", WHITE);
-        bttsValue = addMetricCard(goalsRow, "BTTS YES", "--", GREEN);
+        overValue = addMetricCard(goalsRow, "3+ TOTAL GOALS", "--", GREEN);
+        underValue = addMetricCard(goalsRow, "0–2 TOTAL GOALS", "--", WHITE);
+        bttsValue = addMetricCard(goalsRow, "BOTH TEAMS SCORE", "--", GREEN);
         outputCard.addView(goalsRow);
 
-        TextView visualHeading = label("PROBABILITY SNAPSHOT");
+        TextView visualHeading = label("CHANCES AT A GLANCE");
         visualHeading.setTextColor(MUTED);
         visualHeading.setTextSize(13);
         visualHeading.setTypeface(null, Typeface.BOLD);
@@ -2433,8 +2433,8 @@ public class MainActivity extends Activity {
         addProbabilityBar(probabilityChart, "HOME WIN", homeWinValue, GREEN);
         addProbabilityBar(probabilityChart, "DRAW", drawValue, Color.rgb(244, 190, 80));
         addProbabilityBar(probabilityChart, "AWAY WIN", awayWinValue, Color.rgb(90, 165, 255));
-        addProbabilityBar(probabilityChart, "OVER 2.5 GOALS", overValue, Color.rgb(80, 210, 170));
-        addProbabilityBar(probabilityChart, "BOTH TEAMS TO SCORE", bttsValue, Color.rgb(180, 135, 255));
+        addProbabilityBar(probabilityChart, "3 OR MORE TOTAL GOALS", overValue, Color.rgb(80, 210, 170));
+        addProbabilityBar(probabilityChart, "BOTH TEAMS SCORE", bttsValue, Color.rgb(180, 135, 255));
         outputCard.addView(probabilityChart);
 
         TextView detailsHeading = label("MATCH INTELLIGENCE & MODEL ANALYSIS");
@@ -4359,14 +4359,14 @@ public class MainActivity extends Activity {
         // Dedicated validation metric cards requested for the V2 report.
         double confidenceTotal = 0.0;
         for (double binTotal : confidenceBinProbabilityTotal) confidenceTotal += binTotal;
-        addValidationMetricCard(historyResultsContainer, "AVERAGE PREDICTED CONFIDENCE",
+        addValidationMetricCard(historyResultsContainer, "HOW CONFIDENT FOOTBALL GENIE WAS",
             finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * confidenceTotal / finished)
                 : "Waiting for completed matches");
-        addValidationMetricCard(historyResultsContainer, "ACTUAL HIT RATE",
+        addValidationMetricCard(historyResultsContainer, "HOW OFTEN PREDICTIONS WERE RIGHT",
             finished > 0 ? String.format(Locale.US, "%d / %d matches • %.1f%% correct",
                 outcomeCorrect, finished, 100.0 * outcomeCorrect / finished)
                 : "Waiting for completed matches");
-        addValidationMetricCard(historyResultsContainer, "SAMPLE SIZE",
+        addValidationMetricCard(historyResultsContainer, "MATCHES CHECKED",
             finished + " completed matches evaluated");
 
         StringBuilder confidenceRanges = new StringBuilder();
@@ -4375,7 +4375,7 @@ public class MainActivity extends Activity {
         confidenceRanges.append("40–59%: ").append(calibrationText(confidenceBinCount[2], confidenceBinCorrect[2], confidenceBinProbabilityTotal[2])).append("\n");
         confidenceRanges.append("60–79%: ").append(calibrationText(confidenceBinCount[3], confidenceBinCorrect[3], confidenceBinProbabilityTotal[3])).append("\n");
         confidenceRanges.append("80–100%: ").append(calibrationText(confidenceBinCount[4], confidenceBinCorrect[4], confidenceBinProbabilityTotal[4]));
-        addValidationMetricCard(historyResultsContainer, "CONFIDENCE RANGES", confidenceRanges.toString());
+        addValidationMetricCard(historyResultsContainer, "CONFIDENCE: CHANCE VS RESULTS", confidenceRanges.toString());
 
         StringBuilder aiValidationEvidence = new StringBuilder();
         aiValidationEvidence.append("Saved validation report metrics (").append(finished)
@@ -4521,7 +4521,7 @@ public class MainActivity extends Activity {
         heading.setTypeface(null, Typeface.BOLD);
         reviewCard.addView(heading);
 
-        TextView explanation = label("The Performance Analyst studies measured results, finds recurring weaknesses and recommends practical improvements. Each recommendation must be tested against historical results before it can be adopted.");
+        TextView explanation = label("Football Genie checks past predictions to find what went well and what needs work. It may suggest changes, but we must test each suggestion against past matches before using it.");
         explanation.setTextColor(MUTED);
         explanation.setTextSize(13);
         explanation.setLineSpacing(dp(3), 1f);
@@ -4529,8 +4529,8 @@ public class MainActivity extends Activity {
         reviewCard.addView(explanation);
 
         TextView answer = label(finished > 0
-            ? "READY FOR ANALYSIS\nThe analyst will separate measured findings from hypotheses and propose testable improvements."
-            : "WAITING FOR EVIDENCE\nRecord final results for saved predictions before running a reliable performance analysis.");
+            ? "READY TO CHECK\nFootball Genie will look for patterns in the finished matches and suggest changes worth testing."
+            : "WAITING FOR RESULTS\nAdd final scores for saved predictions after matches finish, then run the performance check.");
         answer.setTextColor(WHITE);
         answer.setTextSize(14);
         answer.setLineSpacing(dp(3), 1f);
@@ -4538,7 +4538,7 @@ public class MainActivity extends Activity {
         reviewCard.addView(answer);
 
         Button reviewButton = new Button(this);
-        reviewButton.setText("🧠  RUN PERFORMANCE ANALYSIS");
+        reviewButton.setText("🧠  CHECK HOW WELL WE DID");
         reviewButton.setAllCaps(false);
         reviewButton.setTextColor(Color.rgb(12, 24, 39));
         reviewButton.setBackgroundTintList(android.content.res.ColorStateList.valueOf(GREEN));
@@ -4648,7 +4648,7 @@ public class MainActivity extends Activity {
                 }
                 answer.setText(display);
                 reviewButton.setEnabled(true);
-                reviewButton.setText("🧠  RUN PERFORMANCE ANALYSIS");
+                reviewButton.setText("🧠  CHECK HOW WELL WE DID");
             });
         }).start();
     }
