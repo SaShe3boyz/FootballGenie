@@ -4666,7 +4666,76 @@ public class MainActivity extends Activity {
                 } catch (Exception error) {
                     display = "AI REVIEW UNAVAILABLE\n\nThe server returned an unreadable response. Please try again.";
                 }
-                answer.setText(display);
+                // Render the analyst report inside the Validation & Performance screen itself.
+                // This screen uses a TextView rather than the chat renderer, so card styling must be applied here.
+                if (display.startsWith("⚽ FOOTBALL GENIE AI — PERFORMANCE ANALYST")) {
+                    String report = display;
+                    int splitAt = report.indexOf("\\n\\n");
+                    if (splitAt >= 0) report = report.substring(splitAt + 2);
+                    LinearLayout reviewParent = (LinearLayout) answer.getParent();
+                    int answerIndex = reviewParent.indexOfChild(answer);
+                    reviewParent.removeView(answer);
+                    LinearLayout reportCards = new LinearLayout(MainActivity.this);
+                    reportCards.setOrientation(LinearLayout.VERTICAL);
+                    String[] reportLines = report.split("\\n");
+                    String currentTitle = "PERFORMANCE REVIEW";
+                    StringBuilder currentText = new StringBuilder();
+                    java.util.ArrayList<String> titles = new java.util.ArrayList<>();
+                    java.util.ArrayList<String> sections = new java.util.ArrayList<>();
+                    for (String reportLine : reportLines) {
+                        String clean = reportLine.trim().replaceAll("^\\*{1,2}|\\*{1,2}$", "").trim();
+                        java.util.regex.Matcher sectionMatcher = java.util.regex.Pattern.compile("^(?:#{1,3}\\s*)?(?:[1-6][.)]\\s*)?(?:[📊🔍💡🧪🛡️🎯]\\s*)?(MEASURED FINDINGS|WEAKNESSES TO INVESTIGATE|PRIORITY RECOMMENDATIONS|HOW TO TEST EACH RECOMMENDATION|ADOPTION GATE|CONFIDENCE IN THIS REVIEW)\\s*:?.*$", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(clean);
+                        if (sectionMatcher.matches()) {
+                            if (currentText.length() > 0) {
+                                titles.add(currentTitle);
+                                sections.add(currentText.toString().trim());
+                            }
+                            currentTitle = sectionMatcher.group(1).toUpperCase(Locale.US);
+                            currentText = new StringBuilder();
+                        } else {
+                            if (currentText.length() > 0) currentText.append("\\n");
+                            currentText.append(reportLine);
+                        }
+                    }
+                    if (currentText.length() > 0) {
+                        titles.add(currentTitle);
+                        sections.add(currentText.toString().trim());
+                    }
+                    for (int sectionIndex = 0; sectionIndex < titles.size(); sectionIndex++) {
+                        String sectionTitle = titles.get(sectionIndex);
+                        int accent = getAnalysisAccentColor(sectionTitle);
+                        LinearLayout topicCard = new LinearLayout(MainActivity.this);
+                        topicCard.setOrientation(LinearLayout.VERTICAL);
+                        topicCard.setPadding(dp(14), dp(14), dp(14), dp(14));
+                        GradientDrawable topicBg = rounded(blendAnalysisColor(Color.rgb(16, 27, 44), accent, 0.24f), 14);
+                        topicBg.setStroke(dp(2), accent);
+                        topicCard.setBackground(topicBg);
+                        topicCard.setElevation(dp(2));
+                        LinearLayout.LayoutParams topicParams = new LinearLayout.LayoutParams(-1, -2);
+                        topicParams.bottomMargin = dp(10);
+                        reportCards.addView(topicCard, topicParams);
+                        TextView topicHeading = label(getAnalysisIcon(sectionTitle) + "  " + sectionTitle);
+                        topicHeading.setTextColor(WHITE);
+                        topicHeading.setTextSize(15);
+                        topicHeading.setTypeface(null, Typeface.BOLD);
+                        topicCard.addView(topicHeading);
+                        TextView topicBody = label(sections.get(sectionIndex).replaceAll("^[-*]\\s+", "• ").replace("**", ""));
+                        topicBody.setTextColor(WHITE);
+                        topicBody.setTextSize(14);
+                        topicBody.setLineSpacing(dp(4), 1.06f);
+                        topicBody.setPadding(0, dp(10), 0, dp(2));
+                        topicBody.setTextIsSelectable(true);
+                        topicCard.addView(topicBody);
+                    }
+                    if (titles.isEmpty()) {
+                        answer.setText(display);
+                        reviewParent.addView(answer, answerIndex);
+                    } else {
+                        reviewParent.addView(reportCards, answerIndex);
+                    }
+                } else {
+                    answer.setText(display);
+                }
                 reviewButton.setEnabled(true);
                 reviewButton.setText("🧠  CHECK HOW WELL WE DID");
             });
