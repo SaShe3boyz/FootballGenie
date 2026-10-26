@@ -4754,9 +4754,12 @@ public class MainActivity extends Activity {
                         topicCard.addView(topicHeading);
                         String bodyText = sections.get(sectionIndex).replaceAll("^[-*]\\s+", "• ").replace("**", "");
                         TextView topicBody = label(bodyText);
-                        if ("WHAT OUR PREDICTIONS GOT RIGHT".equals(sectionTitle)) {
+                        if ("WHAT OUR PREDICTIONS GOT RIGHT".equals(sectionTitle)
+                                || "WHAT DOES THIS TELL US?".equals(sectionTitle)) {
                             android.text.SpannableString styledBody = new android.text.SpannableString(bodyText);
-                            String[] subsectionLabels = {"Match results", "Matches with more than 2 goals", "Both teams scoring", "Exact scores", "How close were our predicted scores?", "Are we predicting enough goals?", "Did our strongest predictions perform best?"};
+                            String[] subsectionLabels = "WHAT OUR PREDICTIONS GOT RIGHT".equals(sectionTitle)
+                                ? new String[] {"Match results", "Matches with more than 2 goals", "Both teams scoring", "Exact scores", "How close were our predicted scores?", "Are we predicting enough goals?", "Did our strongest predictions perform best?"}
+                                : new String[] {"Strongest area", "Main concern", "Other concern", "Next step"};
                             for (String subsectionLabel : subsectionLabels) {
                                 int from = 0;
                                 while ((from = bodyText.indexOf(subsectionLabel, from)) >= 0) {
