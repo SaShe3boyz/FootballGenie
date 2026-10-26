@@ -4725,7 +4725,7 @@ public class MainActivity extends Activity {
                             currentTitle = matchedTopic;
                             currentText = new StringBuilder();
                         } else {
-                            if (currentText.length() > 0) currentText.append("\\n");
+                            if (currentText.length() > 0) currentText.append("\n");
                             currentText.append(reportLine);
                         }
                     }
