@@ -4106,7 +4106,7 @@ public class MainActivity extends Activity {
 
     private String calibrationText(int count, int correct, double probabilityTotal) {
         if (count == 0) return "no matches";
-        return String.format(Locale.US, "%d matches, avg confidence %.1f%%, hit rate %.1f%%",
+        return String.format(Locale.US, "%d matches checked, average predicted chance %.1f%%, correct picks %.1f%%",
             count, 100.0 * probabilityTotal / count, 100.0 * correct / count);
     }
 
@@ -4117,11 +4117,11 @@ public class MainActivity extends Activity {
         if (sample < 10) {
             review.append("Not enough completed matches for a dependable adjustment. Collect at least 10, preferably 30+, before changing model settings.\n");
         } else {
-            review.append("Observed outcome hit rate: ")
+            review.append("Observed correct-result picks: ")
                 .append(String.format(Locale.US, "%.1f%%", 100.0 * outcomeCorrect / sample))
-                .append("; Over/Under hit rate: ")
+                .append("; Over/Under picks correct: ")
                 .append(String.format(Locale.US, "%.1f%%", 100.0 * goalsCorrect / sample))
-                .append("; BTTS hit rate: ")
+                .append("; Both-teams-scored picks correct: ")
                 .append(String.format(Locale.US, "%.1f%%", 100.0 * bttsCorrect / sample)).append(".\n");
             if (sample < 30) {
                 review.append("Early-sample caution: these patterns are provisional. No automatic parameter change has been applied.\n");
@@ -4292,18 +4292,18 @@ public class MainActivity extends Activity {
                 "Mean absolute home-goal error: " + String.format(Locale.US, "%.2f", homeGoalAbsError / finished) + "\n" +
                 "Mean absolute away-goal error: " + String.format(Locale.US, "%.2f", awayGoalAbsError / finished) + "\n" +
                 "Mean absolute total-goal error: " + String.format(Locale.US, "%.2f", totalGoalAbsError / finished) + "\n\n" +
-                "CONFIDENCE CALIBRATION (highest 1X2 probability)\n" +
+                "PREDICTED CHANCE COMPARED WITH RESULTS (highest win/draw/away chance)\n" +
                 "0-19%: " + calibrationText(confidenceBinCount[0], confidenceBinCorrect[0], confidenceBinProbabilityTotal[0]) + "\n" +
                 "20-39%: " + calibrationText(confidenceBinCount[1], confidenceBinCorrect[1], confidenceBinProbabilityTotal[1]) + "\n" +
                 "40-59%: " + calibrationText(confidenceBinCount[2], confidenceBinCorrect[2], confidenceBinProbabilityTotal[2]) + "\n" +
                 "60-79%: " + calibrationText(confidenceBinCount[3], confidenceBinCorrect[3], confidenceBinProbabilityTotal[3]) + "\n" +
                 "80-100%: " + calibrationText(confidenceBinCount[4], confidenceBinCorrect[4], confidenceBinProbabilityTotal[4]) + "\n" +
-                "Small bins are noisy; compare predicted confidence with observed hit rate.\n\n" +
+                "Each row groups matches with similar predicted chances. With only a few matches in a row, results can vary a lot.\n\n" +
                 "Probability data check: " + invalidProbabilityRecords + " records have missing, out-of-range or non-normalized 1X2 probabilities.\n\n" +
                 "HOW TO READ THESE METRICS\\n" +
-                "Hit rate measures pick frequency; Brier score measures probability quality, and lower is better. " +
+                "Correct-pick percentage tells how often the selected option was right. The probability score checks how close the stated chances were to what happened; lower is better. " +
                 "The majority baseline is retrospective, not a live strategy. Results depend on saved sample size and competition mix.\\n\\n" +
-                "PROBABILITY QUALITY (Brier score; lower is better)\n" +
+                "HOW CLOSE WERE THE PREDICTED CHANCES? (lower score is better)\n" +
                 "Home/Draw/Away: " + String.format(Locale.US, "%.3f", outcomeBrierTotal / finished) + "\n" +
                 "Over 2.5: " + String.format(Locale.US, "%.3f", goalsBrierTotal / finished) + "\n" +
                 "Both teams score: " + String.format(Locale.US, "%.3f", bttsBrierTotal / finished) + "\n\n" +
@@ -4400,11 +4400,11 @@ public class MainActivity extends Activity {
         StringBuilder aiValidationEvidence = new StringBuilder();
         aiValidationEvidence.append("Saved validation report metrics (").append(finished)
             .append(" completed matches):\n")
-            .append("Outcome hit rate: ").append(outcomeCorrect).append("/").append(finished)
+            .append("Correct-result picks: ").append(outcomeCorrect).append("/").append(finished)
             .append(" (").append(finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * outcomeCorrect / finished) : "n/a").append(").\n")
-            .append("Over/Under 2.5 hit rate: ").append(goalsCorrect).append("/").append(finished)
+            .append("Over/Under 2.5 picks correct: ").append(goalsCorrect).append("/").append(finished)
             .append(" (").append(finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * goalsCorrect / finished) : "n/a").append(").\n")
-            .append("BTTS hit rate: ").append(bttsCorrect).append("/").append(finished)
+            .append("Both-teams-scored picks correct: ").append(bttsCorrect).append("/").append(finished)
             .append(" (").append(finished > 0 ? String.format(Locale.US, "%.1f%%", 100.0 * bttsCorrect / finished) : "n/a").append(").\n")
             .append("Exact score hits: ").append(exactCorrect).append("/").append(finished).append(".\n")
             .append("Mean absolute predicted-score errors: home ")
