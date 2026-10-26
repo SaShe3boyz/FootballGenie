@@ -4595,7 +4595,7 @@ public class MainActivity extends Activity {
 
                 JSONObject payload = new JSONObject();
                 payload.put("question",
-                    "Act as FOOTBALL GENIE AI — PERFORMANCE ANALYST. Review the supplied validation summary and completed match records. Return mobile-friendly sections titled: 1) MEASURED FINDINGS, 2) WEAKNESSES TO INVESTIGATE, 3) PRIORITY RECOMMENDATIONS, 4) HOW TO TEST EACH RECOMMENDATION, 5) ADOPTION GATE, and 6) CONFIDENCE IN THIS REVIEW. Give up to three prioritized, specific and testable recommendations. For each, state the observed evidence, the proposed parameter or calculation to investigate, the test needed, and a measurable success criterion. Never invent model parameters that are not supplied. Do not claim that you changed, retrained, or implemented anything. State clearly that recommendations are not applied and must pass a historical/held-out backtest before adoption. Explain sample-size limits; if evidence is insufficient, say so and recommend collecting more completed matches.");
+                    "Act as FOOTBALL GENIE AI — PERFORMANCE ANALYST. Review the supplied validation summary and completed match records. For the first findings card, use the exact heading WHAT OUR PREDICTIONS GOT RIGHT (never MEASURED FINDINGS). Inside it, format each supported subsection title in Markdown bold exactly like **Match results**, **Matches with more than 2 goals**, **Both teams scoring**, **Exact scores**, **How close were our predicted scores?**, **Are we predicting enough goals?**, and **Did our strongest predictions perform best?** Put the explanation on the next line as short, plain-English bullets. Then use the exact heading WHAT DOES THIS TELL US? with simple bullets for strongest area, main concern, other concern, and next step. Do not use technical tables or jargon. After these two plain-English sections, continue with mobile-friendly sections titled WEAKNESSES TO INVESTIGATE, PRIORITY RECOMMENDATIONS, HOW TO TEST EACH RECOMMENDATION, ADOPTION GATE, and CONFIDENCE IN THIS REVIEW. Give up to three prioritized, specific and testable recommendations. For each, state the observed evidence, the proposed parameter or calculation to investigate, the test needed, and a measurable success criterion. Never invent model parameters that are not supplied. Do not claim that you changed, retrained, or implemented anything. State clearly that recommendations are not applied and must pass a historical/held-out backtest before adoption. Explain sample-size limits; if evidence is insufficient, say so and recommend collecting more completed matches.");
                 payload.put("validationSummary", evidenceSummary);
                 payload.put("match", new JSONObject());
 
@@ -4702,6 +4702,7 @@ public class MainActivity extends Activity {
                             .replaceFirst("^\\*{1,2}\\s*", "")
                             .trim().toUpperCase(Locale.US);
                         String[] knownTopics = {
+                            "WHAT OUR PREDICTIONS GOT RIGHT", "WHAT DOES THIS TELL US?",
                             "MEASURED FINDINGS", "WEAKNESSES TO INVESTIGATE",
                             "PRIORITY RECOMMENDATIONS", "HOW TO TEST EACH RECOMMENDATION",
                             "ADOPTION GATE", "CONFIDENCE IN THIS REVIEW"
@@ -4751,7 +4752,21 @@ public class MainActivity extends Activity {
                         topicHeading.setTextSize(15);
                         topicHeading.setTypeface(null, Typeface.BOLD);
                         topicCard.addView(topicHeading);
-                        TextView topicBody = label(sections.get(sectionIndex).replaceAll("^[-*]\\s+", "• ").replace("**", ""));
+                        String bodyText = sections.get(sectionIndex).replaceAll("^[-*]\\s+", "• ").replace("**", "");
+                        TextView topicBody = label(bodyText);
+                        if ("WHAT OUR PREDICTIONS GOT RIGHT".equals(sectionTitle)) {
+                            android.text.SpannableString styledBody = new android.text.SpannableString(bodyText);
+                            String[] subsectionLabels = {"Match results", "Matches with more than 2 goals", "Both teams scoring", "Exact scores", "How close were our predicted scores?", "Are we predicting enough goals?", "Did our strongest predictions perform best?"};
+                            for (String subsectionLabel : subsectionLabels) {
+                                int from = 0;
+                                while ((from = bodyText.indexOf(subsectionLabel, from)) >= 0) {
+                                    int end = from + subsectionLabel.length();
+                                    styledBody.setSpan(new android.text.style.StyleSpan(Typeface.BOLD), from, end, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                    from = end;
+                                }
+                            }
+                            topicBody.setText(styledBody);
+                        }
                         topicBody.setTextColor(WHITE);
                         topicBody.setTextSize(14);
                         topicBody.setLineSpacing(dp(4), 1.06f);
