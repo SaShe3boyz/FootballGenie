@@ -4756,13 +4756,17 @@ public class MainActivity extends Activity {
                         TextView topicBody = label(bodyText);
                         if ("WHAT OUR PREDICTIONS GOT RIGHT".equals(sectionTitle)
                                 || "WHAT DOES THIS TELL US?".equals(sectionTitle)
-                                || "WEAKNESSES TO INVESTIGATE".equals(sectionTitle)) {
+                                || "WEAKNESSES TO INVESTIGATE".equals(sectionTitle)
+                                || "PRIORITY RECOMMENDATIONS".equals(sectionTitle)
+                                || "HOW TO TEST EACH RECOMMENDATION".equals(sectionTitle)) {
                             android.text.SpannableString styledBody = new android.text.SpannableString(bodyText);
                             String[] subsectionLabels = "WHAT OUR PREDICTIONS GOT RIGHT".equals(sectionTitle)
                                 ? new String[] {"Match results", "Matches with more than 2 goals", "Both teams scoring", "Exact scores", "How close were our predicted scores?", "Are we predicting enough goals?", "Did our strongest predictions perform best?"}
                                 : ("WHAT DOES THIS TELL US?".equals(sectionTitle)
                                     ? new String[] {"Strongest area", "Main concern", "Other concern", "Next step"}
-                                    : new String[] {"Match result predictions", "Goal predictions", "High-confidence predictions", "Limited match history", "Match results", "Confidence calibration", "Small sample"});
+                                    : ("WEAKNESSES TO INVESTIGATE".equals(sectionTitle)
+                                        ? new String[] {"Match result predictions", "Goal predictions", "High-confidence predictions", "Limited match history", "Match results", "Confidence calibration", "Small sample"}
+                                        : new String[] {"Improve confidence accuracy", "Confidence accuracy", "Improve goal predictions", "Goal predictions", "Strengthen match-result predictions", "Match-result predictions", "Build a larger validation record", "Validation record", "Recommendation", "Test"}));
                             for (String subsectionLabel : subsectionLabels) {
                                 int from = 0;
                                 while ((from = bodyText.indexOf(subsectionLabel, from)) >= 0) {
