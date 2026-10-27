@@ -4791,10 +4791,16 @@ public class MainActivity extends Activity {
                                         && colon - labelStart <= 70) {
                                     styledBody.setSpan(new android.text.style.StyleSpan(Typeface.BOLD),
                                             labelStart, colon, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                                } else if (labelStart < lineEnd && lineEnd - labelStart <= 70
-                                        && !bodyText.substring(labelStart, lineEnd).contains(".")) {
+                                } else if (labelStart < lineEnd && lineEnd - labelStart <= 90
+                                        && (bodyText.substring(labelStart, lineEnd).trim().matches("^\\d+[.)]\\s+.{2,85}$")
+                                            || (!bodyText.substring(labelStart, lineEnd).contains(".")
+                                                && !bodyText.substring(labelStart, lineEnd).contains("—")))) {
+                                    // Numbered standalone headings (for example "1. Match Result Predictions")
+                                    // must be bold even though the numbering contains a full stop.
+                                    int boldEnd = lineEnd;
+                                    while (boldEnd > labelStart && Character.isWhitespace(bodyText.charAt(boldEnd - 1))) boldEnd--;
                                     styledBody.setSpan(new android.text.style.StyleSpan(Typeface.BOLD),
-                                            labelStart, lineEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                            labelStart, boldEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                 }
                                 lineStart = lineEnd + 1;
                             }
