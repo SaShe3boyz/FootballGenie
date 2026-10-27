@@ -2520,7 +2520,18 @@ public class MainActivity extends Activity {
         container.removeAllViews();
         if (source == null || source.trim().isEmpty()) source = "No analysis was returned. Please try again.";
         int[] accents = new int[] { Color.rgb(66, 220, 164), Color.rgb(83, 171, 255), Color.rgb(255, 190, 82), Color.rgb(190, 137, 255), Color.rgb(255, 123, 143) };
-        String[] lines = source.replace("\r", "").replace("\\n", "\n").split("\n", -1);
+        // AI providers can return real line breaks or escaped line breaks (sometimes double-escaped).
+        // Normalize both forms before splitting the answer into readable cards.
+        String normalizedSource = source;
+        for (int pass = 0; pass < 3; pass++) {
+            normalizedSource = normalizedSource.replace("\\\\r\\\\n", "\n")
+                .replace("\\\\n", "\n")
+                .replace("\\\\t", "    ")
+                .replace("\\r\\n", "\n")
+                .replace("\\n", "\n")
+                .replace("\\t", "    ");
+        }
+        String[] lines = normalizedSource.replace("\r", "").split("\n", -1);
         String title = "";
         StringBuilder body = new StringBuilder();
         int cardIndex = 0;
