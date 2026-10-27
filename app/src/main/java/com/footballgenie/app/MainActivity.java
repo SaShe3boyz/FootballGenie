@@ -4778,7 +4778,7 @@ public class MainActivity extends Activity {
                             // Bold subtopic labels dynamically too; do not rely only on a fixed label list.
                             int lineStart = 0;
                             while (lineStart < bodyText.length()) {
-                                int lineEnd = bodyText.indexOf("\\n", lineStart);
+                                int lineEnd = bodyText.indexOf("\n", lineStart);
                                 if (lineEnd < 0) lineEnd = bodyText.length();
                                 int labelStart = lineStart;
                                 while (labelStart < lineEnd && Character.isWhitespace(bodyText.charAt(labelStart))) labelStart++;
