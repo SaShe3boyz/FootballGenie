@@ -463,7 +463,7 @@ public class MainActivity extends Activity {
                 currentHeading = detectedHeading;
                 currentBody = new StringBuilder();
             } else {
-                if (currentBody.length() > 0) currentBody.append("\\n");
+                if (currentBody.length() > 0) currentBody.append("\n");
                 currentBody.append(raw);
             }
         }
