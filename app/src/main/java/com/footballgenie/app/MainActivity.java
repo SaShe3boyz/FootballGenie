@@ -637,9 +637,7 @@ public class MainActivity extends Activity {
                 JSONObject response = new JSONObject(body.toString());
                 if (code >= 200 && code < 300) {
                     answer = response.optString("answer", "The AI returned no answer.");
-                    String provider = response.optString("provider", "");
-                    if (!provider.isEmpty()) answer += "\n\n— Powered by " + provider + " (" + response.optString("model", "AI model") + ")";
-                } else {
+                    // Keep provider/model details internal; Football Genie is the user-facing AI brand.                } else {
                     error = response.optString("error", "AI request failed (HTTP " + code + ").");
                 }
             } catch (Exception ex) {
