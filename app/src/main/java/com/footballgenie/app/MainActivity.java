@@ -424,6 +424,16 @@ public class MainActivity extends Activity {
         String source = message == null ? "" : message.trim();
         if (source.isEmpty()) return;
 
+        // Some providers send visible escape sequences instead of real line breaks.
+        for (int pass = 0; pass < 3; pass++) {
+            source = source.replace("\\\\r\\\\n", "\n")
+                .replace("\\\\n", "\n")
+                .replace("\\\\t", "    ")
+                .replace("\\r\\n", "\n")
+                .replace("\\n", "\n")
+                .replace("\\t", "    ");
+        }
+
         // Render markdown AI reports as colourful topic cards like DETAILED MATCH INTELLIGENCE.
         java.util.ArrayList<String> headings = new java.util.ArrayList<>();
         java.util.ArrayList<StringBuilder> bodies = new java.util.ArrayList<>();
