@@ -4775,6 +4775,29 @@ public class MainActivity extends Activity {
                                     from = end;
                                 }
                             }
+                            // Bold subtopic labels dynamically too; do not rely only on a fixed label list.
+                            int lineStart = 0;
+                            while (lineStart < bodyText.length()) {
+                                int lineEnd = bodyText.indexOf("\\n", lineStart);
+                                if (lineEnd < 0) lineEnd = bodyText.length();
+                                int labelStart = lineStart;
+                                while (labelStart < lineEnd && Character.isWhitespace(bodyText.charAt(labelStart))) labelStart++;
+                                while (labelStart < lineEnd && (bodyText.charAt(labelStart) == '•'
+                                        || Character.isDigit(bodyText.charAt(labelStart))
+                                        || bodyText.charAt(labelStart) == '.' || bodyText.charAt(labelStart) == ')'
+                                        || bodyText.charAt(labelStart) == ' ')) labelStart++;
+                                int colon = bodyText.indexOf(":", labelStart);
+                                if (labelStart < lineEnd && colon > labelStart && colon < lineEnd
+                                        && colon - labelStart <= 70) {
+                                    styledBody.setSpan(new android.text.style.StyleSpan(Typeface.BOLD),
+                                            labelStart, colon, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                } else if (labelStart < lineEnd && lineEnd - labelStart <= 70
+                                        && !bodyText.substring(labelStart, lineEnd).contains(".")) {
+                                    styledBody.setSpan(new android.text.style.StyleSpan(Typeface.BOLD),
+                                            labelStart, lineEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                                }
+                                lineStart = lineEnd + 1;
+                            }
                             topicBody.setText(styledBody);
                         }
                         topicBody.setTextColor(WHITE);
