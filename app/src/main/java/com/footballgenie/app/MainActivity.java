@@ -2583,7 +2583,18 @@ public class MainActivity extends Activity {
         TextView head = label("✦  " + title);
         head.setTextColor(accent); head.setTextSize(14); head.setTypeface(null, Typeface.BOLD);
         head.setPadding(0, 0, 0, dp(7)); card.addView(head);
-        TextView text = label(body == null || body.trim().isEmpty() ? "See the details above." : body.trim());
+        // Final safety net: clean provider escape sequences at the exact point text enters the UI.
+        String displayBody = body == null ? "" : body;
+        for (int pass = 0; pass < 5; pass++) {
+            displayBody = displayBody.replace("\\\\n", "\n")
+                .replace("\\\\r", "\r")
+                .replace("\\\\t", "    ")
+                .replace("\\n", "\n")
+                .replace("\\r", "\r")
+                .replace("\\t", "    ");
+        }
+        displayBody = displayBody.replace("\r\n", "\n").replace("\r", "\n");
+        TextView text = label(displayBody.trim().isEmpty() ? "See the details above." : displayBody.trim());
         text.setTextColor(WHITE); text.setTextSize(14); text.setLineSpacing(dp(4), 1.04f); card.addView(text);
     }
 
