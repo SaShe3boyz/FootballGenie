@@ -69,6 +69,8 @@ public class MainActivity extends Activity {
     private LinearLayout fixtureFiltersLayout;
     private TextView fixtureListStatus;
     private android.widget.EditText fixtureSearchInput;
+    private Spinner fixtureCompetitionSpinner;
+    private String activeFixtureCompetition = "ALL COMPETITIONS";
     private String selectedLanguageCode = "en";
     private final ArrayList<JSONObject> loadedFixtures = new ArrayList<>();
     private String activeFixtureFilter = "ALL";
@@ -1030,6 +1032,31 @@ public class MainActivity extends Activity {
             @Override public void afterTextChanged(android.text.Editable s) { }
         });
 
+        TextView competitionFilterLabel = label("LEAGUE / COMPETITION");
+        competitionFilterLabel.setTextColor(GREEN);
+        competitionFilterLabel.setTextSize(13);
+        competitionFilterLabel.setTypeface(null, Typeface.BOLD);
+        LinearLayout.LayoutParams competitionLabelParams = new LinearLayout.LayoutParams(-1, -2);
+        competitionLabelParams.topMargin = dp(12);
+        mainLayout.addView(competitionFilterLabel, competitionLabelParams);
+
+        fixtureCompetitionSpinner = new Spinner(this);
+        fixtureCompetitionSpinner.setBackground(rounded(CARD, 10));
+        LinearLayout.LayoutParams competitionSpinnerParams = new LinearLayout.LayoutParams(-1, dp(48));
+        competitionSpinnerParams.topMargin = dp(5);
+        mainLayout.addView(fixtureCompetitionSpinner, competitionSpinnerParams);
+        refreshFixtureCompetitionOptions();
+        fixtureCompetitionSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                Object item = parent.getItemAtPosition(position);
+                if (item != null) {
+                    activeFixtureCompetition = item.toString();
+                    renderFixtureCards(loadedFixtures);
+                }
+            }
+            @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
+        });
+
         fixtureFiltersLayout = new LinearLayout(this);
         fixtureFiltersLayout.setOrientation(LinearLayout.HORIZONTAL);
         fixtureFiltersLayout.setGravity(Gravity.CENTER);
@@ -1045,6 +1072,47 @@ public class MainActivity extends Activity {
         mainLayout.addView(fixtureListLayout, listParams);
 
         addFixtureEmptyState("Your fixture schedule will appear here after refresh.");
+    }
+
+    private String fixtureCompetitionName(JSONObject fixture) {
+        JSONObject competition = fixture.optJSONObject("competition");
+        if (competition != null) return competition.optString("name", "").trim();
+        return fixture.optString("competitionName", "").trim();
+    }
+
+    private void refreshFixtureCompetitionOptions() {
+        if (fixtureCompetitionSpinner == null) return;
+        java.util.TreeSet<String> names = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        for (JSONObject fixture : loadedFixtures) {
+            String name = fixtureCompetitionName(fixture);
+            if (!name.isEmpty()) names.add(name);
+        }
+        ArrayList<String> options = new ArrayList<>();
+        options.add("ALL COMPETITIONS");
+        options.addAll(names);
+        if (!options.contains(activeFixtureCompetition)) activeFixtureCompetition = "ALL COMPETITIONS";
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+            this, android.R.layout.simple_spinner_item, options) {
+            @Override public View getView(int position, View convertView, android.view.ViewGroup parent) {
+                TextView view = (TextView) super.getView(position, convertView, parent);
+                view.setTextColor(WHITE);
+                view.setTextSize(14);
+                view.setPadding(dp(12), 0, dp(8), 0);
+                return view;
+            }
+            @Override public View getDropDownView(int position, View convertView, android.view.ViewGroup parent) {
+                TextView view = (TextView) super.getDropDownView(position, convertView, parent);
+                view.setTextColor(WHITE);
+                view.setBackgroundColor(CARD);
+                view.setTextSize(14);
+                view.setPadding(dp(12), dp(10), dp(8), dp(10));
+                return view;
+            }
+        };
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        fixtureCompetitionSpinner.setAdapter(adapter);
+        int selectedPosition = options.indexOf(activeFixtureCompetition);
+        fixtureCompetitionSpinner.setSelection(Math.max(0, selectedPosition), false);
     }
 
     private void buildFixtureFilterTabs() {
@@ -1159,6 +1227,8 @@ public class MainActivity extends Activity {
             : fixtureSearchInput.getText().toString().trim().toLowerCase(java.util.Locale.ROOT);
         for (JSONObject fixture : fixtures) {
             if (!fixtureMatchesFilter(fixture)) continue;
+            if (!"ALL COMPETITIONS".equals(activeFixtureCompetition)
+                    && !fixtureCompetitionName(fixture).equalsIgnoreCase(activeFixtureCompetition)) continue;
             JSONObject home = fixture.optJSONObject("homeTeam");
             JSONObject away = fixture.optJSONObject("awayTeam");
             String homeName = home == null ? "" : home.optString("name", "");
