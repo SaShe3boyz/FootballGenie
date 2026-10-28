@@ -5516,6 +5516,9 @@ public class MainActivity extends Activity {
                     updateConnectionStatus(true);
                     loadedFixtures.clear();
                     loadedFixtures.addAll(fixtures);
+                    // Rebuild competition chips after every fixture refresh so leagues
+                    // returned by the API appear automatically, not only at screen startup.
+                    refreshFixtureCompetitionOptions();
                     if (fixtureListStatus != null) {
                         fixtureListStatus.setText(fixtures.size() + " fixtures loaded");
                     }
