@@ -2402,27 +2402,34 @@ public class MainActivity extends Activity {
 
     // Show prediction accuracy separately for each competition using only saved,
     // completed matches and the original prediction recorded before kickoff.
+
     private void addLeaguePerformanceCards(LinearLayout parent, JSONArray history) {
         final class LeagueStats {
             String name;
-            int finished, outcomeCorrect, overCorrect, bttsCorrect, exactCorrect;
+            int saved, finished, outcomeCorrect, overCorrect, bttsCorrect, exactCorrect;
             LeagueStats(String value) { name = value; }
         }
         ArrayList<LeagueStats> leagues = new ArrayList<>();
         for (int i = 0; i < history.length(); i++) {
             JSONObject record = history.optJSONObject(i);
-            if (record == null || !"FINISHED".equals(record.optString("predictionStatus", "PENDING"))
-                    || !record.has("actualHome") || !record.has("actualAway")) continue;
-            int ah = record.optInt("actualHome", -1);
-            int aa = record.optInt("actualAway", -1);
-            if (ah < 0 || aa < 0) continue;
-            String name = record.optString("competition", "Competition not recorded").trim();
-            if (name.isEmpty() || "Unknown".equalsIgnoreCase(name)) name = "Competition not recorded";
+            if (record == null) continue;
+            String name = record.optString("competition", "").trim();
+            if (name.startsWith("{")) {
+                try { name = new JSONObject(name).optString("name", ""); } catch (Exception ignored) {}
+            }
+            if (name.isEmpty() || "Unknown".equalsIgnoreCase(name)
+                    || "null".equalsIgnoreCase(name)) name = "Competition not recorded";
             LeagueStats stats = null;
             for (LeagueStats item : leagues) {
                 if (item.name.equalsIgnoreCase(name)) { stats = item; break; }
             }
             if (stats == null) { stats = new LeagueStats(name); leagues.add(stats); }
+            stats.saved++;
+            if (!"FINISHED".equals(record.optString("predictionStatus", "PENDING"))
+                    || !record.has("actualHome") || !record.has("actualAway")) continue;
+            int ah = record.optInt("actualHome", -1);
+            int aa = record.optInt("actualAway", -1);
+            if (ah < 0 || aa < 0) continue;
             stats.finished++;
             String predictedOutcome = record.optDouble("homeP", 0) >=
                 Math.max(record.optDouble("drawP", 0), record.optDouble("awayP", 0))
@@ -2439,21 +2446,23 @@ public class MainActivity extends Activity {
         heading.setTypeface(null, Typeface.BOLD);
         heading.setPadding(dp(2), dp(16), dp(2), dp(8));
         parent.addView(heading);
-        TextView note = label("Compare competitions using completed matches only. Small samples can change quickly; use this as a guide, not a guarantee.");
+        TextView note = label("Every competition with a saved prediction appears here. Accuracy updates when final scores are recorded.");
         note.setTextColor(MUTED);
         note.setTextSize(12);
         note.setPadding(dp(2), 0, dp(2), dp(8));
         parent.addView(note);
         if (leagues.isEmpty()) {
-            TextView empty = label("League comparisons will appear after saved predictions have final scores.");
+            TextView empty = label("No saved predictions yet. Save a prediction from a fixture to start tracking its competition.");
             empty.setTextColor(MUTED);
             empty.setTextSize(13);
             parent.addView(empty);
             return;
         }
         java.util.Collections.sort(leagues, (left, right) -> {
-            double leftRate = left.finished == 0 ? 0 : (double) left.outcomeCorrect / left.finished;
-            double rightRate = right.finished == 0 ? 0 : (double) right.outcomeCorrect / right.finished;
+            if (left.finished == 0 && right.finished > 0) return 1;
+            if (right.finished == 0 && left.finished > 0) return -1;
+            double leftRate = left.finished == 0 ? -1 : (double) left.outcomeCorrect / left.finished;
+            double rightRate = right.finished == 0 ? -1 : (double) right.outcomeCorrect / right.finished;
             return Double.compare(rightRate, leftRate);
         });
         for (LeagueStats stats : leagues) {
@@ -2464,39 +2473,47 @@ public class MainActivity extends Activity {
             leagueName.setTextSize(15);
             leagueName.setTypeface(null, Typeface.BOLD);
             leagueCard.addView(leagueName);
-            TextView count = label(stats.finished + " completed match(es) checked");
+            TextView count = label(stats.saved + " prediction(s) saved • " + stats.finished + " completed and checked");
             count.setTextColor(MUTED);
             count.setTextSize(12);
             count.setPadding(0, dp(3), 0, dp(7));
             leagueCard.addView(count);
-            TextView outcome = label("Correct match results: " + stats.outcomeCorrect + "/" + stats.finished
-                + " • " + String.format(Locale.US, "%.1f%%", 100.0 * stats.outcomeCorrect / stats.finished));
-            outcome.setTextColor(stats.finished >= 10 && 100.0 * stats.outcomeCorrect / stats.finished >= 60
-                ? GREEN : WHITE);
-            outcome.setTextSize(14);
-            outcome.setTypeface(null, Typeface.BOLD);
-            leagueCard.addView(outcome);
-            TextView other = label("Over 2.5 goals: " + stats.overCorrect + "/" + stats.finished
-                + " (" + String.format(Locale.US, "%.1f%%", 100.0 * stats.overCorrect / stats.finished) + ")"
-                + "\nBoth teams to score: " + stats.bttsCorrect + "/" + stats.finished
-                + " (" + String.format(Locale.US, "%.1f%%", 100.0 * stats.bttsCorrect / stats.finished) + ")"
-                + "\nExact score: " + stats.exactCorrect + "/" + stats.finished
-                + " (" + String.format(Locale.US, "%.1f%%", 100.0 * stats.exactCorrect / stats.finished) + ")");
-            other.setTextColor(MUTED);
-            other.setTextSize(13);
-            other.setLineSpacing(dp(3), 1f);
-            other.setPadding(0, dp(6), 0, 0);
-            leagueCard.addView(other);
-            if (stats.finished < 10) {
-                TextView warning = label("Early sample — collect more results before judging this competition.");
-                warning.setTextColor(Color.rgb(244, 190, 80));
-                warning.setTextSize(12);
-                warning.setPadding(0, dp(6), 0, 0);
-                leagueCard.addView(warning);
+            if (stats.finished == 0) {
+                TextView waiting = label("Accuracy will appear after a saved match finishes and its final score is recorded.");
+                waiting.setTextColor(Color.rgb(244, 190, 80));
+                waiting.setTextSize(13);
+                leagueCard.addView(waiting);
+            } else {
+                TextView outcome = label("Correct match results: " + stats.outcomeCorrect + "/" + stats.finished
+                    + " • " + String.format(Locale.US, "%.1f%%", 100.0 * stats.outcomeCorrect / stats.finished));
+                outcome.setTextColor(stats.finished >= 10 && 100.0 * stats.outcomeCorrect / stats.finished >= 60
+                    ? GREEN : WHITE);
+                outcome.setTextSize(14);
+                outcome.setTypeface(null, Typeface.BOLD);
+                leagueCard.addView(outcome);
+                TextView other = label("Over 2.5 goals: " + stats.overCorrect + "/" + stats.finished
+                    + " (" + String.format(Locale.US, "%.1f%%", 100.0 * stats.overCorrect / stats.finished) + ")"
+                    + "\nBoth teams to score: " + stats.bttsCorrect + "/" + stats.finished
+                    + " (" + String.format(Locale.US, "%.1f%%", 100.0 * stats.bttsCorrect / stats.finished) + ")"
+                    + "\nExact score: " + stats.exactCorrect + "/" + stats.finished
+                    + " (" + String.format(Locale.US, "%.1f%%", 100.0 * stats.exactCorrect / stats.finished) + ")");
+                other.setTextColor(MUTED);
+                other.setTextSize(13);
+                other.setLineSpacing(dp(3), 1f);
+                other.setPadding(0, dp(6), 0, 0);
+                leagueCard.addView(other);
+                if (stats.finished < 10) {
+                    TextView warning = label("Early sample — collect more results before judging this competition.");
+                    warning.setTextColor(Color.rgb(244, 190, 80));
+                    warning.setTextSize(12);
+                    warning.setPadding(0, dp(6), 0, 0);
+                    leagueCard.addView(warning);
+                }
             }
             parent.addView(leagueCard);
         }
     }
+
 
     private void buildResults() {
         addHeading("", "MATCH PREDICTION");
@@ -4031,7 +4048,10 @@ public class MainActivity extends Activity {
             record.put("fixtureId", fixtureId);
             record.put("home", home);
             record.put("away", away);
-            record.put("competition", selectedFixture.optString("competition", selectedFixture.optString("competitionName", "Competition not recorded")));
+            JSONObject savedCompetition = selectedFixture.optJSONObject("competition");
+            String savedCompetitionName = savedCompetition == null ? selectedFixture.optString("competitionName", selectedFixtureCompetition) : savedCompetition.optString("name", selectedFixtureCompetition);
+            if (savedCompetitionName == null || savedCompetitionName.trim().isEmpty()) savedCompetitionName = "Competition not recorded";
+            record.put("competition", savedCompetitionName);
             record.put("kickoff", kickoff);
             record.put("homeXg", homeXg);
             record.put("awayXg", awayXg);
@@ -4165,7 +4185,10 @@ public class MainActivity extends Activity {
                                 !wantedId.equals(match.optString("id", ""))) continue;
 
                             String matchStatus = match.optString("status", "");
-                            String competitionName = match.optString("competition", match.optString("competitionName", ""));
+                            JSONObject matchCompetition = match.optJSONObject("competition");
+                            String competitionName = matchCompetition == null
+                                ? match.optString("competitionName", match.optString("league", ""))
+                                : matchCompetition.optString("name", "");
                             if (!competitionName.trim().isEmpty()) record.put("competition", competitionName);
                             record.put("currentMatchStatus", matchStatus);
                             if ("FINISHED".equals(matchStatus)) {
