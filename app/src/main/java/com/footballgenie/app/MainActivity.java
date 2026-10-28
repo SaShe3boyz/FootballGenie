@@ -69,7 +69,7 @@ public class MainActivity extends Activity {
     private LinearLayout fixtureFiltersLayout;
     private TextView fixtureListStatus;
     private android.widget.EditText fixtureSearchInput;
-    private Spinner fixtureCompetitionSpinner;
+    private LinearLayout fixtureCompetitionChips;
     private String activeFixtureCompetition = "ALL COMPETITIONS";
     private String selectedLanguageCode = "en";
     private final ArrayList<JSONObject> loadedFixtures = new ArrayList<>();
@@ -1040,22 +1040,16 @@ public class MainActivity extends Activity {
         competitionLabelParams.topMargin = dp(12);
         mainLayout.addView(competitionFilterLabel, competitionLabelParams);
 
-        fixtureCompetitionSpinner = new Spinner(this);
-        fixtureCompetitionSpinner.setBackground(rounded(CARD, 10));
-        LinearLayout.LayoutParams competitionSpinnerParams = new LinearLayout.LayoutParams(-1, dp(48));
-        competitionSpinnerParams.topMargin = dp(5);
-        mainLayout.addView(fixtureCompetitionSpinner, competitionSpinnerParams);
+        HorizontalScrollView competitionScroll = new HorizontalScrollView(this);
+        competitionScroll.setHorizontalScrollBarEnabled(false);
+        LinearLayout.LayoutParams competitionScrollParams = new LinearLayout.LayoutParams(-1, dp(48));
+        competitionScrollParams.topMargin = dp(5);
+        fixtureCompetitionChips = new LinearLayout(this);
+        fixtureCompetitionChips.setOrientation(LinearLayout.HORIZONTAL);
+        fixtureCompetitionChips.setGravity(Gravity.CENTER_VERTICAL);
+        competitionScroll.addView(fixtureCompetitionChips, new HorizontalScrollView.LayoutParams(-2, -1));
+        mainLayout.addView(competitionScroll, competitionScrollParams);
         refreshFixtureCompetitionOptions();
-        fixtureCompetitionSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
-            @Override public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
-                Object item = parent.getItemAtPosition(position);
-                if (item != null) {
-                    activeFixtureCompetition = item.toString();
-                    renderFixtureCards(loadedFixtures);
-                }
-            }
-            @Override public void onNothingSelected(android.widget.AdapterView<?> parent) { }
-        });
 
         fixtureFiltersLayout = new LinearLayout(this);
         fixtureFiltersLayout.setOrientation(LinearLayout.HORIZONTAL);
@@ -1081,38 +1075,58 @@ public class MainActivity extends Activity {
     }
 
     private void refreshFixtureCompetitionOptions() {
-        if (fixtureCompetitionSpinner == null) return;
+        if (fixtureCompetitionChips == null) return;
         java.util.TreeSet<String> names = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         for (JSONObject fixture : loadedFixtures) {
             String name = fixtureCompetitionName(fixture);
             if (!name.isEmpty()) names.add(name);
         }
+        if (!"ALL COMPETITIONS".equals(activeFixtureCompetition) && !names.contains(activeFixtureCompetition)) {
+            activeFixtureCompetition = "ALL COMPETITIONS";
+        }
+        fixtureCompetitionChips.removeAllViews();
         ArrayList<String> options = new ArrayList<>();
         options.add("ALL COMPETITIONS");
         options.addAll(names);
-        if (!options.contains(activeFixtureCompetition)) activeFixtureCompetition = "ALL COMPETITIONS";
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-            this, android.R.layout.simple_spinner_item, options) {
-            @Override public View getView(int position, View convertView, android.view.ViewGroup parent) {
-                TextView view = (TextView) super.getView(position, convertView, parent);
-                view.setTextColor(WHITE);
-                view.setTextSize(14);
-                view.setPadding(dp(12), 0, dp(8), 0);
-                return view;
-            }
-            @Override public View getDropDownView(int position, View convertView, android.view.ViewGroup parent) {
-                TextView view = (TextView) super.getDropDownView(position, convertView, parent);
-                view.setTextColor(WHITE);
-                view.setBackgroundColor(CARD);
-                view.setTextSize(14);
-                view.setPadding(dp(12), dp(10), dp(8), dp(10));
-                return view;
-            }
-        };
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        fixtureCompetitionSpinner.setAdapter(adapter);
-        int selectedPosition = options.indexOf(activeFixtureCompetition);
-        fixtureCompetitionSpinner.setSelection(Math.max(0, selectedPosition), false);
+        for (String competitionName : options) {
+            boolean selected = competitionName.equalsIgnoreCase(activeFixtureCompetition);
+            TextView chip = new TextView(this);
+            chip.setText(fixtureCompetitionFlag(competitionName) + " " + competitionName);
+            chip.setTextColor(selected ? Color.rgb(8, 25, 22) : WHITE);
+            chip.setTextSize(12);
+            chip.setTypeface(null, Typeface.BOLD);
+            chip.setGravity(Gravity.CENTER);
+            chip.setSingleLine(true);
+            chip.setPadding(dp(12), 0, dp(12), 0);
+            chip.setBackground(rounded(selected ? GREEN : CARD, 18));
+            chip.setClickable(true);
+            chip.setFocusable(true);
+            LinearLayout.LayoutParams chipParams = new LinearLayout.LayoutParams(-2, dp(38));
+            chipParams.setMargins(0, 0, dp(8), 0);
+            fixtureCompetitionChips.addView(chip, chipParams);
+            chip.setOnClickListener(v -> {
+                activeFixtureCompetition = competitionName;
+                refreshFixtureCompetitionOptions();
+                renderFixtureCards(loadedFixtures);
+            });
+        }
+    }
+
+    private String fixtureCompetitionFlag(String name) {
+        String n = name == null ? "" : name.toLowerCase(java.util.Locale.ROOT);
+        if (n.contains("premier league") || n.contains("fa cup") || n.contains("efl") || n.contains("carabao")) return "🇬🇧";
+        if (n.contains("la liga") || n.contains("copa del rey") || n.contains("segunda")) return "🇪🇸";
+        if (n.contains("serie a") || n.contains("serie b") || n.contains("coppa italia")) return "🇮🇹";
+        if (n.contains("bundesliga") || n.contains("dfb-pokal")) return "🇩🇪";
+        if (n.contains("ligue 1") || n.contains("coupe de france")) return "🇫🇷";
+        if (n.contains("eredivisie") || n.contains("knvb")) return "🇳🇱";
+        if (n.contains("primeira liga") || n.contains("liga portugal")) return "🇵🇹";
+        if (n.contains("champions league") || n.contains("europa league") || n.contains("conference league")) return "🇪🇺";
+        if (n.contains("mls") || n.contains("major league soccer")) return "🇺🇸";
+        if (n.contains("brasileirão") || n.contains("brasileirao") || n.contains("copa do brasil")) return "🇧🇷";
+        if (n.contains("premier soccer league") || n.contains("south africa")) return "🇿🇦";
+        if (n.contains("zimbabwe")) return "🇿🇼";
+        return "🌍";
     }
 
     private void buildFixtureFilterTabs() {
