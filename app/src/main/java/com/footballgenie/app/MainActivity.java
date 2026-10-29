@@ -4182,6 +4182,10 @@ public class MainActivity extends Activity {
             payload.put("kickoffAt", record.optString("kickoff", ""));
             payload.put("predictedHomeGoals", record.optDouble("predictedHome", 0));
             payload.put("predictedAwayGoals", record.optDouble("predictedAway", 0));
+            // Keep the model's expected-goal inputs separate from its most likely scoreline.
+            // Validation needs both values to compare the same calculation fairly.
+            payload.put("homeXg", record.optDouble("homeXg", -1));
+            payload.put("awayXg", record.optDouble("awayXg", -1));
             payload.put("homeWinProbability", record.optDouble("homeP", 0));
             payload.put("drawProbability", record.optDouble("drawP", 0));
             payload.put("awayWinProbability", record.optDouble("awayP", 0));
