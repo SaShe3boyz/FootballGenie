@@ -787,7 +787,6 @@ public class MainActivity extends Activity {
             loadFixtures();
         });
 
-        LinearLayout fixtureCard = card();
         Button betSlipButton = new Button(this);
         betSlipButton.setText("🎟  FOOTBALL GENIE BET SLIP");
         betSlipButton.setAllCaps(false);
