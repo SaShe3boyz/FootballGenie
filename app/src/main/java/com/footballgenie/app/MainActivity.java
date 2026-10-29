@@ -1928,7 +1928,21 @@ public class MainActivity extends Activity {
             teams.setTypeface(null, Typeface.BOLD);
             item.addView(teams);
 
-            String competition = slip.optString("competition", "Competition not recorded");
+            String competition = slip.optString("competition", "Competition not recorded").trim();
+            // Older API records may store the full competition object as JSON text.
+            // Show users the readable competition name instead of raw JSON.
+            if (competition.startsWith("{")) {
+                try {
+                    JSONObject competitionObject = new JSONObject(competition);
+                    competition = competitionObject.optString("name",
+                        competitionObject.optString("code", "Competition not recorded"));
+                } catch (Exception ignored) {
+                    competition = "Competition not recorded";
+                }
+            }
+            if (competition.isEmpty() || "null".equalsIgnoreCase(competition)) {
+                competition = "Competition not recorded";
+            }
             String kickoff = slip.optString("kickoff_at", "");
             if (kickoff.length() >= 10) kickoff = kickoff.substring(0, 10);
             TextView details = label(competition + (kickoff.isEmpty() ? "" : "  •  " + kickoff));
