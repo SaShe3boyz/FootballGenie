@@ -5792,8 +5792,22 @@ public class MainActivity extends Activity {
             try {
                 String homeId = String.valueOf(fixture.getJSONObject("homeTeam").getLong("id"));
                 String awayId = String.valueOf(fixture.getJSONObject("awayTeam").getLong("id"));
-                JSONObject homeStats = fetchTeamStats(homeId);
-                JSONObject awayStats = fetchTeamStats(awayId);
+                // Fetch both teams at the same time so the second request does not wait
+                // for the first provider response to finish.
+                java.util.concurrent.ExecutorService statsExecutor =
+                    java.util.concurrent.Executors.newFixedThreadPool(2);
+                JSONObject homeStats;
+                JSONObject awayStats;
+                try {
+                    java.util.concurrent.Future<JSONObject> homeFuture =
+                        statsExecutor.submit(() -> fetchTeamStats(homeId));
+                    java.util.concurrent.Future<JSONObject> awayFuture =
+                        statsExecutor.submit(() -> fetchTeamStats(awayId));
+                    homeStats = homeFuture.get(17, java.util.concurrent.TimeUnit.SECONDS);
+                    awayStats = awayFuture.get(17, java.util.concurrent.TimeUnit.SECONDS);
+                } finally {
+                    statsExecutor.shutdownNow();
+                }
                 JSONObject homeGoalsStats = homeStats.optJSONObject("goals");
                 JSONObject awayGoalsStats = awayStats.optJSONObject("goals");
 
