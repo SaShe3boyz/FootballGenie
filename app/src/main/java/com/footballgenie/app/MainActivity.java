@@ -60,7 +60,9 @@ public class MainActivity extends Activity {
     private View appRoot;
     private boolean aiChatOpen = false;
     private final ArrayList<Integer> navigationHistory = new ArrayList<>();
-    private final View[] appScreens = new View[8];
+    private final View[] appScreens = new View[9];
+    private LinearLayout betSlipListContainer;
+    private TextView betSlipSummary;
     private TextView simulationSummary;
     private final LinearLayout[] navItems = new LinearLayout[5];
     private int activeScreen = 0;
@@ -123,6 +125,7 @@ public class MainActivity extends Activity {
         appScreens[5] = createAppPage(5); // Live Fixtures
         appScreens[6] = createAppPage(6); // Validation & Performance
         appScreens[7] = createAppPage(7); // Settings
+        appScreens[8] = createAppPage(8); // Football Genie Bet Slip
 
         root.addView(buildBottomNavigation(),
             new LinearLayout.LayoutParams(-1, dp(62)));
@@ -230,6 +233,9 @@ public class MainActivity extends Activity {
                 break;
             case 7:
                 buildSettingsScreen();
+                break;
+            case 8:
+                buildBetSlipScreen();
                 break;
         }
         mainLayout = previousLayout;
@@ -736,6 +742,7 @@ public class MainActivity extends Activity {
             if (previousScreen != 5) loadFixtures();
             liveRefreshHandler.postDelayed(liveRefreshRunnable, 180000L);
         }
+        if (screen == 8) loadBetSlips();
         for (int i = 0; i < navItems.length; i++) {
             LinearLayout item = navItems[i];
             if (item == null) continue;
@@ -779,6 +786,19 @@ public class MainActivity extends Activity {
             showScreen(5);
             loadFixtures();
         });
+
+        LinearLayout fixtureCard = card();
+        Button betSlipButton = new Button(this);
+        betSlipButton.setText("🎟  FOOTBALL GENIE BET SLIP");
+        betSlipButton.setAllCaps(false);
+        betSlipButton.setTextSize(15);
+        betSlipButton.setTypeface(null, Typeface.BOLD);
+        betSlipButton.setTextColor(WHITE);
+        betSlipButton.setBackground(rounded(Color.rgb(34, 64, 105), 12));
+        LinearLayout.LayoutParams betSlipParams = new LinearLayout.LayoutParams(-1, dp(50));
+        betSlipParams.bottomMargin = dp(12);
+        mainLayout.addView(betSlipButton, betSlipParams);
+        betSlipButton.setOnClickListener(v -> showScreen(8));
 
         LinearLayout fixtureCard = card();
         fixtureCard.setOrientation(LinearLayout.VERTICAL);
@@ -1771,6 +1791,200 @@ public class MainActivity extends Activity {
         }
         for (String[] pair : pairs) if (pair.length > 1 && pair[0].equals(english)) return pair[1];
         return english;
+    }
+
+    private void buildBetSlipScreen() {
+        addHeading("🎟", "FOOTBALL GENIE BET SLIP");
+        TextView intro = label("One strongest selection per saved match. Football Genie only selects a market when its estimated confidence reaches 70%.");
+        intro.setTextColor(MUTED);
+        intro.setTextSize(14);
+        intro.setPadding(0, 0, 0, dp(12));
+        mainLayout.addView(intro);
+
+        LinearLayout summaryCard = card();
+        TextView summaryHeading = label("YOUR SAVED BET SLIPS");
+        summaryHeading.setTextColor(GREEN);
+        summaryHeading.setTextSize(15);
+        summaryHeading.setTypeface(null, Typeface.BOLD);
+        summaryCard.addView(summaryHeading);
+        betSlipSummary = label("Loading saved selections…");
+        betSlipSummary.setTextColor(WHITE);
+        betSlipSummary.setTextSize(14);
+        betSlipSummary.setPadding(0, dp(8), 0, dp(8));
+        summaryCard.addView(betSlipSummary);
+        Button refresh = new Button(this);
+        refresh.setText("↻  REFRESH BET SLIPS");
+        refresh.setAllCaps(false);
+        refresh.setTextColor(Color.rgb(5, 24, 18));
+        refresh.setTypeface(null, Typeface.BOLD);
+        refresh.setBackground(rounded(GREEN, 10));
+        summaryCard.addView(refresh, new LinearLayout.LayoutParams(-1, dp(44)));
+        refresh.setOnClickListener(v -> loadBetSlips());
+        mainLayout.addView(summaryCard);
+
+        betSlipListContainer = new LinearLayout(this);
+        betSlipListContainer.setOrientation(LinearLayout.VERTICAL);
+        mainLayout.addView(betSlipListContainer, new LinearLayout.LayoutParams(-1, -2));
+        TextView note = label("Selections are saved before kickoff. Confidence is an estimate, not a guarantee. Matches without a selection are still recorded.");
+        note.setTextColor(MUTED);
+        note.setTextSize(12);
+        note.setPadding(dp(2), dp(10), dp(2), dp(10));
+        mainLayout.addView(note);
+    }
+
+    private void loadBetSlips() {
+        if (betSlipSummary != null) betSlipSummary.setText("Loading saved selections…");
+        if (betSlipListContainer != null) {
+            betSlipListContainer.removeAllViews();
+            TextView loading = label("Connecting to Football Genie…");
+            loading.setTextColor(MUTED);
+            betSlipListContainer.addView(loading);
+        }
+        final String clientId = predictionClientId();
+        new Thread(() -> {
+            HttpURLConnection connection = null;
+            String responseText = null;
+            String errorMessage = null;
+            try {
+                String encodedClientId = java.net.URLEncoder.encode(clientId, "UTF-8");
+                URL url = new URL("https://football-genie-api.onrender.com/api/bet-slips?clientId=" + encodedClientId + "&limit=100");
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(20000);
+                int code = connection.getResponseCode();
+                java.io.InputStream stream = (code >= 200 && code < 300)
+                    ? connection.getInputStream() : connection.getErrorStream();
+                if (stream != null) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+                    StringBuilder body = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) body.append(line);
+                    reader.close();
+                    responseText = body.toString();
+                }
+                if (code < 200 || code >= 300) {
+                    JSONObject error = responseText == null ? new JSONObject() : new JSONObject(responseText);
+                    errorMessage = error.optString("error", "The server could not load bet slips (HTTP " + code + ").");
+                }
+            } catch (Exception error) {
+                errorMessage = "Could not connect. Check your internet connection and try again.";
+                android.util.Log.w("FootballGenie", "Bet slip loading failed.", error);
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+            final String finalResponse = responseText;
+            final String finalError = errorMessage;
+            runOnUiThread(() -> {
+                if (betSlipSummary == null || betSlipListContainer == null) return;
+                if (finalError != null || finalResponse == null) {
+                    betSlipSummary.setText(finalError == null ? "Unable to load bet slips." : finalError);
+                    betSlipListContainer.removeAllViews();
+                    return;
+                }
+                try {
+                    JSONObject data = new JSONObject(finalResponse);
+                    JSONObject summary = data.optJSONObject("summary");
+                    JSONArray slips = data.optJSONArray("slips");
+                    if (summary != null) {
+                        String rate = summary.isNull("successRatePercent") ? "—" : summary.optString("successRatePercent") + "%";
+                        betSlipSummary.setText(
+                            "Matches saved: " + summary.optInt("totalMatches") +
+                            "\nHigh-confidence selections: " + summary.optInt("highConfidenceSelections") +
+                            "\nWon: " + summary.optInt("won") +
+                            "   Lost: " + summary.optInt("lost") +
+                            "   Pending: " + summary.optInt("pending") +
+                            "\nNo selection: " + summary.optInt("noSelection") +
+                            "\nSuccess rate of settled selections: " + rate);
+                    } else {
+                        betSlipSummary.setText("Your saved selections and their results.");
+                    }
+                    renderBetSlipCards(slips == null ? new JSONArray() : slips);
+                } catch (Exception error) {
+                    betSlipSummary.setText("The server response could not be read. Please refresh.");
+                    betSlipListContainer.removeAllViews();
+                    android.util.Log.w("FootballGenie", "Invalid bet slip response.", error);
+                }
+            });
+        }).start();
+    }
+
+    private void renderBetSlipCards(JSONArray slips) {
+        betSlipListContainer.removeAllViews();
+        if (slips.length() == 0) {
+            TextView empty = label("No saved bet slips yet. Open MATCH CENTRE, select an upcoming match, run your prediction, and save it. Your saved selection will appear here.");
+            empty.setTextColor(MUTED);
+            empty.setTextSize(14);
+            empty.setPadding(dp(8), dp(18), dp(8), dp(18));
+            betSlipListContainer.addView(empty);
+            return;
+        }
+        for (int i = 0; i < slips.length(); i++) {
+            JSONObject slip = slips.optJSONObject(i);
+            if (slip == null) continue;
+            LinearLayout item = card();
+            TextView teams = label(slip.optString("home_team", "Home Team") + "  vs  " + slip.optString("away_team", "Away Team"));
+            teams.setTextColor(WHITE);
+            teams.setTextSize(16);
+            teams.setTypeface(null, Typeface.BOLD);
+            item.addView(teams);
+
+            String competition = slip.optString("competition", "Competition not recorded");
+            String kickoff = slip.optString("kickoff_at", "");
+            if (kickoff.length() >= 10) kickoff = kickoff.substring(0, 10);
+            TextView details = label(competition + (kickoff.isEmpty() ? "" : "  •  " + kickoff));
+            details.setTextColor(MUTED);
+            details.setTextSize(12);
+            details.setPadding(0, dp(5), 0, dp(8));
+            item.addView(details);
+
+            String selection = slip.optString("selection", "");
+            if (selection.isEmpty() || slip.isNull("selection")) {
+                TextView noPick = label("NO HIGH-CONFIDENCE SELECTION");
+                noPick.setTextColor(Color.rgb(255, 204, 102));
+                noPick.setTypeface(null, Typeface.BOLD);
+                item.addView(noPick);
+                TextView reason = label("No available market reached 70% confidence. No pick was forced.");
+                reason.setTextColor(MUTED);
+                reason.setTextSize(13);
+                item.addView(reason);
+            } else {
+                TextView market = label(slip.optString("market", "Market") + "  •  " + selection);
+                market.setTextColor(GREEN);
+                market.setTextSize(15);
+                market.setTypeface(null, Typeface.BOLD);
+                item.addView(market);
+                TextView confidence = label("Football Genie confidence: " + slip.optString("confidence", "—") + "%");
+                confidence.setTextColor(WHITE);
+                confidence.setTextSize(14);
+                confidence.setPadding(0, dp(5), 0, dp(5));
+                item.addView(confidence);
+            }
+
+            String status = slip.optString("status", "pending");
+            String statusText;
+            int statusColor;
+            if ("won".equals(status)) {
+                statusText = "RESULT: CORRECT";
+                statusColor = GREEN;
+            } else if ("lost".equals(status)) {
+                statusText = "RESULT: INCORRECT";
+                statusColor = Color.rgb(255, 120, 120);
+            } else if ("no_selection".equals(status)) {
+                statusText = "STATUS: NO SELECTION";
+                statusColor = Color.rgb(255, 204, 102);
+            } else {
+                statusText = "STATUS: AWAITING MATCH RESULT";
+                statusColor = Color.rgb(130, 190, 255);
+            }
+            TextView statusView = label(statusText);
+            statusView.setTextColor(statusColor);
+            statusView.setTypeface(null, Typeface.BOLD);
+            statusView.setTextSize(13);
+            statusView.setPadding(0, dp(10), 0, 0);
+            item.addView(statusView);
+            betSlipListContainer.addView(item);
+        }
     }
 
     private void buildSettingsScreen() {
